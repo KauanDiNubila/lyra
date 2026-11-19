@@ -42,6 +42,7 @@ class FoodTest {
         assertThatThrownBy(() -> Food.custom(null, HUNDRED_GRAMS, RICE)).isInstanceOf(InvalidInputException.class);
         assertThatThrownBy(() -> Food.custom("x".repeat(201), HUNDRED_GRAMS, RICE)).isInstanceOf(InvalidInputException.class);
         assertThat(Food.custom("x".repeat(200), HUNDRED_GRAMS, RICE).getName()).hasSize(200);
+        assertThat(Food.custom(" ab ", HUNDRED_GRAMS, RICE).getName()).isEqualTo("ab");
     }
 
     @Test
