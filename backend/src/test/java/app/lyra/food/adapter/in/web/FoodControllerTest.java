@@ -86,7 +86,8 @@ class FoodControllerTest {
     void searchWithoutAQueryIsABadRequestProblem() throws Exception {
         mvc.perform(get("/api/foods"))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Bad Request"));
     }
 
     @Test
@@ -172,6 +173,15 @@ class FoodControllerTest {
                         }
                         """))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Bad Request"));
+    }
+
+    @Test
+    void createWithMalformedJsonIsABadRequestProblem() throws Exception {
+        mvc.perform(post("/api/foods").contentType(MediaType.APPLICATION_JSON).content("{"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Bad Request"));
     }
 }
