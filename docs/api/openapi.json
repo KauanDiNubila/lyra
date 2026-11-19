@@ -22,10 +22,20 @@
           }
         } ],
         "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "200" : {
             "description" : "OK",
             "content" : {
-              "*/*" : {
+              "application/json" : {
                 "schema" : {
                   "type" : "array",
                   "items" : {
@@ -51,10 +61,20 @@
           "required" : true
         },
         "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "201" : {
             "description" : "Created",
             "content" : {
-              "*/*" : {
+              "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/FoodResponse"
                 }
@@ -67,6 +87,33 @@
   },
   "components" : {
     "schemas" : {
+      "ProblemDetail" : {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "format" : "uri"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "detail" : {
+            "type" : "string"
+          },
+          "instance" : {
+            "type" : "string",
+            "format" : "uri"
+          },
+          "properties" : {
+            "type" : "object",
+            "additionalProperties" : { }
+          }
+        }
+      },
       "CreateFoodRequest" : {
         "type" : "object",
         "properties" : {
