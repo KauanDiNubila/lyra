@@ -1,9 +1,11 @@
 package app.lyra.architecture;
 
 import archfixture.food.adapter.out.persistence.FoodEntity;
+import archfixture.food.adapter.in.web.FoodController;
 import archfixture.food.application.service.FoodSearchService;
 import archfixture.food.domainevents.FoodRenamed;
 import archfixture.violation.adapter.in.web.ControllerUsingOutboundAdapter;
+import archfixture.violation.adapter.out.persistence.RepositoryUsingInboundAdapter;
 import archfixture.violation.application.service.ServiceUsingAdapter;
 import archfixture.violation.application.service.ServiceUsingLookalikePackage;
 import archfixture.violation.application.service.ServiceUsingOtherModuleService;
@@ -32,6 +34,7 @@ class HexagonalArchitectureTest {
             HexagonalRules::domainDependsOnlyOnJdkAndDomain,
             HexagonalRules::applicationDoesNotDependOnAdapters,
             HexagonalRules::inboundAdaptersDoNotDependOnOutboundAdapters,
+            HexagonalRules::outboundAdaptersDoNotDependOnInboundAdapters,
             HexagonalRules::modulesTalkOnlyThroughInboundPortsAndDomain);
 
     @Test
@@ -77,6 +80,12 @@ class HexagonalArchitectureTest {
         void inboundAdapterDependingOnAnOutboundAdapterIsRejected() {
             assertViolation(HexagonalRules.inboundAdaptersDoNotDependOnOutboundAdapters(FIXTURE_ROOT),
                     ControllerUsingOutboundAdapter.class, FoodEntity.class);
+        }
+
+        @Test
+        void outboundAdapterDependingOnAnInboundAdapterIsRejected() {
+            assertViolation(HexagonalRules.outboundAdaptersDoNotDependOnInboundAdapters(FIXTURE_ROOT),
+                    RepositoryUsingInboundAdapter.class, FoodController.class);
         }
 
         @Test

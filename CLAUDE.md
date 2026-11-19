@@ -14,6 +14,8 @@ Read before working on a slice:
 | `backend/` | Spring Boot 4.1, Java 25, Maven wrapper |
 | `frontend/` | React 19, Vite, Astryx, vite-plugin-pwa |
 | `docs/rfc/`, `docs/adr/` | RFCs and ADRs (MADR format, in English) |
+| `docs/api/openapi.json` | HTTP contract; `OpenApiContractTest` fails when the API drifts from it |
+| `tools/taco/` | One-off converter from the TACO spreadsheet to the seed TSV |
 | `.github/` | CI workflow and Dependabot |
 
 ## Commands
@@ -23,6 +25,7 @@ The machine's `JAVA_HOME` points to JDK 21; the backend needs 25.
 ```bash
 cd backend && JAVA_HOME="C:\Program Files\Eclipse Adoptium\jdk-25.0.4.101-hotspot" ./mvnw verify
 cd frontend && npm run lint && npm test && npm run build
+cd tools/taco && python -X utf8 -m unittest
 ```
 
 Integration tests use Testcontainers and need Docker Desktop running. The application reads the database from `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` and `SPRING_DATASOURCE_PASSWORD` and fails to start without them; for local runs use `TestLyraApplication`, which starts PostgreSQL in a container.
@@ -63,6 +66,8 @@ adapter/out/<external>/   external API clients
 - `domain`: unit tests without mocks. `application`: unit tests with in-memory fakes for outbound ports.
 - Web adapters: `@WebMvcTest`. Persistence: `@DataJpaTest` with Testcontainers. External APIs: WireMock.
 - JaCoCo fails the build below 90% line and branch coverage in `domain` and `application`.
+- Every outbound port that has an in-memory fake has a `<Port>Contract` interface with the behaviour tests, implemented by the fake's test and by the real adapter's test.
+- Test methods inherited from an interface do not run inside the `@DataJpaTest` transaction, so nothing is rolled back: an adapter test that writes cleans up with `@AfterEach`.
 - Frontend: Vitest and Testing Library.
 
 ## Git workflow (ADR-007)
@@ -99,9 +104,12 @@ Fixed accepted decisions:
 | Records for value objects and DTOs instead of classes | ADR-005 | |
 | In-memory fakes instead of Mockito in application tests | ADR-002 | |
 | Snapshot of food name and nutrients duplicated in each diary entry | ADR-003 | |
-| `allowEmptyShould(true)` on ArchUnit rules | Slice 1 | Until the first module exists (slice 2) |
-| Spring starters in `pom.xml` without code using them yet | Slice 1 | Until slice 2 |
 | Zero required approvals in the rulesets | ADR-007 | |
+| TACO rules: `Tr` and `NA` stored as 0, foods with unknown macros skipped, negative carbohydrate stored as 0 | ADR-008 | |
+| Custom foods visible to every user | ADR-008 | Until the identity module exists |
+| Generated `taco-foods.tsv` and `docs/api/openapi.json` committed | ADR-008 | |
+| Contract without `required` fields; errors raised by Spring keep the default `Bad Request` title | ADR-008 | Until a second API client exists |
+| TACO converter tests not wired to the CI | ADR-008 | Until the converter is run more than once |
 
 Fixed push-hard items: `domain` depending on anything outside the JDK; rounding outside the presentation edge; `@Data` or `@Setter` on domain entities; silent fallbacks in configuration or error handling; logic in the wrong module or layer; tests that only verify mocks.
 
