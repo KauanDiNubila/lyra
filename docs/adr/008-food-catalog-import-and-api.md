@@ -50,7 +50,7 @@ Value rules, from the spreadsheet legend:
 - The query is normalized like the names, punctuation is removed and it is split into terms; it needs at least 2 characters.
 - A food matches when its normalized name contains **every** term ("feijao cozido" finds "Feijão, carioca, cozido").
 - The persistence adapter escapes `%`, `_` and `\` in every term before building the `LIKE`, so a term is always literal text, whatever the domain strips.
-- Order: custom foods first, then shorter names, then alphabetical. At most 20 results. The order is applied by the database because the limit is too, so it belongs to the persistence adapter; `FoodRepositoryContract` states it once and runs against both the in-memory fake and the real adapter.
+- Order: custom foods first, then shorter names; names of the same length come in no defined order, because the database collation would decide it and the in-memory fake would differ. At most 20 results. The order is applied by the database because the limit is too, so it belongs to the persistence adapter; `FoodRepositoryContract` states it once and runs against both the in-memory fake and the real adapter.
 - Until the identity module exists, custom foods are visible to every user.
 
 ### HTTP contract

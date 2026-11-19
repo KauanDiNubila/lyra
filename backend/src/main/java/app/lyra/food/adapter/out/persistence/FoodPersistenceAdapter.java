@@ -45,8 +45,7 @@ class FoodPersistenceAdapter implements FoodRepository {
 
         criteria.where(everyTerm).orderBy(
                 cb.asc(cb.selectCase().when(cb.equal(food.get("source"), FoodSource.CUSTOM), 0).otherwise(1)),
-                cb.asc(cb.length(food.get("name"))),
-                cb.asc(food.get("name")));
+                cb.asc(cb.length(food.get("name"))));
 
         return entityManager.createQuery(criteria).setMaxResults(limit).getResultList().stream()
                 .map(FoodPersistenceAdapter::toDomain)

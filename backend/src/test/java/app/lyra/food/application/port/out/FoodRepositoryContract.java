@@ -49,10 +49,13 @@ public interface FoodRepositoryContract {
     }
 
     @Test
-    default void listsShorterNamesFirstThenAlphabetically() {
-        saveCustom("Quimera b", "Quimera a", "Quimera ab cd");
+    default void listsShorterNamesFirstAndLeavesTheOrderOfEqualLengthsOpen() {
+        saveCustom("Quimera b", "Quimera ab cd", "Quimera a");
 
-        assertThat(names(search("quimera"))).containsExactly("Quimera a", "Quimera b", "Quimera ab cd");
+        List<String> names = names(search("quimera"));
+
+        assertThat(names.subList(0, 2)).containsExactlyInAnyOrder("Quimera a", "Quimera b");
+        assertThat(names.get(2)).isEqualTo("Quimera ab cd");
     }
 
     @Test

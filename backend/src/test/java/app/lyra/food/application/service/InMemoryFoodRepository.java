@@ -24,8 +24,7 @@ class InMemoryFoodRepository implements FoodRepository {
         return foods.stream()
                 .filter(food -> query.terms().stream().allMatch(SearchText.normalize(food.getName())::contains))
                 .sorted(Comparator.comparingInt((Food food) -> food.getSource() == FoodSource.CUSTOM ? 0 : 1)
-                        .thenComparingInt(food -> food.getName().length())
-                        .thenComparing(Food::getName))
+                        .thenComparingInt(food -> food.getName().length()))
                 .limit(limit)
                 .toList();
     }
