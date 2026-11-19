@@ -25,7 +25,7 @@ cd backend && JAVA_HOME="C:\Program Files\Eclipse Adoptium\jdk-25.0.4.101-hotspo
 cd frontend && npm run lint && npm test && npm run build
 ```
 
-Integration tests use Testcontainers and need Docker Desktop running.
+Integration tests use Testcontainers and need Docker Desktop running. The application reads the database from `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` and `SPRING_DATASOURCE_PASSWORD` and fails to start without them; for local runs use `TestLyraApplication`, which starts PostgreSQL in a container.
 
 ## Architecture rules (ADR-001)
 
@@ -76,7 +76,37 @@ adapter/out/<external>/   external API clients
 ## Before opening a pull request
 
 1. Run backend and frontend checks locally and report what was and was not run.
-2. Stop and remind the user to run `/thermo-nuclear-code-quality-review`. Do not open the pull request before it runs.
+2. Stop and remind the user to run `/thermo-nuclear-code-quality-review`, and send with the reminder the ready-to-paste command built from the template in "Code review context" below. Do not open the pull request before it runs.
 3. When the findings arrive, give an opinion on each one (real problem or noise, fix now or not). Do not fix anything until the user chooses.
 4. Fix the chosen findings, then open the pull request into `develop`.
 5. Review the delivery item by item against the RFC slice it implements, not only for internal consistency.
+
+## Code review context
+
+When reminding the user to run the thermo-nuclear review, send one command in Brazilian Portuguese, so the review also answers in Portuguese. It has three parts: the fixed list below, the accepted items specific to that pull request, and what to push hard on.
+
+Rules for the accepted list:
+
+- Only decisions written in an ADR or explicitly agreed with the user go in; never "it looked fine".
+- Every temporary item states its limit (until which slice or condition). Past the limit it is a finding again.
+- The list never silences a contradiction of an ADR.
+
+Fixed accepted decisions:
+
+| Decision | Source | Limit |
+|---|---|---|
+| Lombok `@Getter`, `@RequiredArgsConstructor`, `@Slf4j` in domain and services | ADR-005 | |
+| Records for value objects and DTOs instead of classes | ADR-005 | |
+| In-memory fakes instead of Mockito in application tests | ADR-002 | |
+| Snapshot of food name and nutrients duplicated in each diary entry | ADR-003 | |
+| `allowEmptyShould(true)` on ArchUnit rules | Slice 1 | Until the first module exists (slice 2) |
+| Spring starters in `pom.xml` without code using them yet | Slice 1 | Until slice 2 |
+| Zero required approvals in the rulesets | ADR-007 | |
+
+Fixed push-hard items: `domain` depending on anything outside the JDK; rounding outside the presentation edge; `@Data` or `@Setter` on domain entities; silent fallbacks in configuration or error handling; logic in the wrong module or layer; tests that only verify mocks.
+
+Template:
+
+```
+/thermo-nuclear-code-quality-review Responda em português do Brasil. Contexto: Lyra, backend Java 25 com arquitetura hexagonal (ADR-001) e front React PWA com Astryx. Decisões aceitas, não apontar: <lista fixa e itens deste PR, cada um com o limite quando houver>. Apertar sem dó: <lista fixa e pontos de risco deste PR>.
+```
