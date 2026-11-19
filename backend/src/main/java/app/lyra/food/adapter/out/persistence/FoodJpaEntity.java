@@ -28,7 +28,6 @@ class FoodJpaEntity {
     private String searchName;
     @Enumerated(EnumType.STRING)
     private FoodSource source;
-    private String sourceReference;
     private BigDecimal referenceAmount;
     @Enumerated(EnumType.STRING)
     private MeasurementUnit referenceUnit;
