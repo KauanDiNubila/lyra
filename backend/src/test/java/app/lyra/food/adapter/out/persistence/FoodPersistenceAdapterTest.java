@@ -99,6 +99,36 @@ class FoodPersistenceAdapterTest {
     }
 
     @Test
+    void percentSignInATermIsTakenLiterally() {
+        adapter.save(Food.custom("Suco 100% natural", HUNDRED_GRAMS, ANY));
+        adapter.save(Food.custom("Suco 100 de laranja", HUNDRED_GRAMS, ANY));
+
+        List<Food> found = adapter.search(new FoodSearchQuery(List.of("100%")), 20);
+
+        assertThat(found).extracting(Food::getName).containsExactly("Suco 100% natural");
+    }
+
+    @Test
+    void underscoreInATermIsTakenLiterally() {
+        adapter.save(Food.custom("Pao_integral", HUNDRED_GRAMS, ANY));
+        adapter.save(Food.custom("Pao integral", HUNDRED_GRAMS, ANY));
+
+        List<Food> found = adapter.search(new FoodSearchQuery(List.of("pao_integral")), 20);
+
+        assertThat(found).extracting(Food::getName).containsExactly("Pao_integral");
+    }
+
+    @Test
+    void backslashInATermIsTakenLiterally() {
+        adapter.save(Food.custom("Doce a\\b", HUNDRED_GRAMS, ANY));
+        adapter.save(Food.custom("Doce ab", HUNDRED_GRAMS, ANY));
+
+        List<Food> found = adapter.search(new FoodSearchQuery(List.of("a\\b")), 20);
+
+        assertThat(found).extracting(Food::getName).containsExactly("Doce a\\b");
+    }
+
+    @Test
     void searchFindsNothingForUnknownTerms() {
         assertThat(adapter.search(FoodSearchQuery.of("xyzzy"), 20)).isEmpty();
     }

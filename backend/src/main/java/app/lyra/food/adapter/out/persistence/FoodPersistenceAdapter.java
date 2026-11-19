@@ -22,6 +22,8 @@ import java.util.List;
 @RequiredArgsConstructor
 class FoodPersistenceAdapter implements FoodRepository {
 
+    private static final char LIKE_ESCAPE = '\\';
+
     private final EntityManager entityManager;
 
     @Override
@@ -38,7 +40,7 @@ class FoodPersistenceAdapter implements FoodRepository {
         Root<FoodJpaEntity> food = criteria.from(FoodJpaEntity.class);
 
         Predicate[] everyTerm = query.terms().stream()
-                .map(term -> cb.like(food.get("searchName"), "%" + term + "%"))
+                .map(term -> cb.like(food.get("searchName"), containsPattern(term), LIKE_ESCAPE))
                 .toArray(Predicate[]::new);
 
         criteria.where(everyTerm).orderBy(
@@ -49,6 +51,11 @@ class FoodPersistenceAdapter implements FoodRepository {
         return entityManager.createQuery(criteria).setMaxResults(limit).getResultList().stream()
                 .map(FoodPersistenceAdapter::toDomain)
                 .toList();
+    }
+
+    private static String containsPattern(String term) {
+        String literal = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+        return "%" + literal + "%";
     }
 
     private static FoodJpaEntity toEntity(Food food) {
