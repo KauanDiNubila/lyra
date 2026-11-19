@@ -8,6 +8,9 @@ public record FoodSearchQuery(List<String> terms) {
     private static final int MIN_LENGTH = 2;
 
     public FoodSearchQuery {
+        if (terms == null || terms.isEmpty() || terms.stream().anyMatch(term -> term == null || term.isBlank())) {
+            throw new InvalidInputException("Search query must have at least one non-blank term");
+        }
         terms = List.copyOf(terms);
     }
 
