@@ -76,6 +76,24 @@ public interface FoodRepositoryContract {
     }
 
     @Test
+    default void findsASavedFoodById() {
+        Food saved = food("Quimera por id", FoodSource.CUSTOM);
+        repository().save(saved);
+
+        Food found = repository().findById(saved.getId()).orElseThrow();
+
+        assertThat(found).isEqualTo(saved);
+        assertThat(found.getName()).isEqualTo("Quimera por id");
+        assertThat(found.getReferenceAmount()).isEqualTo(saved.getReferenceAmount());
+        assertThat(found.getNutrients()).isEqualTo(saved.getNutrients());
+    }
+
+    @Test
+    default void findsNothingForAnUnknownId() {
+        assertThat(repository().findById(UUID.randomUUID())).isEmpty();
+    }
+
+    @Test
     default void percentSignInATermIsTakenLiterally() {
         saveCustom("Quimera 100% natural", "Quimera 100 de laranja");
 

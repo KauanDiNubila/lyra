@@ -17,6 +17,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -30,6 +32,12 @@ class FoodPersistenceAdapter implements FoodRepository {
     @Transactional
     public void save(Food food) {
         entityManager.persist(toEntity(food));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Food> findById(UUID id) {
+        return Optional.ofNullable(entityManager.find(FoodJpaEntity.class, id)).map(FoodPersistenceAdapter::toDomain);
     }
 
     @Override
