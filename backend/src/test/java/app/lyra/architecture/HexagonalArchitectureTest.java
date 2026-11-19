@@ -1,7 +1,11 @@
 package app.lyra.architecture;
 
+import archfixture.food.adapter.out.persistence.FoodEntity;
+import archfixture.food.application.service.FoodSearchService;
+import archfixture.food.domainevents.FoodRenamed;
 import archfixture.violation.adapter.in.web.ControllerUsingOutboundAdapter;
 import archfixture.violation.application.service.ServiceUsingAdapter;
+import archfixture.violation.application.service.ServiceUsingLookalikePackage;
 import archfixture.violation.application.service.ServiceUsingOtherModuleService;
 import archfixture.violation.domain.DomainUsingAdapter;
 import archfixture.violation.domain.DomainUsingFramework;
@@ -11,6 +15,7 @@ import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.function.Function;
@@ -38,17 +43,13 @@ class HexagonalArchitectureTest {
         RULES.forEach(rule -> rule.apply(PRODUCTION_ROOT).check(production));
     }
 
-    @Nested
-    class RulesAcceptValidCode {
+    @Test
+    void validModulesPassEveryRule() {
+        JavaClasses valid = new ClassFileImporter()
+                .importPackages(FIXTURE_ROOT + ".food", FIXTURE_ROOT + ".diary");
 
-        @Test
-        void validModulesPassEveryRule() {
-            JavaClasses valid = new ClassFileImporter()
-                    .importPackages(FIXTURE_ROOT + ".food", FIXTURE_ROOT + ".diary");
-
-            RULES.forEach(rule -> assertThatCode(() -> rule.apply(FIXTURE_ROOT).check(valid))
-                    .doesNotThrowAnyException());
-        }
+        RULES.forEach(rule -> assertThatCode(() -> rule.apply(FIXTURE_ROOT).check(valid))
+                .doesNotThrowAnyException());
     }
 
     @Nested
@@ -57,40 +58,46 @@ class HexagonalArchitectureTest {
         @Test
         void domainDependingOnAnAdapterIsRejected() {
             assertViolation(HexagonalRules.domainDependsOnlyOnJdkAndDomain(FIXTURE_ROOT),
-                    DomainUsingAdapter.class, "FoodEntity");
+                    DomainUsingAdapter.class, FoodEntity.class);
         }
 
         @Test
         void domainDependingOnAFrameworkIsRejected() {
             assertViolation(HexagonalRules.domainDependsOnlyOnJdkAndDomain(FIXTURE_ROOT),
-                    DomainUsingFramework.class, "Component");
+                    DomainUsingFramework.class, Component.class);
         }
 
         @Test
         void applicationDependingOnAnAdapterIsRejected() {
             assertViolation(HexagonalRules.applicationDoesNotDependOnAdapters(FIXTURE_ROOT),
-                    ServiceUsingAdapter.class, "FoodEntity");
+                    ServiceUsingAdapter.class, FoodEntity.class);
         }
 
         @Test
         void inboundAdapterDependingOnAnOutboundAdapterIsRejected() {
             assertViolation(HexagonalRules.inboundAdaptersDoNotDependOnOutboundAdapters(FIXTURE_ROOT),
-                    ControllerUsingOutboundAdapter.class, "FoodEntity");
+                    ControllerUsingOutboundAdapter.class, FoodEntity.class);
+        }
+
+        @Test
+        void moduleReachingAPackageThatOnlyStartsLikeDomainIsRejected() {
+            assertViolation(HexagonalRules.modulesTalkOnlyThroughInboundPortsAndDomain(FIXTURE_ROOT),
+                    ServiceUsingLookalikePackage.class, FoodRenamed.class);
         }
 
         @Test
         void moduleReachingAnotherModuleServiceIsRejected() {
             assertViolation(HexagonalRules.modulesTalkOnlyThroughInboundPortsAndDomain(FIXTURE_ROOT),
-                    ServiceUsingOtherModuleService.class, "FoodSearchService");
+                    ServiceUsingOtherModuleService.class, FoodSearchService.class);
         }
 
-        private void assertViolation(ArchRule rule, Class<?> violatingClass, String expectedTarget) {
-            JavaClasses classes = new ClassFileImporter().importClasses(violatingClass);
+        private void assertViolation(ArchRule rule, Class<?> violatingClass, Class<?> target) {
+            JavaClasses classes = new ClassFileImporter().importClasses(violatingClass, target);
 
             assertThatThrownBy(() -> rule.check(classes))
                     .isInstanceOf(AssertionError.class)
                     .hasMessageContaining(violatingClass.getSimpleName())
-                    .hasMessageContaining(expectedTarget);
+                    .hasMessageContaining(target.getSimpleName());
         }
     }
 }
