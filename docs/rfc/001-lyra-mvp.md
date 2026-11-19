@@ -133,5 +133,5 @@ Each slice is delivered end to end (domain, adapters, tests, UI) before the next
 
 1. **Authentication.** Single user at first, but social is on the roadmap. Options: Spring Security with session cookies, or an external provider. Needs its own ADR before slice 3.
 2. **Offline writes.** The MVP reads offline; queuing writes offline and syncing later is harder (conflicts). Deferred to after slice 8.
-3. **TACO edition and format.** The 4th edition is published as PDF and spreadsheets; the import format must be confirmed before slice 2.
+3. ~~**TACO edition and format.**~~ Resolved in [ADR-008](../adr/008-food-catalog-import-and-api.md): official spreadsheet, converted to TSV and seeded by a Flyway migration.
 4. **Hosting.** Not decided; does not block development.
