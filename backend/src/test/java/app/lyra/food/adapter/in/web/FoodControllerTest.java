@@ -122,12 +122,44 @@ class FoodControllerTest {
     }
 
     @Test
-    void createWithoutNestedObjectsIsABadRequestProblem() throws Exception {
+    void createWithoutTheReferenceAmountIsAnInvalidInputProblem() throws Exception {
         mvc.perform(post("/api/foods").contentType(MediaType.APPLICATION_JSON).content("""
-                        {"name": "Milkshake"}
+                        {
+                          "name": "Milkshake",
+                          "nutrients": {"kcal": 1, "protein": 1, "carbohydrate": 1, "fat": 1}
+                        }
                         """))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Invalid input"))
+                .andExpect(jsonPath("$.detail").value("reference amount is required"));
+    }
+
+    @Test
+    void createWithoutTheNutrientsIsAnInvalidInputProblem() throws Exception {
+        mvc.perform(post("/api/foods").contentType(MediaType.APPLICATION_JSON).content("""
+                        {
+                          "name": "Milkshake",
+                          "referenceAmount": {"amount": 1, "unit": "PORTION"}
+                        }
+                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Invalid input"))
+                .andExpect(jsonPath("$.detail").value("nutrients are required"));
+    }
+
+    @Test
+    void createWithoutANameIsAnInvalidInputProblem() throws Exception {
+        mvc.perform(post("/api/foods").contentType(MediaType.APPLICATION_JSON).content("""
+                        {
+                          "referenceAmount": {"amount": 1, "unit": "PORTION"},
+                          "nutrients": {"kcal": 1, "protein": 1, "carbohydrate": 1, "fat": 1}
+                        }
+                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Invalid input"))
+                .andExpect(jsonPath("$.detail").value("Food name must have between 2 and 200 characters"));
     }
 
     @Test

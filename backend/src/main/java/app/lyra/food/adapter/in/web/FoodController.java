@@ -2,7 +2,6 @@ package app.lyra.food.adapter.in.web;
 
 import app.lyra.food.application.port.in.CreateCustomFoodUseCase;
 import app.lyra.food.application.port.in.SearchFoodsUseCase;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,8 +29,8 @@ class FoodController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    FoodResponse create(@Valid @RequestBody CreateFoodRequest request) {
+    FoodResponse create(@RequestBody CreateFoodRequest request) {
         return FoodResponse.from(createCustomFood.create(
-                request.name(), request.referenceAmount().toDomain(), request.nutrients().toDomain()));
+                request.name(), request.toReferenceAmount(), request.toNutrients()));
     }
 }

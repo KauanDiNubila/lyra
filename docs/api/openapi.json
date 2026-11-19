@@ -126,8 +126,7 @@
           "nutrients" : {
             "$ref" : "#/components/schemas/NutrientsJson"
           }
-        },
-        "required" : [ "nutrients", "referenceAmount" ]
+        }
       },
       "NutrientsJson" : {
         "type" : "object",
