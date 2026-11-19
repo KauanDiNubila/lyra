@@ -53,6 +53,7 @@ adapter/out/<external>/   external API clients
 
 - Code, identifiers, commits and docs in English. Talk to the user in Brazilian Portuguese.
 - No code comments.
+- Write the simplest code that works, readable by a junior developer: well-known names, short methods, plain Java and Spring features, no clever tricks. Add an abstraction only when two real cases need it, and when a pattern appears for the first time, explain it in the pull request.
 - Use the ponytail skill (lite) on code tasks; load it again after a context compaction, even if the summary says it is active.
 - Value objects and DTOs are records. Lombok follows ADR-005: no `@Data`, no `@Setter` on domain entities, no Lombok `equals`/`hashCode` on JPA entities.
 - Money-like and nutrient arithmetic uses `BigDecimal`; rounding only at the presentation edge.
@@ -111,7 +112,7 @@ Fixed accepted decisions:
 | Contract without `required` fields; errors raised by Spring keep the default `Bad Request` title | ADR-008 | Until a second API client exists |
 | TACO converter tests not wired to the CI | ADR-008 | Until the converter is run more than once |
 
-Fixed push-hard items: `domain` depending on anything outside the JDK; rounding outside the presentation edge; `@Data` or `@Setter` on domain entities; silent fallbacks in configuration or error handling; logic in the wrong module or layer; tests that only verify mocks.
+Fixed push-hard items: code a junior developer could not read at a glance; `domain` depending on anything outside the JDK; rounding outside the presentation edge; `@Data` or `@Setter` on domain entities; silent fallbacks in configuration or error handling; logic in the wrong module or layer; tests that only verify mocks.
 
 Template:
 
