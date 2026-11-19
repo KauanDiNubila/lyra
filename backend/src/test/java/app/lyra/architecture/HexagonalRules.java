@@ -27,6 +27,11 @@ final class HexagonalRules {
                 .should().dependOnClassesThat().resideInAPackage(root + ".*.adapter.out..");
     }
 
+    static ArchRule outboundAdaptersDoNotDependOnInboundAdapters(String root) {
+        return noClasses().that().resideInAPackage(root + ".*.adapter.out..")
+                .should().dependOnClassesThat().resideInAPackage(root + ".*.adapter.in..");
+    }
+
     static ArchRule modulesTalkOnlyThroughInboundPortsAndDomain(String root) {
         return modules().definedByPackages(root + ".(*)..")
                 .should().onlyDependOnEachOtherThroughClassesThat()
