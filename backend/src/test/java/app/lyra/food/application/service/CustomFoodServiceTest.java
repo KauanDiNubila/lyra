@@ -2,7 +2,7 @@ package app.lyra.food.application.service;
 
 import app.lyra.food.domain.Food;
 import app.lyra.food.domain.FoodSource;
-import app.lyra.food.domain.InvalidFoodException;
+import app.lyra.food.domain.InvalidInputException;
 import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
@@ -32,7 +32,7 @@ class CustomFoodServiceTest {
 
     @Test
     void storesNothingWhenTheFoodIsInvalid() {
-        assertThatThrownBy(() -> service.create("", ONE_PORTION, MILKSHAKE)).isInstanceOf(InvalidFoodException.class);
+        assertThatThrownBy(() -> service.create("", ONE_PORTION, MILKSHAKE)).isInstanceOf(InvalidInputException.class);
 
         assertThat(repository.all()).isEmpty();
     }

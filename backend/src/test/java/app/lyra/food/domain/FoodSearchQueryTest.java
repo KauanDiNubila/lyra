@@ -24,7 +24,7 @@ class FoodSearchQueryTest {
     @NullSource
     @ValueSource(strings = {"", " ", "a", " ,. ", "%"})
     void rejectsQueriesShorterThanTwoCharacters(String query) {
-        assertThatThrownBy(() -> FoodSearchQuery.of(query)).isInstanceOf(InvalidFoodException.class);
+        assertThatThrownBy(() -> FoodSearchQuery.of(query)).isInstanceOf(InvalidInputException.class);
     }
 
     @Test

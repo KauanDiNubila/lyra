@@ -1,7 +1,7 @@
 package app.lyra.food.application.service;
 
 import app.lyra.food.domain.Food;
-import app.lyra.food.domain.InvalidFoodException;
+import app.lyra.food.domain.InvalidInputException;
 import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
@@ -40,6 +40,6 @@ class FoodSearchServiceTest {
 
     @Test
     void rejectsAQueryThatIsTooShort() {
-        assertThatThrownBy(() -> service.search("a")).isInstanceOf(InvalidFoodException.class);
+        assertThatThrownBy(() -> service.search("a")).isInstanceOf(InvalidInputException.class);
     }
 }

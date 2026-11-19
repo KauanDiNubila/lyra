@@ -20,10 +20,10 @@ public class Food {
 
     public Food(UUID id, String name, FoodSource source, Quantity referenceAmount, Nutrients nutrients) {
         if (id == null || source == null || referenceAmount == null || nutrients == null) {
-            throw new InvalidFoodException("id, source, reference amount and nutrients are required");
+            throw new InvalidInputException("id, source, reference amount and nutrients are required");
         }
         if (referenceAmount.amount().signum() == 0) {
-            throw new InvalidFoodException("Reference amount must be positive");
+            throw new InvalidInputException("Reference amount must be positive");
         }
         this.id = id;
         this.name = validName(name);
@@ -39,7 +39,7 @@ public class Food {
     private static String validName(String name) {
         String trimmed = name == null ? "" : name.trim();
         if (trimmed.length() < 2 || trimmed.length() > MAX_NAME_LENGTH) {
-            throw new InvalidFoodException("Food name must have between 2 and " + MAX_NAME_LENGTH + " characters");
+            throw new InvalidInputException("Food name must have between 2 and " + MAX_NAME_LENGTH + " characters");
         }
         return trimmed;
     }

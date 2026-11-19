@@ -38,9 +38,9 @@ class FoodTest {
 
     @Test
     void nameMustHaveBetweenTwoAndTwoHundredCharacters() {
-        assertThatThrownBy(() -> Food.custom(" a ", HUNDRED_GRAMS, RICE)).isInstanceOf(InvalidFoodException.class);
-        assertThatThrownBy(() -> Food.custom(null, HUNDRED_GRAMS, RICE)).isInstanceOf(InvalidFoodException.class);
-        assertThatThrownBy(() -> Food.custom("x".repeat(201), HUNDRED_GRAMS, RICE)).isInstanceOf(InvalidFoodException.class);
+        assertThatThrownBy(() -> Food.custom(" a ", HUNDRED_GRAMS, RICE)).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> Food.custom(null, HUNDRED_GRAMS, RICE)).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> Food.custom("x".repeat(201), HUNDRED_GRAMS, RICE)).isInstanceOf(InvalidInputException.class);
         assertThat(Food.custom("x".repeat(200), HUNDRED_GRAMS, RICE).getName()).hasSize(200);
     }
 
@@ -49,7 +49,7 @@ class FoodTest {
         Quantity zero = new Quantity(BigDecimal.ZERO, MeasurementUnit.GRAM);
 
         assertThatThrownBy(() -> Food.custom("Arroz", zero, RICE))
-                .isInstanceOf(InvalidFoodException.class)
+                .isInstanceOf(InvalidInputException.class)
                 .hasMessageContaining("positive");
     }
 
@@ -57,9 +57,9 @@ class FoodTest {
     void requiredPartsMustBePresent() {
         UUID id = UUID.randomUUID();
 
-        assertThatThrownBy(() -> new Food(null, "Arroz", FoodSource.TACO, HUNDRED_GRAMS, RICE)).isInstanceOf(InvalidFoodException.class);
-        assertThatThrownBy(() -> new Food(id, "Arroz", null, HUNDRED_GRAMS, RICE)).isInstanceOf(InvalidFoodException.class);
-        assertThatThrownBy(() -> new Food(id, "Arroz", FoodSource.TACO, null, RICE)).isInstanceOf(InvalidFoodException.class);
-        assertThatThrownBy(() -> new Food(id, "Arroz", FoodSource.TACO, HUNDRED_GRAMS, null)).isInstanceOf(InvalidFoodException.class);
+        assertThatThrownBy(() -> new Food(null, "Arroz", FoodSource.TACO, HUNDRED_GRAMS, RICE)).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> new Food(id, "Arroz", null, HUNDRED_GRAMS, RICE)).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> new Food(id, "Arroz", FoodSource.TACO, null, RICE)).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> new Food(id, "Arroz", FoodSource.TACO, HUNDRED_GRAMS, null)).isInstanceOf(InvalidInputException.class);
     }
 }

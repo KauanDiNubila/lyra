@@ -78,7 +78,7 @@ class FoodControllerTest {
         mvc.perform(get("/api/foods").param("query", "a"))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
-                .andExpect(jsonPath("$.title").value("Invalid food"))
+                .andExpect(jsonPath("$.title").value("Invalid input"))
                 .andExpect(jsonPath("$.detail").value("Search query must have at least 2 characters"));
     }
 

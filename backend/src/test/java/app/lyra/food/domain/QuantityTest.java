@@ -16,8 +16,8 @@ class QuantityTest {
 
     @Test
     void negativeAmountsAndMissingPartsAreRejected() {
-        assertThatThrownBy(() -> new Quantity(new BigDecimal("-1"), MeasurementUnit.GRAM)).isInstanceOf(InvalidFoodException.class);
-        assertThatThrownBy(() -> new Quantity(null, MeasurementUnit.GRAM)).isInstanceOf(InvalidFoodException.class);
-        assertThatThrownBy(() -> new Quantity(BigDecimal.TEN, null)).isInstanceOf(InvalidFoodException.class);
+        assertThatThrownBy(() -> new Quantity(new BigDecimal("-1"), MeasurementUnit.GRAM)).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> new Quantity(null, MeasurementUnit.GRAM)).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> new Quantity(BigDecimal.TEN, null)).isInstanceOf(InvalidInputException.class);
     }
 }

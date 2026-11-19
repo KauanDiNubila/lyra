@@ -21,14 +21,14 @@ public record Nutrients(
 
     private static void requirePresentAndNotNegative(BigDecimal value, String name) {
         if (value == null) {
-            throw new InvalidFoodException(name + " is required");
+            throw new InvalidInputException(name + " is required");
         }
         requireNotNegative(value, name);
     }
 
     private static void requireNotNegative(BigDecimal value, String name) {
         if (value != null && value.signum() < 0) {
-            throw new InvalidFoodException(name + " must not be negative");
+            throw new InvalidInputException(name + " must not be negative");
         }
     }
 }

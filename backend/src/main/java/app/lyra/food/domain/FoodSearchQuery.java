@@ -14,7 +14,7 @@ public record FoodSearchQuery(List<String> terms) {
     public static FoodSearchQuery of(String rawQuery) {
         String normalized = rawQuery == null ? "" : SearchText.normalize(rawQuery.replaceAll("\\p{Punct}", " "));
         if (normalized.length() < MIN_LENGTH) {
-            throw new InvalidFoodException("Search query must have at least " + MIN_LENGTH + " characters");
+            throw new InvalidInputException("Search query must have at least " + MIN_LENGTH + " characters");
         }
         return new FoodSearchQuery(Arrays.asList(normalized.split(" ")));
     }
