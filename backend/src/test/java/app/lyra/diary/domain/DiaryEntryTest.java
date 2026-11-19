@@ -138,6 +138,35 @@ class DiaryEntryTest {
         }
     }
 
+    @Test
+    void withQuantityChangesOnlyTheQuantity() {
+        DiaryEntry entry = riceEntry("150");
+
+        DiaryEntry changed = entry.withQuantity(grams("250"));
+
+        assertThat(changed.getQuantity()).isEqualTo(grams("250"));
+        assertThat(changed.getId()).isEqualTo(entry.getId());
+        assertThat(changed.getDate()).isEqualTo(entry.getDate());
+        assertThat(changed.getMealName()).isEqualTo(entry.getMealName());
+        assertThat(changed.getFoodId()).isEqualTo(entry.getFoodId());
+        assertThat(changed.getFoodName()).isEqualTo(entry.getFoodName());
+        assertThat(changed.getNutrients()).isEqualTo(entry.getNutrients());
+        assertThat(entry.getQuantity()).isEqualTo(grams("150"));
+    }
+
+    @Test
+    void withQuantityRejectsZeroAndAnotherUnit() {
+        DiaryEntry entry = riceEntry("150");
+        Quantity milliliters = new Quantity(new BigDecimal("150"), MeasurementUnit.MILLILITER);
+
+        assertThatThrownBy(() -> entry.withQuantity(grams("0")))
+                .isInstanceOf(InvalidInputException.class)
+                .hasMessage("Quantity must be positive");
+        assertThatThrownBy(() -> entry.withQuantity(milliliters))
+                .isInstanceOf(InvalidInputException.class)
+                .hasMessage("Quantity must be in GRAM");
+    }
+
     private static DiaryEntry riceEntry(String grams) {
         return DiaryEntry.log(Food.custom("Arroz", HUNDRED_GRAMS, RICE), DATE, "Almoço", grams(grams));
     }

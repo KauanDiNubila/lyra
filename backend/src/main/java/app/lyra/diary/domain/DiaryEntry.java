@@ -59,6 +59,10 @@ public class DiaryEntry {
                 food.getReferenceAmount(), food.getNutrients(), quantity);
     }
 
+    public DiaryEntry withQuantity(Quantity newQuantity) {
+        return new DiaryEntry(id, date, mealName, foodId, foodName, foodReference, nutrients, newQuantity);
+    }
+
     public Macros macros() {
         return new Macros(
                 scaled(nutrients.kcal()),
