@@ -1,12 +1,13 @@
 package app.lyra.food.adapter.out.persistence;
 
 import app.lyra.TestcontainersConfiguration;
+import app.lyra.food.application.port.out.FoodRepository;
+import app.lyra.food.application.port.out.FoodRepositoryContract;
 import app.lyra.food.domain.Food;
 import app.lyra.food.domain.FoodSearchQuery;
 import app.lyra.food.domain.FoodSource;
 import app.lyra.food.domain.MeasurementUnit;
-import app.lyra.food.domain.Nutrients;
-import app.lyra.food.domain.Quantity;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -14,25 +15,28 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.stream.IntStream;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({TestcontainersConfiguration.class, FoodPersistenceAdapter.class})
-class FoodPersistenceAdapterTest {
-
-    private static final Quantity HUNDRED_GRAMS = new Quantity(new BigDecimal("100"), MeasurementUnit.GRAM);
-    private static final Nutrients ANY = new Nutrients(BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, null, null);
+class FoodPersistenceAdapterTest implements FoodRepositoryContract {
 
     @Autowired
     private FoodPersistenceAdapter adapter;
 
     @Autowired
     private JdbcClient jdbc;
+
+    @Override
+    public FoodRepository repository() {
+        return adapter;
+    }
+
+    @AfterEach
+    void removeFoodsCreatedByTheTest() {
+        jdbc.sql("delete from food where source_reference is null").update();
+    }
 
     @Test
     void tacoMigrationSeedsTheImportedFoods() {
@@ -55,81 +59,5 @@ class FoodPersistenceAdapterTest {
         assertThat(rice.getNutrients().fat()).isEqualByComparingTo("0.227");
         assertThat(rice.getNutrients().fiber()).isEqualByComparingTo("1.561");
         assertThat(rice.getNutrients().sodium()).isEqualByComparingTo("1.2007");
-    }
-
-    @Test
-    void searchIgnoresAccentsAndRequiresEveryTerm() {
-        List<Food> found = adapter.search(FoodSearchQuery.of("feijao carioca cozido"), 20);
-
-        assertThat(found).isNotEmpty().allSatisfy(food -> assertThat(food.getName())
-                .containsIgnoringCase("feijão").containsIgnoringCase("carioca").containsIgnoringCase("cozido"));
-    }
-
-    @Test
-    void customFoodsComeFirstThenShorterNames() {
-        adapter.save(Food.custom("Arroz da vó, com alho e cebola", HUNDRED_GRAMS, ANY));
-
-        List<String> names = adapter.search(FoodSearchQuery.of("arroz"), 3).stream().map(Food::getName).toList();
-
-        assertThat(names.getFirst()).isEqualTo("Arroz da vó, com alho e cebola");
-        assertThat(names.get(1).length()).isLessThanOrEqualTo(names.get(2).length());
-    }
-
-    @Test
-    void searchHonoursTheLimit() {
-        IntStream.range(0, 5).forEach(i -> adapter.save(Food.custom("Bolo caseiro " + i, HUNDRED_GRAMS, ANY)));
-
-        assertThat(adapter.search(FoodSearchQuery.of("bolo caseiro"), 3)).hasSize(3);
-    }
-
-    @Test
-    void savedFoodComesBackWithTheSameValuesIncludingUnknownNutrients() {
-        Quantity onePortion = new Quantity(BigDecimal.ONE, MeasurementUnit.PORTION);
-        Nutrients milkshake = new Nutrients(new BigDecimal("590.5"), new BigDecimal("13"), new BigDecimal("98.25"),
-                new BigDecimal("16"), null, new BigDecimal("0.123456"));
-        Food saved = Food.custom("Milkshake de morango", onePortion, milkshake);
-
-        adapter.save(saved);
-        Food found = adapter.search(FoodSearchQuery.of("milkshake morango"), 1).getFirst();
-
-        assertThat(found).isEqualTo(saved);
-        assertThat(found.getSource()).isEqualTo(FoodSource.CUSTOM);
-        assertThat(found.getReferenceAmount()).isEqualTo(onePortion);
-        assertThat(found.getNutrients()).isEqualTo(milkshake);
-    }
-
-    @Test
-    void percentSignInATermIsTakenLiterally() {
-        adapter.save(Food.custom("Suco 100% natural", HUNDRED_GRAMS, ANY));
-        adapter.save(Food.custom("Suco 100 de laranja", HUNDRED_GRAMS, ANY));
-
-        List<Food> found = adapter.search(new FoodSearchQuery(List.of("100%")), 20);
-
-        assertThat(found).extracting(Food::getName).containsExactly("Suco 100% natural");
-    }
-
-    @Test
-    void underscoreInATermIsTakenLiterally() {
-        adapter.save(Food.custom("Pao_integral", HUNDRED_GRAMS, ANY));
-        adapter.save(Food.custom("Pao integral", HUNDRED_GRAMS, ANY));
-
-        List<Food> found = adapter.search(new FoodSearchQuery(List.of("pao_integral")), 20);
-
-        assertThat(found).extracting(Food::getName).containsExactly("Pao_integral");
-    }
-
-    @Test
-    void backslashInATermIsTakenLiterally() {
-        adapter.save(Food.custom("Doce a\\b", HUNDRED_GRAMS, ANY));
-        adapter.save(Food.custom("Doce ab", HUNDRED_GRAMS, ANY));
-
-        List<Food> found = adapter.search(new FoodSearchQuery(List.of("a\\b")), 20);
-
-        assertThat(found).extracting(Food::getName).containsExactly("Doce a\\b");
-    }
-
-    @Test
-    void searchFindsNothingForUnknownTerms() {
-        assertThat(adapter.search(FoodSearchQuery.of("xyzzy"), 20)).isEmpty();
     }
 }

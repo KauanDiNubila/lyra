@@ -1,0 +1,121 @@
+package app.lyra.food.application.port.out;
+
+import app.lyra.food.domain.Food;
+import app.lyra.food.domain.FoodSearchQuery;
+import app.lyra.food.domain.FoodSource;
+import app.lyra.food.domain.MeasurementUnit;
+import app.lyra.food.domain.Nutrients;
+import app.lyra.food.domain.Quantity;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.IntStream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+public interface FoodRepositoryContract {
+
+    FoodRepository repository();
+
+    @Test
+    default void findsFoodsMatchingEveryTermIgnoringAccentsAndCase() {
+        saveCustom("Quimera Feijão Preto", "Quimera Feijão Branco", "Quimera Arroz");
+
+        assertThat(names(search("QUIMERA feijao"))).containsExactlyInAnyOrder("Quimera Feijão Preto", "Quimera Feijão Branco");
+    }
+
+    @Test
+    default void returnsNothingWhenNoFoodMatches() {
+        saveCustom("Quimera Arroz");
+
+        assertThat(search("quimera feijao")).isEmpty();
+    }
+
+    @Test
+    default void returnsAtMostTheRequestedNumberOfFoods() {
+        IntStream.range(0, 5).forEach(i -> saveCustom("Quimera bolo " + i));
+
+        assertThat(repository().search(FoodSearchQuery.of("quimera bolo"), 3)).hasSize(3);
+    }
+
+    @Test
+    default void listsCustomFoodsBeforeTacoFoods() {
+        repository().save(food("Quimera curto", FoodSource.TACO));
+        repository().save(food("Quimera personalizado com nome bem mais longo", FoodSource.CUSTOM));
+
+        assertThat(names(search("quimera"))).containsExactly("Quimera personalizado com nome bem mais longo", "Quimera curto");
+    }
+
+    @Test
+    default void listsShorterNamesFirstThenAlphabetically() {
+        saveCustom("Quimera b", "Quimera a", "Quimera ab cd");
+
+        assertThat(names(search("quimera"))).containsExactly("Quimera a", "Quimera b", "Quimera ab cd");
+    }
+
+    @Test
+    default void savedFoodComesBackWithTheSameValuesIncludingUnknownNutrients() {
+        Quantity onePortion = new Quantity(BigDecimal.ONE, MeasurementUnit.PORTION);
+        Nutrients nutrients = new Nutrients(new BigDecimal("590.5"), new BigDecimal("13"), new BigDecimal("98.25"),
+                new BigDecimal("16"), null, new BigDecimal("0.123456"));
+        Food saved = Food.custom("Quimera milkshake de morango", onePortion, nutrients);
+
+        repository().save(saved);
+        Food found = search("quimera milkshake").getFirst();
+
+        assertThat(found).isEqualTo(saved);
+        assertThat(found.getName()).isEqualTo(saved.getName());
+        assertThat(found.getSource()).isEqualTo(FoodSource.CUSTOM);
+        assertThat(found.getReferenceAmount()).isEqualTo(onePortion);
+        assertThat(found.getNutrients()).isEqualTo(nutrients);
+    }
+
+    @Test
+    default void percentSignInATermIsTakenLiterally() {
+        saveCustom("Quimera 100% natural", "Quimera 100 de laranja");
+
+        List<Food> found = repository().search(new FoodSearchQuery(List.of("quimera", "100%")), 20);
+
+        assertThat(names(found)).containsExactly("Quimera 100% natural");
+    }
+
+    @Test
+    default void underscoreInATermIsTakenLiterally() {
+        saveCustom("Quimera_integral", "Quimera integral");
+
+        List<Food> found = repository().search(new FoodSearchQuery(List.of("quimera_integral")), 20);
+
+        assertThat(names(found)).containsExactly("Quimera_integral");
+    }
+
+    @Test
+    default void backslashInATermIsTakenLiterally() {
+        saveCustom("Quimera a\\b", "Quimera ab");
+
+        List<Food> found = repository().search(new FoodSearchQuery(List.of("quimera", "a\\b")), 20);
+
+        assertThat(names(found)).containsExactly("Quimera a\\b");
+    }
+
+    private List<Food> search(String query) {
+        return repository().search(FoodSearchQuery.of(query), 20);
+    }
+
+    private void saveCustom(String... names) {
+        for (String name : names) {
+            repository().save(food(name, FoodSource.CUSTOM));
+        }
+    }
+
+    private static Food food(String name, FoodSource source) {
+        Quantity hundredGrams = new Quantity(new BigDecimal("100"), MeasurementUnit.GRAM);
+        Nutrients nutrients = new Nutrients(BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, null, null);
+        return new Food(UUID.randomUUID(), name, source, hundredGrams, nutrients);
+    }
+
+    private static List<String> names(List<Food> foods) {
+        return foods.stream().map(Food::getName).toList();
+    }
+}
