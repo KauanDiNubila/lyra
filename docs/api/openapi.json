@@ -83,6 +83,205 @@
           }
         }
       }
+    },
+    "/api/diary/{date}/entries" : {
+      "post" : {
+        "tags" : [ "diary-controller" ],
+        "operationId" : "log",
+        "parameters" : [ {
+          "name" : "date",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/LogEntryRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EntryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diary/entries/{id}" : {
+      "delete" : {
+        "tags" : [ "diary-controller" ],
+        "operationId" : "delete",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "204" : {
+            "description" : "No Content"
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "diary-controller" ],
+        "operationId" : "changeQuantity",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChangeQuantityRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EntryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diary/{date}" : {
+      "get" : {
+        "tags" : [ "diary-controller" ],
+        "operationId" : "day",
+        "parameters" : [ {
+          "name" : "date",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DiaryDayResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components" : {
@@ -182,6 +381,110 @@
           },
           "nutrients" : {
             "$ref" : "#/components/schemas/NutrientsJson"
+          }
+        }
+      },
+      "LogEntryRequest" : {
+        "type" : "object",
+        "properties" : {
+          "foodId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "mealName" : {
+            "type" : "string"
+          },
+          "quantity" : {
+            "$ref" : "#/components/schemas/QuantityJson"
+          }
+        }
+      },
+      "EntryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "date" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "mealName" : {
+            "type" : "string"
+          },
+          "foodId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "foodName" : {
+            "type" : "string"
+          },
+          "quantity" : {
+            "$ref" : "#/components/schemas/QuantityJson"
+          },
+          "macros" : {
+            "$ref" : "#/components/schemas/MacrosJson"
+          }
+        }
+      },
+      "MacrosJson" : {
+        "type" : "object",
+        "properties" : {
+          "kcal" : {
+            "type" : "number"
+          },
+          "protein" : {
+            "type" : "number"
+          },
+          "carbohydrate" : {
+            "type" : "number"
+          },
+          "fat" : {
+            "type" : "number"
+          }
+        }
+      },
+      "ChangeQuantityRequest" : {
+        "type" : "object",
+        "properties" : {
+          "quantity" : {
+            "$ref" : "#/components/schemas/QuantityJson"
+          }
+        }
+      },
+      "DiaryDayResponse" : {
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "meals" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MealResponse"
+            }
+          },
+          "total" : {
+            "$ref" : "#/components/schemas/MacrosJson"
+          }
+        }
+      },
+      "MealResponse" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "entries" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/EntryResponse"
+            }
+          },
+          "total" : {
+            "$ref" : "#/components/schemas/MacrosJson"
           }
         }
       }
