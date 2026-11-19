@@ -42,7 +42,7 @@ Branch names use kebab-case, for example `feat/slice-1-skeleton`.
 ### Commits and pull requests
 
 - Commit messages and pull request titles follow [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `build:`, `ci:`, `chore:`, optionally with a scope (`feat(diary): ...`).
-- Pull requests into `develop` are **rebase merged**: every commit of the branch lands on `develop` as it is, so each commit must be small, build on its own and have a valid message. CI checks every commit message of the pull request. Squash merge is disabled in the repository settings.
+- Pull requests into `develop` use **Merge pull request** (a merge commit): every commit of the branch lands on `develop` with the same hash CI tested, plus one merge commit that groups the pull request. Each commit must still be small, build on its own and have a valid message, and CI checks every commit message of the pull request. Squash merge is disabled in the repository settings, and the `develop` ruleset accepts only merge commits.
 - `develop` is the default branch, so the work shows up on GitHub (default view, contribution graph) the day a pull request is merged, not only on release.
 - Release pull requests from `develop` into `main` use a **merge commit**, so `main` keeps the history of what each release contained. Their title is `release: <version or summary>`; hotfix pull requests into `main` use `fix: ...`.
 - No `Co-Authored-By` trailers or tool attribution in commits or pull requests.
@@ -77,6 +77,6 @@ The repository is public, so GitHub enforces rulesets on the free plan. `main` a
 
 - Good: `main` only changes through a reviewed release.
 - Good: every change has a pull request and a CI run, and each small commit is kept in the history.
-- Bad: rebase merge rewrites commit hashes on `develop`; a branch must not be reused after its pull request is merged (branches are deleted automatically).
+- Bad: the history of `develop` is not linear; read it with `git log --first-parent` to see one line per pull request. A branch must not be reused after its pull request is merged (branches are deleted automatically).
 - Bad: two merges per change reach `main` (branch to `develop`, `develop` to `main`); acceptable because releases are batched.
 - Bad: hotfixes must be merged back into `develop` or the fix is lost on the next release.

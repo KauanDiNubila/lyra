@@ -73,7 +73,7 @@ adapter/out/<external>/   external API clients
 ## Git workflow (ADR-007)
 
 - Never commit or push to `main` or `develop` directly. Branch from `develop`: `feat/...`, `fix/...`, `docs/...`, `test/...`, `refactor/...`, `build/...`, `ci/...`.
-- `develop` is the default branch. Pull requests into `develop` are rebase merged, so every commit lands as it is: keep commits small, each one building on its own, and every message in Conventional Commits (CI checks each one). Releases go from `develop` to `main` with a merge commit titled `release: ...`.
+- `develop` is the default branch. Pull requests into `develop` use Merge pull request (a merge commit), so every commit lands with the hash CI tested: keep commits small, each one building on its own, and every message in Conventional Commits (CI checks each one). Releases go from `develop` to `main` with a merge commit titled `release: ...`.
 - No `Co-Authored-By` trailers and no tool attribution in commits or pull requests.
 - Commit only when the user asks. "Por partes" means one small local commit per part. Push only on "commit e deploy".
 - Say "merge", not "fundir".
