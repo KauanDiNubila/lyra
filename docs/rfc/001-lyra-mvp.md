@@ -118,20 +118,22 @@ The contract will be specified with OpenAPI before the first endpoint is impleme
 
 ## 9. MVP slices
 
-Each slice is delivered end to end (domain, adapters, tests, UI) before the next starts.
+Each slice is built backend first (domain, adapters, tests, API contract) and the screen after, each in its own pull request, before the next slice starts.
 
 1. Project skeleton: backend, frontend, CI, ArchUnit rules.
 2. Foods: TACO import, search, custom food.
-3. Diet plan: create, edit, activate.
-4. Diary: open from plan, adjust, swap, extra, totals.
+3. Diary: register foods by date and meal, totals per meal and per day, edit and remove entries.
+4. Diet plan: create, edit, activate; pre-fill the diary and show the difference from the plan (adjust, swap).
 5. Quick add and reuse.
 6. Barcode with Open Food Facts.
 7. Weight log.
 8. PWA: install, offline read of today's diary.
 
+The diary comes before the plan because it is the smallest piece the user can use every day and the one with the most uncertainty (editing quantities and recalculating). The plan then pre-fills it. The order of the slices is chosen by what the user can use soonest, by risk and by dependency, in that order.
+
 ## 10. Open questions
 
-1. **Authentication.** Single user at first, but social is on the roadmap. Options: Spring Security with session cookies, or an external provider. Needs its own ADR before slice 3.
+1. **Authentication.** Single user at first, but social is on the roadmap. Options: Spring Security with session cookies, or an external provider. Until it is decided the MVP is single user and the diary entries have no owner, the same rule as custom foods ([ADR-008](../adr/008-food-catalog-import-and-api.md)); it needs its own ADR before the app holds data of more than one person.
 2. **Offline writes.** The MVP reads offline; queuing writes offline and syncing later is harder (conflicts). Deferred to after slice 8.
 3. ~~**TACO edition and format.**~~ Resolved in [ADR-008](../adr/008-food-catalog-import-and-api.md): official spreadsheet, converted to TSV and seeded by a Flyway migration.
 4. **Hosting.** Not decided; does not block development.
