@@ -1,0 +1,144 @@
+{
+  "openapi" : "3.1.0",
+  "info" : {
+    "title" : "OpenAPI definition",
+    "version" : "v0"
+  },
+  "servers" : [ {
+    "url" : "http://localhost",
+    "description" : "Generated server url"
+  } ],
+  "paths" : {
+    "/api/foods" : {
+      "get" : {
+        "tags" : [ "food-controller" ],
+        "operationId" : "search",
+        "parameters" : [ {
+          "name" : "query",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/FoodResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "food-controller" ],
+        "operationId" : "create",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateFoodRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FoodResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "CreateFoodRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "referenceAmount" : {
+            "$ref" : "#/components/schemas/QuantityJson"
+          },
+          "nutrients" : {
+            "$ref" : "#/components/schemas/NutrientsJson"
+          }
+        },
+        "required" : [ "nutrients", "referenceAmount" ]
+      },
+      "NutrientsJson" : {
+        "type" : "object",
+        "properties" : {
+          "kcal" : {
+            "type" : "number"
+          },
+          "protein" : {
+            "type" : "number"
+          },
+          "carbohydrate" : {
+            "type" : "number"
+          },
+          "fat" : {
+            "type" : "number"
+          },
+          "fiber" : {
+            "type" : "number"
+          },
+          "sodium" : {
+            "type" : "number"
+          }
+        }
+      },
+      "QuantityJson" : {
+        "type" : "object",
+        "properties" : {
+          "amount" : {
+            "type" : "number"
+          },
+          "unit" : {
+            "type" : "string",
+            "enum" : [ "GRAM", "MILLILITER", "PORTION" ]
+          }
+        }
+      },
+      "FoodResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "source" : {
+            "type" : "string",
+            "enum" : [ "TACO", "CUSTOM" ]
+          },
+          "referenceAmount" : {
+            "$ref" : "#/components/schemas/QuantityJson"
+          },
+          "nutrients" : {
+            "$ref" : "#/components/schemas/NutrientsJson"
+          }
+        }
+      }
+    }
+  }
+}

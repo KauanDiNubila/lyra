@@ -17,6 +17,7 @@
 		<lombok.version>1.18.48</lombok.version>
 		<archunit.version>1.5.1</archunit.version>
 		<jacoco.version>0.8.16</jacoco.version>
+		<springdoc.version>3.2.0</springdoc.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -38,6 +39,11 @@
 		<dependency>
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-database-postgresql</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+			<version>${springdoc.version}</version>
 		</dependency>
 
 		<dependency>
