@@ -5,7 +5,17 @@ import xml.etree.ElementTree as ET
 from decimal import Decimal, ROUND_HALF_UP
 
 NS = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
-COLUMNS = {"kcal": 3, "protein": 5, "fat": 6, "carbohydrate": 8, "fiber": 9, "sodium": 17}
+NAME_ROW = 2
+UNIT_ROW = 3
+HEADER = {
+    "kcal": (3, "Energia", "(kcal)"),
+    "protein": (5, "Proteína", "(g)"),
+    "fat": (6, "Lipídeos", "(g)"),
+    "carbohydrate": (8, "idrato", "(g)"),
+    "fiber": (9, "Alimentar", "(g)"),
+    "sodium": (17, "Sódio", "(mg)"),
+}
+COLUMNS = {name: column for name, (column, _, _) in HEADER.items()}
 REQUIRED = ("kcal", "protein", "carbohydrate", "fat")
 OPTIONAL = ("fiber", "sodium")
 ZERO_MARKERS = {"Tr", "NA"}
@@ -38,7 +48,7 @@ def first_sheet_rows(path):
                 continue
             text = strings[int(value.text)] if cell.get("t") == "s" else value.text
             cells[column_index(cell.get("r"))] = text.strip()
-        yield cells
+        yield int(row.get("r")), cells
 
 
 def parse_value(raw):
@@ -49,9 +59,22 @@ def parse_value(raw):
     return Decimal(raw).quantize(SCALE, rounding=ROUND_HALF_UP).normalize()
 
 
+def check_header(rows):
+    names, units = rows.get(NAME_ROW, {}), rows.get(UNIT_ROW, {})
+    for nutrient, (column, name, unit) in HEADER.items():
+        found = (names.get(column), units.get(column))
+        if found != (name, unit):
+            raise ValueError(
+                f"Column {column} should hold {nutrient} ({name} {unit}) but holds {found}: "
+                "the spreadsheet layout changed, update HEADER after checking the new layout"
+            )
+
+
 def convert(path):
+    rows = dict(first_sheet_rows(path))
+    check_header(rows)
     foods, skipped = [], []
-    for cells in first_sheet_rows(path):
+    for cells in rows.values():
         number = cells.get(0, "")
         if not number.isdigit():
             continue
