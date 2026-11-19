@@ -71,7 +71,10 @@ def check_header(rows):
 
 
 def convert(path):
-    rows = dict(first_sheet_rows(path))
+    return convert_rows(dict(first_sheet_rows(path)))
+
+
+def convert_rows(rows):
     check_header(rows)
     foods, skipped = [], []
     for cells in rows.values():
