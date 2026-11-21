@@ -31,13 +31,13 @@ class DiaryController {
     private final DeleteEntryUseCase deleteEntry;
 
     @GetMapping("/{date}")
-    DiaryDayResponse day(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+    DiaryDayResponse getDay(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return DiaryDayResponse.from(getDiaryDay.getDay(date));
     }
 
     @PostMapping("/{date}/entries")
     @ResponseStatus(HttpStatus.CREATED)
-    EntryResponse log(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+    EntryResponse addEntry(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                       @RequestBody LogEntryRequest request) {
         return EntryResponse.from(logEntry.log(request.toCommand(date)));
     }
@@ -49,7 +49,7 @@ class DiaryController {
 
     @DeleteMapping("/entries/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void delete(@PathVariable UUID id) {
+    void removeEntry(@PathVariable UUID id) {
         deleteEntry.delete(id);
     }
 }

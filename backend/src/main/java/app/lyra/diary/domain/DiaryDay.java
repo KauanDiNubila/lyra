@@ -34,6 +34,10 @@ public record DiaryDay(LocalDate date, List<DiaryEntry> entries) {
 
     public record Meal(String name, List<DiaryEntry> entries) {
 
+        public Meal {
+            entries = List.copyOf(entries);
+        }
+
         public Macros total() {
             return DiaryEntry.totalOf(entries);
         }

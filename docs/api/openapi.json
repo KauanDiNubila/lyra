@@ -87,7 +87,7 @@
     "/api/diary/{date}/entries" : {
       "post" : {
         "tags" : [ "diary-controller" ],
-        "operationId" : "log",
+        "operationId" : "addEntry",
         "parameters" : [ {
           "name" : "date",
           "in" : "path",
@@ -144,7 +144,7 @@
     "/api/diary/entries/{id}" : {
       "delete" : {
         "tags" : [ "diary-controller" ],
-        "operationId" : "delete",
+        "operationId" : "removeEntry",
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -239,7 +239,7 @@
     "/api/diary/{date}" : {
       "get" : {
         "tags" : [ "diary-controller" ],
-        "operationId" : "day",
+        "operationId" : "getDay",
         "parameters" : [ {
           "name" : "date",
           "in" : "path",

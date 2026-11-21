@@ -45,7 +45,7 @@ Entries come back in the order they were logged. The table has an `entry_order` 
 
 - Errors use Problem Details, as in ADR-008. Rule violations have the title `Invalid input`; a missing food or entry has the title `Not found`, with the exception message as detail. Errors raised by Spring before the domain is reached (malformed date or JSON, unknown unit) keep the default `Bad Request`.
 - The delete is permanent and it answers `404` for an id that does not exist, so the client can tell a repeated delete from a successful one.
-- The web adapter of the diary repeats two small pieces of the food adapter: `QuantityJson` and the handling of `InvalidInputException`. [ADR-001](001-hexagonal-modular-monolith.md) forbids a module from using the adapter of another, so the copy is intended. When a second module needs `InvalidInputException`, move it to a shared place and remove the copy.
+- The web adapter of the diary repeats two small pieces of the food adapter: `QuantityJson` and the handling of `InvalidInputException`. [ADR-001](001-hexagonal-modular-monolith.md) forbids a module from using the adapter of another, so the copy is accepted for now. The limit was already reached by the diary itself, whose domain throws `InvalidInputException` and whose web adapter handles `FoodNotFoundException`, both from the `food` domain. The planned fix is a shared kernel (its own ADR, with a change to the ArchUnit rules) that holds `InvalidInputException` and one global handler, which removes both copies; it goes in a pull request of its own.
 - The OpenAPI document `docs/api/openapi.json` was extended with the three diary paths; no food path changed.
 
 ### Consequences

@@ -89,6 +89,14 @@ class DiaryDayTest {
         assertThatThrownBy(() -> new DiaryDay(DATE, null)).isInstanceOf(InvalidInputException.class);
     }
 
+    @Test
+    void theEntriesOfAMealCannotBeChanged() {
+        DiaryEntry lunch = DiaryEntry.log(RICE, DATE, "Almoço", grams("100"));
+        List<DiaryEntry> lunchEntries = new DiaryDay(DATE, List.of(lunch)).meals().getFirst().entries();
+
+        assertThatThrownBy(() -> lunchEntries.add(lunch)).isInstanceOf(UnsupportedOperationException.class);
+    }
+
     private static Food food(String name, String kcal, String protein, String carbohydrate, String fat) {
         return Food.custom(name, HUNDRED_GRAMS, new Nutrients(new BigDecimal(kcal), new BigDecimal(protein),
                 new BigDecimal(carbohydrate), new BigDecimal(fat), null, null));
