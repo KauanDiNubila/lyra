@@ -43,13 +43,13 @@ Each of these is a candidate for a later RFC. The architecture must not block th
 | Concept | Meaning |
 |---|---|
 | **Food** | Something that can be eaten, with nutrients per a reference amount (100 g, 100 ml or 1 portion) and its source (TACO, Open Food Facts, USDA, custom). |
-| **Nutrients** | Value object: kcal, protein, carbohydrate, fat, fiber, sodium. Supports `scale(factor)` and `plus(other)`. |
+| **Nutrients** | Value object: kcal, protein, carbohydrate, fat, fiber, sodium, per the food's reference amount. The scaling by quantity lives in the diary entry and the sum in `Macros` ([ADR-009](../adr/009-diary-entries-and-api.md)). |
 | **Quantity** | Value object: amount plus unit (`GRAM`, `MILLILITER`, `PORTION`). Never negative. |
 | **Diet plan** | Named set of planned meals plus daily targets. One plan is active per user at a time. |
 | **Planned meal** | A slot in the plan (breakfast, lunch, ...) with an order and an optional time. |
 | **Planned item** | A food and a quantity inside a planned meal. |
-| **Diary day** | What the user ate on a date. Created from the active plan the first time the date is opened. |
-| **Diary entry** | One eaten item: a snapshot of the food (name and nutrients), the quantity eaten, the planned quantity when it came from the plan, and its origin. |
+| **Diary day** | What the user ate on a date. It is derived from the entries of that date and has no table of its own; a date without entries is an empty day. Slice 4 will create the entries of the active plan when the date is opened. |
+| **Diary entry** | One eaten item: the date, a free-text meal name, a snapshot of the food (name and nutrients) and the quantity eaten. The planned quantity and the origin arrive with slice 4. |
 | **Weight entry** | Body weight on a date. |
 
 ### 5.2 Diary entry origin
@@ -66,7 +66,7 @@ A planned item that was skipped is an entry with quantity zero, so the diary sti
 
 ### 5.3 Calculation rules
 
-- Entry nutrients = `snapshot.nutrients.scale(quantity / snapshot.referenceAmount)`. The units must match; a mismatch is a domain error, not a silent conversion.
+- Entry macros = `nutrient × quantity ÷ snapshot.referenceAmount`, multiplying first and dividing once. The units must match; a mismatch is a domain error, not a silent conversion. Totals cover kcal, protein, carbohydrate and fat ([ADR-009](../adr/009-diary-entries-and-api.md)).
 - Meal total = sum of its entries. Day total = sum of its meals.
 - Difference against the plan = day total minus the planned total; against the targets = day total minus the targets.
 - Arithmetic uses `BigDecimal`. Rounding happens only at the presentation edge (one decimal place).
@@ -108,13 +108,13 @@ Future features fit as new adapters or new modules: AI logging is another `FoodC
 | GET, POST | `/api/plans` | List and create diet plans |
 | GET, PUT | `/api/plans/{id}` | Read and replace a plan |
 | POST | `/api/plans/{id}/activation` | Make a plan the active one |
-| GET | `/api/diary/{date}` | Read the day, creating it from the active plan if needed |
-| POST | `/api/diary/{date}/entries` | Add an extra item or a quick add |
-| PATCH | `/api/diary/{date}/entries/{id}` | Change the quantity or swap the food |
-| DELETE | `/api/diary/{date}/entries/{id}` | Remove an extra item |
+| GET | `/api/diary/{date}` | Read the day with its meals and totals (empty when there are no entries; slice 4 fills it from the plan) |
+| POST | `/api/diary/{date}/entries` | Log a food in a meal |
+| PATCH | `/api/diary/entries/{id}` | Change the quantity (swapping the food comes with slice 4) |
+| DELETE | `/api/diary/entries/{id}` | Remove an entry |
 | GET, POST | `/api/weights` | List and log body weight |
 
-The contract will be specified with OpenAPI before the first endpoint is implemented.
+The contract of the routes already built is the committed `docs/api/openapi.json` ([ADR-008](../adr/008-food-catalog-import-and-api.md), [ADR-009](../adr/009-diary-entries-and-api.md)); the other routes are still a draft.
 
 ## 9. MVP slices
 
@@ -122,7 +122,7 @@ Each slice is built backend first (domain, adapters, tests, API contract) and th
 
 1. Project skeleton: backend, frontend, CI, ArchUnit rules.
 2. Foods: TACO import, search, custom food.
-3. Diary: register foods by date and meal, totals per meal and per day, edit and remove entries.
+3. Diary: register foods by date and meal, totals per meal and per day, edit and remove entries. The backend is described in [ADR-009](../adr/009-diary-entries-and-api.md).
 4. Diet plan: create, edit, activate; pre-fill the diary and show the difference from the plan (adjust, swap).
 5. Quick add and reuse.
 6. Barcode with Open Food Facts.

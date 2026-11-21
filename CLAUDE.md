@@ -51,6 +51,7 @@ adapter/out/<external>/   external API clients
 
 ## Code conventions
 
+- After a context compaction, read this file again before the next step and follow it, including the pull request steps below.
 - Code, identifiers, commits and docs in English. Talk to the user in Brazilian Portuguese.
 - No code comments.
 - Write the simplest code that works, readable by a junior developer: well-known names, short methods, plain Java and Spring features, no clever tricks. Add an abstraction only when two real cases need it, and when a pattern appears for the first time, explain it in the pull request.
@@ -82,14 +83,14 @@ adapter/out/<external>/   external API clients
 ## Before opening a pull request
 
 1. Run backend and frontend checks locally and report what was and was not run.
-2. Stop and remind the user to run `/thermo-nuclear-code-quality-review`, and send with the reminder the ready-to-paste command built from the template in "Code review context" below. Do not open the pull request before it runs.
+2. Stop and remind the user to run `/thermo-nuclear-code-quality-review`, and send with the reminder the ready-to-paste command built from the template in "Code review context" below. Do not open the pull request before it runs. Say it also when asking to commit the last part of a pull request.
 3. When the findings arrive, give an opinion on each one (real problem or noise, fix now or not). Do not fix anything until the user chooses.
 4. Fix the chosen findings, then open the pull request into `develop`.
 5. Review the delivery item by item against the RFC slice it implements, not only for internal consistency.
 
 ## Code review context
 
-When reminding the user to run the thermo-nuclear review, send one command in Brazilian Portuguese, so the review also answers in Portuguese. It has three parts: the fixed list below, the accepted items specific to that pull request, and what to push hard on.
+When reminding the user to run the thermo-nuclear review, send one short command in Brazilian Portuguese, so the review also answers in Portuguese. Keep it to two lines at most: the fixed lists below already live in this file, so the command only points to them and adds what is specific to the pull request. Never paste the fixed lists into it.
 
 Rules for the accepted list:
 
@@ -117,5 +118,5 @@ Fixed push-hard items: code a junior developer could not read at a glance; `doma
 Template:
 
 ```
-/thermo-nuclear-code-quality-review Responda em português do Brasil. Contexto: Lyra, backend Java 25 com arquitetura hexagonal (ADR-001) e front React PWA com Astryx. Decisões aceitas, não apontar: <lista fixa e itens deste PR, cada um com o limite quando houver>. Apertar sem dó: <lista fixa e pontos de risco deste PR>.
+/thermo-nuclear-code-quality-review Responda em português do Brasil. Siga a seção "Code review context" do CLAUDE.md. Aceito neste PR: <itens com limite, ou nada>. Apertar: <riscos deste PR>.
 ```

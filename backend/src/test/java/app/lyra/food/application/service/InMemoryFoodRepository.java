@@ -9,6 +9,8 @@ import app.lyra.food.domain.SearchText;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 class InMemoryFoodRepository implements FoodRepository {
 
@@ -17,6 +19,11 @@ class InMemoryFoodRepository implements FoodRepository {
     @Override
     public void save(Food food) {
         foods.add(food);
+    }
+
+    @Override
+    public Optional<Food> findById(UUID id) {
+        return foods.stream().filter(food -> food.getId().equals(id)).findFirst();
     }
 
     @Override

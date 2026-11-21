@@ -23,6 +23,11 @@ class FoodSearchQueryTest {
         assertThat(FoodSearchQuery.of("arroz,cozido%_").terms()).containsExactly("arroz", "cozido");
     }
 
+    @Test
+    void acceptsAQueryOfExactlyTwoCharacters() {
+        assertThat(FoodSearchQuery.of("ab").terms()).containsExactly("ab");
+    }
+
     @ParameterizedTest
     @NullSource
     @ValueSource(strings = {"", " ", "a", " ,. ", "%"})
