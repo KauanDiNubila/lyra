@@ -13,16 +13,24 @@ import { VStack } from '@astryxdesign/core/VStack'
 import { formatMacroValues, formatReference } from '../foods/formatNutrients.ts'
 import { AddEntryForm } from './AddEntryForm.tsx'
 import { shiftDay, todayIso } from './dates.ts'
+import type { DiaryEntry } from './diaryApi.ts'
+import { EditEntryForm } from './EditEntryForm.tsx'
 import { useDiaryDay } from './useDiaryDay.ts'
 
 export function DiaryPage() {
   const [date, setDate] = useState(() => todayIso())
   const [isAdding, setIsAdding] = useState(false)
+  const [editing, setEditing] = useState<DiaryEntry | null>(null)
   const { day, reload } = useDiaryDay(date)
   const mealNames = day.status === 'success' ? day.data.meals.map((meal) => meal.name) : []
 
   function showAdded() {
     setIsAdding(false)
+    reload()
+  }
+
+  function showChanged() {
+    setEditing(null)
     reload()
   }
 
@@ -66,6 +74,7 @@ export function DiaryPage() {
                   <ListItem
                     key={entry.id}
                     label={entry.foodName}
+                    onClick={() => setEditing(entry)}
                     description={
                       <Text type="supporting" maxLines={2}>
                         {`${formatReference(entry.quantity)} · ${formatMacroValues(entry.macros)}`}
@@ -80,6 +89,14 @@ export function DiaryPage() {
       )}
       <BottomSheet label="Adicionar ao diário" purpose="form" isOpen={isAdding} onOpenChange={setIsAdding}>
         {isAdding && <AddEntryForm date={date} mealNames={mealNames} onAdded={showAdded} />}
+      </BottomSheet>
+      <BottomSheet
+        label="Editar entrada"
+        purpose="form"
+        isOpen={editing !== null}
+        onOpenChange={(isOpen) => !isOpen && setEditing(null)}
+      >
+        {editing && <EditEntryForm entry={editing} onChanged={showChanged} />}
       </BottomSheet>
     </VStack>
   )

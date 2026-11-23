@@ -1,4 +1,4 @@
-import { readJson, send } from '../http.ts'
+import { ensureOk, readJson, send } from '../http.ts'
 import type { Quantity } from '../foods/foodApi.ts'
 
 export type Macros = {
@@ -48,4 +48,18 @@ export async function addEntry(date: string, entry: NewEntry): Promise<DiaryEntr
     body: JSON.stringify(entry),
   })
   return readJson<DiaryEntry>(response)
+}
+
+export async function changeQuantity(id: string, quantity: Quantity): Promise<DiaryEntry> {
+  const response = await send(`/api/diary/entries/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quantity }),
+  })
+  return readJson<DiaryEntry>(response)
+}
+
+export async function removeEntry(id: string): Promise<void> {
+  const response = await send(`/api/diary/entries/${id}`, { method: 'DELETE' })
+  await ensureOk(response)
 }
