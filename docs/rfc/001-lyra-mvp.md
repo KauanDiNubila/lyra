@@ -92,7 +92,7 @@ Comida de restaurante (o caso do McDonald's) não tem fonte brasileira gratuita.
 
 ## 7. Visão geral da arquitetura
 
-- **Backend**: Java, arquitetura hexagonal (ports and adapters) como um monolito modular. Módulos: `food`, `plan`, `diary`, `weight`, `identity`. Ver [ADR-001](../adr/001-hexagonal-modular-monolith.md) e [ADR-005](../adr/005-backend-stack.md).
+- **Backend**: Java, arquitetura hexagonal (ports and adapters) como um monolito modular. Módulos: `food`, `plan`, `diary`, `weight`, `identity`, mais um pequeno núcleo compartilhado para tipos de erro ([ADR-010](../adr/010-shared-kernel-for-errors.md)). Ver [ADR-001](../adr/001-hexagonal-modular-monolith.md) e [ADR-005](../adr/005-backend-stack.md).
 - **Frontend**: React 19 com o design system Astryx, entregue como um Progressive Web App. Ver [ADR-004](../adr/004-pwa-with-astryx.md).
 - **Testes**: testes unitários para domain e application, testes de integração para os adaptadores, regras de arquitetura garantidas pelo ArchUnit. Ver [ADR-002](../adr/002-testing-strategy.md).
 
