@@ -17,3 +17,7 @@ export async function readJson<T>(response: Response): Promise<T> {
   await ensureOk(response)
   return response.json() as Promise<T>
 }
+
+export function errorMessage(cause: unknown): string {
+  return cause instanceof Error ? cause.message : String(cause)
+}

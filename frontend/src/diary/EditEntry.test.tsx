@@ -85,6 +85,31 @@ describe('editing a diary entry', () => {
     expect(dayRequests()).toHaveLength(2)
   })
 
+  it('keeps the day on screen while it loads again after a change', async () => {
+    let answerReload: (response: Response) => void = () => {}
+    let dayRequestCount = 0
+    fetchMock.mockImplementation((_url, init) => {
+      if (init?.method === 'PATCH') return Promise.resolve(jsonResponse(lunchRice))
+      dayRequestCount += 1
+      return dayRequestCount === 1
+        ? Promise.resolve(jsonResponse(day))
+        : new Promise((resolve) => { answerReload = resolve })
+    })
+    render(<DiaryPage />)
+    const form = await openEntry()
+    setAmount(form, '200')
+
+    fireEvent.click(saveButton(form))
+
+    await waitFor(() => expect(dayRequestCount).toBe(2))
+    await waitFor(() => expect(screen.queryByRole('form', { name: 'Editar entrada' })).not.toBeInTheDocument())
+    expect(screen.getByRole('heading', { name: 'Almoço' })).toBeInTheDocument()
+    expect(screen.queryByLabelText('Carregando o dia')).not.toBeInTheDocument()
+    await act(async () => answerReload(jsonResponse({ ...day, meals: [day.meals[0]] })))
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Jantar' })).not.toBeInTheDocument())
+    expect(screen.getByRole('heading', { name: 'Almoço' })).toBeInTheDocument()
+  })
+
   it('does not allow a quantity of zero', async () => {
     serve()
     render(<DiaryPage />)

@@ -9,11 +9,14 @@ function App() {
   return (
     <>
       <TabList role="tablist" value={tab} onChange={setTab}>
-        <Tab value="diary" label="Diário" panelId="page" />
-        <Tab value="foods" label="Alimentos" panelId="page" />
+        <Tab value="diary" label="Diário" panelId="diary-page" />
+        <Tab value="foods" label="Alimentos" panelId="foods-page" />
       </TabList>
-      <section id="page" role="tabpanel">
-        {tab === 'diary' ? <DiaryPage /> : <FoodsPage />}
+      <section id="diary-page" role="tabpanel" hidden={tab !== 'diary'}>
+        <DiaryPage />
+      </section>
+      <section id="foods-page" role="tabpanel" hidden={tab !== 'foods'}>
+        <FoodsPage />
       </section>
     </>
   )

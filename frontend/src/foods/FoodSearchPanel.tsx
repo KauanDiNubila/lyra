@@ -18,9 +18,20 @@ type Props = {
   onRetry: () => void
   onSelect?: (food: Food) => void
   emptyActions?: ReactNode
+  emptyDescription?: string
 }
 
-export function FoodSearchPanel({ query, onQueryChange, search, onRetry, onSelect, emptyActions }: Props) {
+const DEFAULT_EMPTY_DESCRIPTION = 'Cadastre o alimento com os valores da embalagem ou da tabela do restaurante.'
+
+export function FoodSearchPanel({
+  query,
+  onQueryChange,
+  search,
+  onRetry,
+  onSelect,
+  emptyActions,
+  emptyDescription = DEFAULT_EMPTY_DESCRIPTION,
+}: Props) {
   return (
     <>
       <TextInput
@@ -44,7 +55,7 @@ export function FoodSearchPanel({ query, onQueryChange, search, onRetry, onSelec
       {search.status === 'success' && search.data.length === 0 && (
         <EmptyState
           title="Nenhum alimento encontrado"
-          description="Cadastre o alimento com os valores da embalagem ou da tabela do restaurante."
+          description={emptyDescription}
           actions={emptyActions}
         />
       )}

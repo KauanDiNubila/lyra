@@ -10,6 +10,7 @@ import type { Food } from '../foods/foodApi.ts'
 import { FoodSearchPanel } from '../foods/FoodSearchPanel.tsx'
 import { quantityLabel } from '../foods/formatNutrients.ts'
 import { useFoodSearch } from '../foods/useFoodSearch.ts'
+import { useSubmit } from '../useSubmit.ts'
 import { addEntry, type NewEntry } from './diaryApi.ts'
 import { suggestMeals } from './meals.ts'
 
@@ -27,7 +28,14 @@ export function AddEntryForm({ date, mealNames, onAdded }: Props) {
   if (food === null) {
     return (
       <VStack gap={4}>
-        <FoodSearchPanel query={query} onQueryChange={setQuery} search={search} onRetry={reload} onSelect={setFood} />
+        <FoodSearchPanel
+          query={query}
+          onQueryChange={setQuery}
+          search={search}
+          onRetry={reload}
+          onSelect={setFood}
+          emptyDescription="Cadastre o alimento na aba Alimentos e volte aqui para registrá-lo."
+        />
       </VStack>
     )
   }
@@ -51,26 +59,20 @@ function EntryDetails({ food, date, mealNames, onChangeFood, onAdded }: DetailsP
   const { unit } = food.referenceAmount
   const [amount, setAmount] = useState<number | null>(food.referenceAmount.amount)
   const [mealName, setMealName] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { run, isRunning, error } = useSubmit()
 
   const entry: NewEntry | null =
     amount !== null && amount > 0 && mealName.trim() !== ''
       ? { foodId: food.id, mealName: mealName.trim(), quantity: { amount, unit } }
       : null
 
-  async function submit(event: FormEvent) {
+  function submit(event: FormEvent) {
     event.preventDefault()
-    if (!entry || isSaving) return
-    setIsSaving(true)
-    setError(null)
-    try {
-      await addEntry(date, entry)
-      onAdded()
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
-    } finally {
-      setIsSaving(false)
+    if (entry) {
+      void run(async () => {
+        await addEntry(date, entry)
+        onAdded()
+      })
     }
   }
 
@@ -89,7 +91,7 @@ function EntryDetails({ food, date, mealNames, onChangeFood, onAdded }: DetailsP
             <Button key={name} label={name} size="sm" variant="secondary" onClick={() => setMealName(name)} />
           ))}
         </HStack>
-        <Button type="submit" label="Adicionar ao dia" variant="primary" isDisabled={!entry} isLoading={isSaving} />
+        <Button type="submit" label="Adicionar ao dia" variant="primary" isDisabled={!entry} isLoading={isRunning} />
       </VStack>
     </form>
   )

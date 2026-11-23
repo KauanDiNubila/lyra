@@ -166,6 +166,16 @@ describe('adding a food to the diary', () => {
     await waitFor(() => expect(addButton(form)).not.toHaveAttribute('aria-disabled', 'true'))
   })
 
+  it('tells the user to register a missing food in the foods tab', async () => {
+    serve({ foods: [] })
+    render(<DiaryPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Adicionar' }))
+
+    fireEvent.change(await screen.findByLabelText('Buscar alimento'), { target: { value: 'xyzzy' } })
+
+    expect(await screen.findByText('Cadastre o alimento na aba Alimentos e volte aqui para registrá-lo.')).toBeInTheDocument()
+  })
+
   it('opens the same sheet from the empty day', async () => {
     serve({})
     render(<DiaryPage />)
