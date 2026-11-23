@@ -84,7 +84,7 @@ function EntryDetails({ food, date, mealNames, onChangeFood, onAdded }: DetailsP
         </HStack>
         <NumberInput label={quantityLabel(unit)} value={amount} onChange={setAmount} min={0} isRequired />
         <TextInput label="Refeição" value={mealName} onChange={setMealName} isRequired />
-        <HStack gap={2}>
+        <HStack gap={2} wrap="wrap">
           {suggestMeals(mealNames).map((name) => (
             <Button key={name} label={name} size="sm" variant="secondary" onClick={() => setMealName(name)} />
           ))}
