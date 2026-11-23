@@ -37,4 +37,10 @@ final class HexagonalRules {
                 .should().onlyDependOnEachOtherThroughClassesThat()
                 .resideInAnyPackage("..application.port.in..", "..domain..");
     }
+
+    static ArchRule sharedKernelDependsOnNoModule(String kernelPackage) {
+        return classes().that().resideInAPackage(kernelPackage + "..")
+                .should().onlyDependOnClassesThat()
+                .resideInAnyPackage("java..", "lombok..", "org.springframework..", kernelPackage + "..");
+    }
 }

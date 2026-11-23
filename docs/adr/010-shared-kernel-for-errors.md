@@ -54,6 +54,8 @@ Os erros que o Spring gera antes de chegar ao domínio mantêm o Problem Details
 
 O núcleo é um pacote sob `app.lyra`, organizado como um módulo, então as regras atuais do ArchUnit valem para ele sem mudança: o domínio de um módulo pode depender do `domain` de outro módulo, e os módulos só se alcançam por `application.port.in` ou `domain`. Nenhuma regra é enfraquecida. Se alguma precisar mudar, isso exige uma ADR própria.
 
+Uma regra nova, `sharedKernelDependsOnNoModule`, garante o que as outras não garantem: as classes de `app.lyra.shared` só dependem de `java`, `lombok`, `org.springframework` e do próprio `shared`. Sem ela, o `shared.domain` poderia importar o `domain` de um módulo e o build passaria.
+
 ### O que continua copiado
 
 O `QuantityJson` é um DTO web de cada módulo e usa `food.domain.Quantity`. Um núcleo que conhecesse `Quantity` passaria a depender de `food`, então a cópia no adaptador web do diário continua até que `Quantity` mude de lugar ou um terceiro módulo precise dela.
@@ -64,5 +66,5 @@ O `QuantityJson` é um DTO web de cada módulo e usa `food.domain.Quantity`. Um 
 - Bom: de dois handlers para um, com um único alvo de teste para o formato do erro.
 - Bom: nenhuma regra da ADR-001 muda.
 - Ruim: o handler é global, então vale para todos os controllers, inclusive os futuros. É a intenção, mas um módulo não consegue dar outro status à mesma exceção sem um handler próprio.
-- Ruim: um pacote compartilhado tende a virar depósito. A regra de entrada acima é a única proteção, e os reviews precisam fazê-la valer.
+- Ruim: um pacote compartilhado tende a virar depósito. O ArchUnit impede que o núcleo dependa de um módulo, mas a regra de entrada acima (só o que dois módulos já usam) depende dos reviews.
 - Ruim: o handler global pode fazer o documento OpenAPI listar `400` ou `404` em operações que não os declaravam; qualquer mudança assim aparece no diff de `docs/api/openapi.json`. Foi o que aconteceu: `GET /api/foods` e `POST /api/foods` passaram a documentar um `404` que nunca devolvem, a mesma imprecisão que o contrato do diário já tinha. Foi aceito para não voltar a registrar cada controller no handler.

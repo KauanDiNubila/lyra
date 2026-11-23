@@ -3,6 +3,7 @@ package app.lyra.architecture;
 import archfixture.food.adapter.out.persistence.FoodEntity;
 import archfixture.food.adapter.in.web.FoodController;
 import archfixture.food.application.service.FoodSearchService;
+import archfixture.food.domain.Food;
 import archfixture.food.domainevents.FoodRenamed;
 import archfixture.violation.adapter.in.web.ControllerUsingOutboundAdapter;
 import archfixture.violation.adapter.out.persistence.RepositoryUsingInboundAdapter;
@@ -11,6 +12,7 @@ import archfixture.violation.application.service.ServiceUsingLookalikePackage;
 import archfixture.violation.application.service.ServiceUsingOtherModuleService;
 import archfixture.violation.domain.DomainUsingAdapter;
 import archfixture.violation.domain.DomainUsingFramework;
+import archfixture.violation.sharedkernel.SharedKernelUsingModule;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
@@ -35,7 +37,8 @@ class HexagonalArchitectureTest {
             HexagonalRules::applicationDoesNotDependOnAdapters,
             HexagonalRules::inboundAdaptersDoNotDependOnOutboundAdapters,
             HexagonalRules::outboundAdaptersDoNotDependOnInboundAdapters,
-            HexagonalRules::modulesTalkOnlyThroughInboundPortsAndDomain);
+            HexagonalRules::modulesTalkOnlyThroughInboundPortsAndDomain,
+            root -> HexagonalRules.sharedKernelDependsOnNoModule(root + ".shared"));
 
     @Test
     void productionCodeFollowsAllRules() {
@@ -49,7 +52,7 @@ class HexagonalArchitectureTest {
     @Test
     void validModulesPassEveryRule() {
         JavaClasses valid = new ClassFileImporter()
-                .importPackages(FIXTURE_ROOT + ".food", FIXTURE_ROOT + ".diary");
+                .importPackages(FIXTURE_ROOT + ".food", FIXTURE_ROOT + ".diary", FIXTURE_ROOT + ".shared");
 
         RULES.forEach(rule -> assertThatCode(() -> rule.apply(FIXTURE_ROOT).check(valid))
                 .doesNotThrowAnyException());
@@ -98,6 +101,12 @@ class HexagonalArchitectureTest {
         void moduleReachingAnotherModuleServiceIsRejected() {
             assertViolation(HexagonalRules.modulesTalkOnlyThroughInboundPortsAndDomain(FIXTURE_ROOT),
                     ServiceUsingOtherModuleService.class, FoodSearchService.class);
+        }
+
+        @Test
+        void sharedKernelDependingOnAModuleIsRejected() {
+            assertViolation(HexagonalRules.sharedKernelDependsOnNoModule(FIXTURE_ROOT + ".violation.sharedkernel"),
+                    SharedKernelUsingModule.class, Food.class);
         }
 
         private void assertViolation(ArchRule rule, Class<?> violatingClass, Class<?> target) {
