@@ -173,7 +173,31 @@ describe('FoodsPage', () => {
     search('arroz')
 
     expect(await screen.findByText('Não foi possível buscar')).toBeInTheDocument()
-    expect(screen.getByText('Failed to fetch')).toBeInTheDocument()
+    expect(screen.getByText('Sem conexão com o servidor. Verifique a internet e tente de novo.')).toBeInTheDocument()
+  })
+
+  it('explains a server failure without a body in Portuguese', async () => {
+    fetchMock.mockResolvedValue(new Response('', { status: 502 }))
+    render(<FoodsPage />)
+
+    search('arroz')
+
+    expect(await screen.findByText('O servidor não conseguiu responder (erro 502). Tente de novo.')).toBeInTheDocument()
+  })
+
+  it('searches again when the user asks to try again after a failure', async () => {
+    fetchMock
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(jsonResponse([rice]))
+    render(<FoodsPage />)
+    search('arroz')
+    await screen.findByText('Não foi possível buscar')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }))
+
+    expect(await screen.findByText('Arroz, tipo 1, cozido')).toBeInTheDocument()
+    expect(screen.queryByText('Não foi possível buscar')).not.toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
   it('keeps the save button disabled until the required fields are filled', async () => {
@@ -226,7 +250,7 @@ describe('FoodsPage', () => {
 
   it.each([
     ['the server rejects the food', () => Promise.resolve(jsonResponse({ detail: 'Food name must have between 2 and 200 characters' }, 400)), 'Food name must have between 2 and 200 characters'],
-    ['the server cannot be reached', () => Promise.reject(new TypeError('Failed to fetch')), 'Failed to fetch'],
+    ['the server cannot be reached', () => Promise.reject(new TypeError('Failed to fetch')), 'Sem conexão com o servidor. Verifique a internet e tente de novo.'],
   ])('keeps the form open and ready for another try when %s', async (_case, answerPost, message) => {
     fetchMock.mockImplementation((_url, init) => (init?.method === 'POST' ? answerPost() : Promise.resolve(jsonResponse([]))))
     render(<FoodsPage />)

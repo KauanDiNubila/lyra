@@ -10,7 +10,7 @@ export const unitLabels: Record<MeasurementUnit, string> = {
 
 export function formatReference({ amount, unit }: Food['referenceAmount']): string {
   const separator = unit === 'PORTION' ? ' ' : ''
-  const label = unit === 'PORTION' && amount !== 1 ? 'porções' : unitLabels[unit]
+  const label = unit === 'PORTION' && amount > 1 ? 'porções' : unitLabels[unit]
   return `${oneDecimal.format(amount)}${separator}${label}`
 }
 

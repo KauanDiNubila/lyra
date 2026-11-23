@@ -12,10 +12,11 @@ export type FoodSearchState =
 
 type Answer = { key: string; state: FoodSearchState }
 
-export function useFoodSearch(query: string, refreshKey = 0): FoodSearchState {
+export function useFoodSearch(query: string): { search: FoodSearchState; reload: () => void } {
   const trimmed = query.trim()
   const isSearchable = trimmed.length >= MIN_QUERY_LENGTH
-  const key = `${refreshKey}:${trimmed}`
+  const [attempt, setAttempt] = useState(0)
+  const key = `${attempt}:${trimmed}`
   const [answer, setAnswer] = useState<Answer | null>(null)
 
   useEffect(() => {
@@ -38,6 +39,8 @@ export function useFoodSearch(query: string, refreshKey = 0): FoodSearchState {
     }
   }, [isSearchable, trimmed, key])
 
-  if (!isSearchable) return { status: 'idle' }
-  return answer?.key === key ? answer.state : { status: 'loading' }
+  const search: FoodSearchState = !isSearchable
+    ? { status: 'idle' }
+    : answer?.key === key ? answer.state : { status: 'loading' }
+  return { search, reload: () => setAttempt((count) => count + 1) }
 }

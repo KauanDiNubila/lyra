@@ -18,13 +18,12 @@ import { MIN_QUERY_LENGTH, useFoodSearch } from './useFoodSearch.ts'
 export function FoodsPage() {
   const [query, setQuery] = useState('')
   const [isCreating, setIsCreating] = useState(false)
-  const [refreshKey, setRefreshKey] = useState(0)
-  const search = useFoodSearch(query, refreshKey)
+  const { search, reload } = useFoodSearch(query)
 
   function showCreated(food: Food) {
     setIsCreating(false)
     setQuery(food.name)
-    setRefreshKey((key) => key + 1)
+    reload()
   }
 
   const createButton = <Button label="Novo alimento" variant="secondary" onClick={() => setIsCreating(true)} />
@@ -48,7 +47,10 @@ export function FoodsPage() {
       )}
       {search.status === 'loading' && <Spinner label="Buscando alimentos" />}
       {search.status === 'error' && (
-        <Banner status="error" title="Não foi possível buscar" description={search.message} />
+        <>
+          <Banner status="error" title="Não foi possível buscar" description={search.message} />
+          <Button label="Tentar de novo" variant="secondary" onClick={reload} />
+        </>
       )}
       {search.status === 'success' && search.foods.length === 0 && (
         <EmptyState
@@ -74,7 +76,7 @@ export function FoodsPage() {
           Fonte dos alimentos da TACO: NEPA/Unicamp, Tabela Brasileira de Composição de Alimentos, 4. ed., 2011.
         </Text>
       )}
-      <BottomSheet label="Novo alimento" isOpen={isCreating} onOpenChange={setIsCreating}>
+      <BottomSheet label="Novo alimento" purpose="form" isOpen={isCreating} onOpenChange={setIsCreating}>
         {isCreating && <CustomFoodForm initialName={query.trim()} onCreated={showCreated} />}
       </BottomSheet>
     </VStack>
