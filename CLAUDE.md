@@ -13,7 +13,7 @@ Read before working on a slice:
 |---|---|
 | `backend/` | Spring Boot 4.1, Java 25, Maven wrapper |
 | `frontend/` | React 19, Vite, Astryx, vite-plugin-pwa |
-| `docs/rfc/`, `docs/adr/` | RFCs and ADRs (MADR format, in English) |
+| `docs/rfc/`, `docs/adr/` | RFCs and ADRs (MADR format, in Brazilian Portuguese) |
 | `docs/api/openapi.json` | HTTP contract; `OpenApiContractTest` fails when the API drifts from it |
 | `tools/taco/` | One-off converter from the TACO spreadsheet to the seed TSV |
 | `.github/` | CI workflow and Dependabot |
@@ -52,7 +52,7 @@ adapter/out/<external>/   external API clients
 ## Code conventions
 
 - After a context compaction, read this file again before the next step and follow it, including the pull request steps below.
-- Code, identifiers, commits and docs in English. Talk to the user in Brazilian Portuguese.
+- Code, identifiers, commits and pull request text in English. RFCs and ADRs in Brazilian Portuguese, keeping technical terms and identifiers in English. Talk to the user in Brazilian Portuguese.
 - No code comments.
 - Write the simplest code that works, readable by a junior developer: well-known names, short methods, plain Java and Spring features, no clever tricks. Add an abstraction only when two real cases need it, and when a pattern appears for the first time, explain it in the pull request.
 - Use the ponytail skill (lite) on code tasks; load it again after a context compaction, even if the summary says it is active.
