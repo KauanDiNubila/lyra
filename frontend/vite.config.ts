@@ -27,6 +27,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    env: { TZ: 'America/Sao_Paulo' },
     setupFiles: ['./src/setupTests.ts'],
     css: true,
   },

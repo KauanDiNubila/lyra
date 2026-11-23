@@ -5,6 +5,7 @@ import { NumberInput } from '@astryxdesign/core/NumberInput'
 import { Selector } from '@astryxdesign/core/Selector'
 import { TextInput } from '@astryxdesign/core/TextInput'
 import { VStack } from '@astryxdesign/core/VStack'
+import { useSubmit } from '../useSubmit.ts'
 import { createFood, MEASUREMENT_UNITS, type Food, type MeasurementUnit, type NewFood } from './foodApi.ts'
 import { unitLabels } from './formatNutrients.ts'
 
@@ -39,8 +40,7 @@ export function CustomFoodForm({ initialName, onCreated }: Props) {
     fiber: null,
     sodium: null,
   })
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { run, isRunning, error } = useSubmit()
 
   function change<Key extends keyof Fields>(key: Key) {
     return (value: Fields[Key]) => setFields((current) => ({ ...current, [key]: value }))
@@ -57,18 +57,9 @@ export function CustomFoodForm({ initialName, onCreated }: Props) {
         }
       : null
 
-  async function submit(event: FormEvent) {
+  function submit(event: FormEvent) {
     event.preventDefault()
-    if (!draft || isSaving) return
-    setIsSaving(true)
-    setError(null)
-    try {
-      onCreated(await createFood(draft))
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
-    } finally {
-      setIsSaving(false)
-    }
+    if (draft) void run(async () => onCreated(await createFood(draft)))
   }
 
   return (
@@ -89,7 +80,7 @@ export function CustomFoodForm({ initialName, onCreated }: Props) {
         <NumberInput label="Gordura (g)" value={fat} onChange={change('fat')} min={0} isRequired />
         <NumberInput label="Fibra (g)" value={fiber} onChange={change('fiber')} min={0} isOptional />
         <NumberInput label="Sódio (mg)" value={sodium} onChange={change('sodium')} min={0} isOptional />
-        <Button type="submit" label="Salvar alimento" variant="primary" isDisabled={!draft} isLoading={isSaving} />
+        <Button type="submit" label="Salvar alimento" variant="primary" isDisabled={!draft} isLoading={isRunning} />
       </VStack>
     </form>
   )
