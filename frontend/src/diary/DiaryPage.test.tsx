@@ -1,49 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { DiaryDay, DiaryEntry } from './diaryApi.ts'
 import { DiaryPage } from './DiaryPage.tsx'
-
-const lunchRice: DiaryEntry = {
-  id: 'rice-entry',
-  date: '2026-11-19',
-  mealName: 'Almoço',
-  foodId: 'rice',
-  foodName: 'Arroz, tipo 1, cozido',
-  quantity: { amount: 150, unit: 'GRAM' },
-  macros: { kcal: 192.38775, protein: 3.7812, carbohydrate: 42.0897, fat: 0.3405 },
-}
-
-const dinnerMilkshake: DiaryEntry = {
-  id: 'milkshake-entry',
-  date: '2026-11-19',
-  mealName: 'Jantar',
-  foodId: 'milkshake',
-  foodName: 'Milkshake de morango',
-  quantity: { amount: 1, unit: 'PORTION' },
-  macros: { kcal: 590, protein: 13, carbohydrate: 98, fat: 16 },
-}
-
-const day: DiaryDay = {
-  date: '2026-11-19',
-  meals: [
-    { name: 'Almoço', entries: [lunchRice], total: lunchRice.macros },
-    { name: 'Jantar', entries: [dinnerMilkshake], total: dinnerMilkshake.macros },
-  ],
-  total: { kcal: 782.38775, protein: 16.7812, carbohydrate: 140.0897, fat: 16.3405 },
-}
-
-const emptyDay = (date: string): DiaryDay => ({
-  date,
-  meals: [],
-  total: { kcal: 0, protein: 0, carbohydrate: 0, fat: 0 },
-})
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': status >= 400 ? 'application/problem+json' : 'application/json' },
-  })
-}
+import { day, emptyDay, jsonResponse } from './testSupport.ts'
 
 const fetchMock = vi.fn<typeof fetch>()
 

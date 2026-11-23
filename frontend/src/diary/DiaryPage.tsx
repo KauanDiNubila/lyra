@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Banner } from '@astryxdesign/core/Banner'
+import { BottomSheet } from '@astryxdesign/core/BottomSheet'
 import { Button } from '@astryxdesign/core/Button'
 import { DateInput } from '@astryxdesign/core/DateInput'
 import { EmptyState } from '@astryxdesign/core/EmptyState'
@@ -10,16 +11,27 @@ import { Spinner } from '@astryxdesign/core/Spinner'
 import { Text } from '@astryxdesign/core/Text'
 import { VStack } from '@astryxdesign/core/VStack'
 import { formatMacroValues, formatReference } from '../foods/formatNutrients.ts'
+import { AddEntryForm } from './AddEntryForm.tsx'
 import { shiftDay, todayIso } from './dates.ts'
 import { useDiaryDay } from './useDiaryDay.ts'
 
 export function DiaryPage() {
   const [date, setDate] = useState(() => todayIso())
+  const [isAdding, setIsAdding] = useState(false)
   const { day, reload } = useDiaryDay(date)
+  const mealNames = day.status === 'success' ? day.data.meals.map((meal) => meal.name) : []
+
+  function showAdded() {
+    setIsAdding(false)
+    reload()
+  }
 
   return (
     <VStack gap={4} padding={4}>
-      <Heading level={1}>Diário</Heading>
+      <HStack justify="between" align="center">
+        <Heading level={1}>Diário</Heading>
+        <Button label="Adicionar" variant="primary" onClick={() => setIsAdding(true)} />
+      </HStack>
       <DateInput label="Data" value={date} onChange={(value) => value && setDate(value)} />
       <HStack justify="between">
         <Button label="Dia anterior" variant="secondary" onClick={() => setDate(shiftDay(date, -1))} />
@@ -36,6 +48,7 @@ export function DiaryPage() {
         <EmptyState
           title="Nada registrado neste dia"
           description="Quando você registrar o que comeu, as refeições e os totais aparecem aqui."
+          actions={<Button label="Adicionar alimento" variant="secondary" onClick={() => setIsAdding(true)} />}
         />
       )}
       {day.status === 'success' && day.data.meals.length > 0 && (
@@ -65,6 +78,9 @@ export function DiaryPage() {
           ))}
         </>
       )}
+      <BottomSheet label="Adicionar ao diário" purpose="form" isOpen={isAdding} onOpenChange={setIsAdding}>
+        {isAdding && <AddEntryForm date={date} mealNames={mealNames} onAdded={showAdded} />}
+      </BottomSheet>
     </VStack>
   )
 }

@@ -8,6 +8,10 @@ export const unitLabels: Record<MeasurementUnit, string> = {
   PORTION: 'porção',
 }
 
+export function quantityLabel(unit: MeasurementUnit): string {
+  return `Quantidade (${unitLabels[unit]})`
+}
+
 export function formatReference({ amount, unit }: Food['referenceAmount']): string {
   const separator = unit === 'PORTION' ? ' ' : ''
   const label = unit === 'PORTION' && amount > 1 ? 'porções' : unitLabels[unit]

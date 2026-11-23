@@ -30,7 +30,22 @@ export type DiaryDay = {
   total: Macros
 }
 
+export type NewEntry = {
+  foodId: string
+  mealName: string
+  quantity: Quantity
+}
+
 export async function fetchDay(date: string, signal: AbortSignal): Promise<DiaryDay> {
   const response = await send(`/api/diary/${date}`, { signal })
   return readJson<DiaryDay>(response)
+}
+
+export async function addEntry(date: string, entry: NewEntry): Promise<DiaryEntry> {
+  const response = await send(`/api/diary/${date}/entries`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(entry),
+  })
+  return readJson<DiaryEntry>(response)
 }
