@@ -14,12 +14,22 @@ export function formatReference({ amount, unit }: Food['referenceAmount']): stri
   return `${oneDecimal.format(amount)}${separator}${label}`
 }
 
-export function formatMacros(food: Food): string {
-  const { kcal, protein, carbohydrate, fat } = food.nutrients
+export type MacroValues = {
+  kcal: number
+  protein: number
+  carbohydrate: number
+  fat: number
+}
+
+export function formatMacroValues({ kcal, protein, carbohydrate, fat }: MacroValues): string {
   return [
     `${oneDecimal.format(kcal)} kcal`,
     `P ${oneDecimal.format(protein)} g`,
     `C ${oneDecimal.format(carbohydrate)} g`,
     `G ${oneDecimal.format(fat)} g`,
-  ].join(' · ') + ` em ${formatReference(food.referenceAmount)}`
+  ].join(' · ')
+}
+
+export function formatMacros(food: Food): string {
+  return `${formatMacroValues(food.nutrients)} em ${formatReference(food.referenceAmount)}`
 }
