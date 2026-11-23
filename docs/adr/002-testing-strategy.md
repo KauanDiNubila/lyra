@@ -1,48 +1,48 @@
-# ADR-002: Testing strategy
+# ADR-002: Estratégia de testes
 
-- **Date**: 2026-11-18
-- **Status**: Proposed
-- **Deciders**: Kauan Di Nubila
-- **Tags**: testing, quality
+- **Data**: 2026-11-18
+- **Status**: Proposta
+- **Decisores**: Kauan Di Nubila
+- **Tags**: testes, qualidade
 
-## Context and Problem Statement
+## Contexto e problema
 
-The goal is a project with very strong test coverage. "Unit tests for absolutely everything" is the starting request, but unit tests with mocks on controllers, mappers and repositories mostly test the mocks: they pass while the real HTTP mapping, SQL or external API contract is broken. The strategy must pick the right kind of test for each layer.
+O objetivo é um projeto com cobertura de testes muito forte. "Testes unitários para absolutamente tudo" é o pedido inicial, mas testes unitários com mocks em controllers, mappers e repositories testam, na maior parte, os próprios mocks: passam enquanto o mapeamento HTTP real, o SQL ou o contrato de uma API externa estão quebrados. A estratégia precisa escolher o tipo certo de teste para cada camada.
 
-## Decision Drivers
+## Fatores de decisão
 
-1. Catch real defects, not only raise a coverage number.
-2. Fast feedback for domain rules (macro calculation is the heart of the app).
-3. Confidence that adapters work against the real database and the real shape of external APIs.
+1. Pegar defeitos reais, e não só aumentar um número de cobertura.
+2. Feedback rápido para as regras de domínio (o cálculo de macros é o coração do app).
+3. Confiança de que os adaptadores funcionam contra o banco de dados real e o formato real das APIs externas.
 
-## Considered Options
+## Opções consideradas
 
-1. **Unit tests for every class**, mocking all collaborators.
-2. **Test per layer**: unit where logic lives, integration where the framework or the network lives.
+1. **Testes unitários para toda classe**, com mocks em todos os colaboradores.
+2. **Um teste por camada**: unitário onde mora a lógica, de integração onde mora o framework ou a rede.
 
-## Decision Outcome
+## Decisão
 
-Chosen option: **test per layer**.
+Opção escolhida: **um teste por camada**.
 
-| Layer | Test type | Tools |
+| Camada | Tipo de teste | Ferramentas |
 |---|---|---|
-| `domain` | Unit, no mocks | JUnit 5, AssertJ |
-| `application` | Unit; outbound ports replaced by in-memory fakes | JUnit 5, AssertJ |
-| `adapter/in/web` | Slice test of the HTTP contract (status, JSON, validation) | `@WebMvcTest` |
-| `adapter/out/persistence` | Integration against real PostgreSQL | `@DataJpaTest`, Testcontainers |
-| `adapter/out/<external>` | Integration against recorded responses of the real API | WireMock |
-| Architecture | Dependency rules from [ADR-001](001-hexagonal-modular-monolith.md) | ArchUnit |
-| End to end | A few critical flows (open diary, adjust item, see totals) | Playwright |
-| Frontend | Components and hooks | Vitest, Testing Library |
+| `domain` | Unitário, sem mocks | JUnit 5, AssertJ |
+| `application` | Unitário; as portas de saída (outbound ports) são trocadas por fakes em memória | JUnit 5, AssertJ |
+| `adapter/in/web` | Teste de fatia (slice) do contrato HTTP (status, JSON, validação) | `@WebMvcTest` |
+| `adapter/out/persistence` | Integração contra um PostgreSQL real | `@DataJpaTest`, Testcontainers |
+| `adapter/out/<external>` | Integração contra respostas gravadas da API real | WireMock |
+| Arquitetura | Regras de dependência da [ADR-001](001-hexagonal-modular-monolith.md) | ArchUnit |
+| Ponta a ponta | Alguns fluxos críticos (abrir o diário, ajustar um item, ver os totais) | Playwright |
+| Frontend | Componentes e hooks | Vitest, Testing Library |
 
-Coverage gate: JaCoCo fails the build below 90% line and branch coverage in `domain` and `application`. Adapters have no percentage gate; they are covered by the integration tests above.
+Portão de cobertura: o JaCoCo falha o build abaixo de 90% de cobertura de linhas e de branches em `domain` e `application`. Os adaptadores não têm portão de porcentagem; são cobertos pelos testes de integração acima.
 
-In-memory fakes are preferred over Mockito in application tests because they test behaviour (what was saved) instead of interactions (which method was called), and survive refactoring.
+Fakes em memória são preferidos ao Mockito nos testes de application porque testam comportamento (o que foi salvo) em vez de interações (qual método foi chamado), e sobrevivem a refatorações.
 
-### Consequences
+### Consequências
 
-- Good: every layer is tested by the kind of test that can actually break it.
-- Good: domain tests stay fast; the slow tests are few and targeted.
-- Bad: integration tests need Docker running locally and in CI.
-- Bad: fakes must be kept in sync with the port contracts; a shared contract test per port mitigates this.
-- Later: mutation testing (PIT) on `domain` to check that the tests really assert something.
+- Bom: cada camada é testada pelo tipo de teste que realmente consegue quebrá-la.
+- Bom: os testes de domínio continuam rápidos; os lentos são poucos e direcionados.
+- Ruim: os testes de integração precisam do Docker rodando, localmente e no CI.
+- Ruim: os fakes precisam ficar em sincronia com os contratos das portas; um teste de contrato compartilhado por porta reduz esse risco.
+- Depois: testes de mutação (PIT) em `domain`, para checar que os testes realmente afirmam alguma coisa.
