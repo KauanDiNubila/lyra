@@ -1,4 +1,4 @@
-package app.lyra.food.domain;
+package app.lyra.shared.domain;
 
 public class InvalidInputException extends RuntimeException {
 

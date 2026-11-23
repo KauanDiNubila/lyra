@@ -1,7 +1,7 @@
 package app.lyra.diary.adapter.in.web;
 
 import app.lyra.diary.application.port.in.LogEntryUseCase.LogEntryCommand;
-import app.lyra.food.domain.InvalidInputException;
+import app.lyra.shared.domain.InvalidInputException;
 
 import java.time.LocalDate;
 import java.util.UUID;

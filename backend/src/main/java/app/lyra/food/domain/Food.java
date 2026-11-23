@@ -1,5 +1,6 @@
 package app.lyra.food.domain;
 
+import app.lyra.shared.domain.InvalidInputException;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 

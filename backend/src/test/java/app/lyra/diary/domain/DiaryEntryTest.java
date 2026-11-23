@@ -1,10 +1,10 @@
 package app.lyra.diary.domain;
 
 import app.lyra.food.domain.Food;
-import app.lyra.food.domain.InvalidInputException;
 import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
+import app.lyra.shared.domain.InvalidInputException;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.Test;
 

@@ -1,5 +1,7 @@
 package app.lyra.food.domain;
 
+import app.lyra.shared.domain.InvalidInputException;
+
 import java.util.Arrays;
 import java.util.List;
 

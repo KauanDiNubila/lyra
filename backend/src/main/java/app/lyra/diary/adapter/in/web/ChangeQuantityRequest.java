@@ -1,7 +1,7 @@
 package app.lyra.diary.adapter.in.web;
 
-import app.lyra.food.domain.InvalidInputException;
 import app.lyra.food.domain.Quantity;
+import app.lyra.shared.domain.InvalidInputException;
 
 record ChangeQuantityRequest(QuantityJson quantity) {
 
