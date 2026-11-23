@@ -1,6 +1,6 @@
 package app.lyra.diary.domain;
 
-import app.lyra.food.domain.InvalidInputException;
+import app.lyra.shared.domain.InvalidInputException;
 
 import java.time.LocalDate;
 import java.util.ArrayList;

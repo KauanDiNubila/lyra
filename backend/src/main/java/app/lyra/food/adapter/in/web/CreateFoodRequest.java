@@ -1,8 +1,8 @@
 package app.lyra.food.adapter.in.web;
 
-import app.lyra.food.domain.InvalidInputException;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
+import app.lyra.shared.domain.InvalidInputException;
 
 record CreateFoodRequest(String name, QuantityJson referenceAmount, NutrientsJson nutrients) {
 

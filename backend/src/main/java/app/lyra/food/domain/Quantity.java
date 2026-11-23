@@ -1,5 +1,7 @@
 package app.lyra.food.domain;
 
+import app.lyra.shared.domain.InvalidInputException;
+
 import java.math.BigDecimal;
 
 public record Quantity(BigDecimal amount, MeasurementUnit unit) {

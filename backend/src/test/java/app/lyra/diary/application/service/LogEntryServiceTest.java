@@ -5,10 +5,10 @@ import app.lyra.diary.domain.DiaryEntry;
 import app.lyra.food.application.port.in.FindFoodUseCase;
 import app.lyra.food.domain.Food;
 import app.lyra.food.domain.FoodNotFoundException;
-import app.lyra.food.domain.InvalidInputException;
 import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
+import app.lyra.shared.domain.InvalidInputException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

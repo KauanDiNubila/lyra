@@ -65,4 +65,4 @@ O `QuantityJson` é um DTO web de cada módulo e usa `food.domain.Quantity`. Um 
 - Bom: nenhuma regra da ADR-001 muda.
 - Ruim: o handler é global, então vale para todos os controllers, inclusive os futuros. É a intenção, mas um módulo não consegue dar outro status à mesma exceção sem um handler próprio.
 - Ruim: um pacote compartilhado tende a virar depósito. A regra de entrada acima é a única proteção, e os reviews precisam fazê-la valer.
-- Ruim: o handler global pode fazer o documento OpenAPI listar `400` ou `404` em operações que não os declaravam; qualquer mudança assim aparece no diff de `docs/api/openapi.json`.
+- Ruim: o handler global pode fazer o documento OpenAPI listar `400` ou `404` em operações que não os declaravam; qualquer mudança assim aparece no diff de `docs/api/openapi.json`. Foi o que aconteceu: `GET /api/foods` e `POST /api/foods` passaram a documentar um `404` que nunca devolvem, a mesma imprecisão que o contrato do diário já tinha. Foi aceito para não voltar a registrar cada controller no handler.
