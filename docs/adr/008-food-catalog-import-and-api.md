@@ -1,77 +1,77 @@
-# ADR-008: Food catalog: TACO import, search and API contract
+# ADR-008: Catálogo de alimentos: importação da TACO, busca e contrato da API
 
-- **Date**: 2026-11-19
-- **Status**: Proposed
-- **Deciders**: Kauan Di Nubila
-- **Tags**: food, data, api
+- **Data**: 2026-11-19
+- **Status**: Proposta
+- **Decisores**: Kauan Di Nubila
+- **Tags**: alimentos, dados, api
 
-## Context and Problem Statement
+## Contexto e problema
 
-Slice 2 of [RFC-001](../rfc/001-lyra-mvp.md) delivers the food catalog: Brazilian generic foods from TACO ([ADR-006](006-food-data-sources.md)), text search and custom foods. Three things had to be decided: how the TACO spreadsheet becomes rows, how search behaves, and what the HTTP contract (including errors) looks like. This also closes open question 3 of the RFC.
+A slice 2 do [RFC-001](../rfc/001-lyra-mvp.md) entrega o catálogo de alimentos: alimentos genéricos brasileiros da TACO ([ADR-006](006-food-data-sources.md)), busca por texto e alimentos personalizados. Três coisas precisaram ser decididas: como a planilha da TACO vira linhas no banco, como a busca se comporta e como é o contrato HTTP (incluindo os erros). Isso também fecha a questão em aberto 3 do RFC.
 
-## Decision Outcome
+## Decisão
 
-### TACO import
+### Importação da TACO
 
-Source: the official TACO spreadsheet published by NEPA/Unicamp (`tabela-taco-excel`, first sheet), 597 foods per 100 g. Reproduction is allowed with citation:
+Fonte: a planilha oficial da TACO publicada pelo NEPA/Unicamp (`tabela-taco-excel`, primeira aba), com 597 alimentos por 100 g. A reprodução é permitida com citação:
 
 > NEPA/UNICAMP. Tabela Brasileira de Composição de Alimentos (TACO). 4. ed. rev. e ampl. Campinas: NEPA/UNICAMP, 2011.
 
-The spreadsheet is converted once by `tools/taco/convert_taco.py` into `backend/src/main/resources/db/taco/taco-foods.tsv`, which is committed. The Flyway Java migration `V2__Seed_taco_foods` inserts it. To regenerate:
+A planilha é convertida uma vez por `tools/taco/convert_taco.py` em `backend/src/main/resources/db/taco/taco-foods.tsv`, que fica no repositório. A migração Java do Flyway `V2__Seed_taco_foods` a insere. Para regenerar:
 
 ```bash
 python -I tools/taco/convert_taco.py <taco.xlsx> backend/src/main/resources/db/taco/taco-foods.tsv
 ```
 
-The converter reads nutrients by column position, so it first checks the name and unit of each column in the spreadsheet header (`HEADER` in the script) and aborts if any differs, instead of silently storing a shifted column. Its tests run with `python -X utf8 -m unittest` inside `tools/taco`; they are not part of the CI.
+O conversor lê os nutrientes pela posição da coluna, então primeiro confere o nome e a unidade de cada coluna no cabeçalho da planilha (`HEADER` no script) e aborta se alguma for diferente, em vez de guardar em silêncio uma coluna deslocada. Os testes dele rodam com `python -X utf8 -m unittest` dentro de `tools/taco`; eles não fazem parte do CI.
 
-Value rules, from the spreadsheet legend:
+Regras de valor, a partir da legenda da planilha:
 
-| Spreadsheet value | Meaning in TACO | Stored as |
+| Valor na planilha | Significado na TACO | Guardado como |
 |---|---|---|
-| number | measured | the number, rounded to 4 decimal places |
-| `Tr` | trace, below the rounding or quantification limit | `0` |
-| `NA` | not applicable (protein in oil, fiber in meat) | `0` |
-| blank | not analysed | unknown (`null`) |
-| `*` | under re-evaluation | unknown (`null`) |
+| número | medido | o número, arredondado em 4 casas decimais |
+| `Tr` | traço, abaixo do limite de arredondamento ou de quantificação | `0` |
+| `NA` | não se aplica (proteína em óleo, fibra em carne) | `0` |
+| vazio | não analisado | desconhecido (`null`) |
+| `*` | em reavaliação | desconhecido (`null`) |
 
-- kcal, protein, carbohydrate and fat are required. A food with any of them unknown is **skipped**: 5 foods (pineapple yogurt, skimmed and whole UHT milk, cachaça, green coconut). Users can add them as custom foods.
-- Fiber and sodium may be unknown.
-- TACO computes carbohydrate by difference, so measurement error produces small negatives (4 foods, between -0.045 and 0 g). Negative carbohydrate is stored as `0`. Any other negative value fails the conversion.
-- Result: 592 foods. Ids are deterministic (`UUID` from `taco:<number>`), so every environment has the same ids.
+- kcal, proteína, carboidrato e gordura são obrigatórios. Um alimento com qualquer um deles desconhecido é **ignorado**: 5 alimentos (iogurte de abacaxi, leite UHT desnatado e integral, cachaça, coco verde). Os usuários podem adicioná-los como alimentos personalizados.
+- Fibra e sódio podem ser desconhecidos.
+- A TACO calcula o carboidrato por diferença, então o erro de medição produz pequenos valores negativos (4 alimentos, entre -0,045 e 0 g). O carboidrato negativo é guardado como `0`. Qualquer outro valor negativo faz a conversão falhar.
+- Resultado: 592 alimentos. Os ids são determinísticos (`UUID` a partir de `taco:<number>`), então todo ambiente tem os mesmos ids.
 
-### Database
+### Banco de dados
 
-- Nutrient and amount columns are `numeric` without precision or scale: the database never rounds silently; values are stored as the domain gives them.
-- `search_name` holds the name normalized by the domain's `SearchText` (no accents, lower case, single spaces). Changing `SearchText` requires a migration that recomputes `search_name`.
+- As colunas de nutrientes e quantidades são `numeric` sem precisão nem escala: o banco nunca arredonda em silêncio; os valores são guardados como o domínio os entrega.
+- `search_name` guarda o nome normalizado pelo `SearchText` do domínio (sem acentos, em minúsculas, com espaços simples). Mudar o `SearchText` exige uma migração que recalcule o `search_name`.
 
-### Search
+### Busca
 
-- The query is normalized like the names, punctuation is removed and it is split into terms; it needs at least 2 characters.
-- A food matches when its normalized name contains **every** term ("feijao cozido" finds "Feijão, carioca, cozido").
-- The persistence adapter escapes `%`, `_` and `\` in every term before building the `LIKE`, so a term is always literal text, whatever the domain strips.
-- Order: custom foods first, then shorter names; names of the same length come in no defined order, because the database collation would decide it and the in-memory fake would differ. At most 20 results. The order is applied by the database because the limit is too, so it belongs to the persistence adapter; `FoodRepositoryContract` states it once and runs against both the in-memory fake and the real adapter.
-- Until the identity module exists, custom foods are visible to every user.
+- A consulta é normalizada como os nomes, a pontuação é removida e ela é dividida em termos; precisa de pelo menos 2 caracteres.
+- Um alimento corresponde quando o nome normalizado dele contém **todos** os termos ("feijao cozido" encontra "Feijão, carioca, cozido").
+- O adaptador de persistência escapa `%`, `_` e `\` em cada termo antes de montar o `LIKE`, então um termo é sempre texto literal, seja qual for o que o domínio remove.
+- Ordem: alimentos personalizados primeiro, depois nomes mais curtos; nomes do mesmo tamanho vêm sem ordem definida, porque o collation do banco decidiria isso e o fake em memória seria diferente. No máximo 20 resultados. A ordem é aplicada pelo banco porque o limite também é, então ela pertence ao adaptador de persistência; o `FoodRepositoryContract` a declara uma vez e roda contra o fake em memória e contra o adaptador real.
+- Até o módulo identity existir, os alimentos personalizados são visíveis para todos os usuários.
 
-### HTTP contract
+### Contrato HTTP
 
-| Method | Path | Success | Errors |
+| Método | Caminho | Sucesso | Erros |
 |---|---|---|---|
-| GET | `/api/foods?query=` | `200` list of foods | `400` query missing or shorter than 2 characters |
-| POST | `/api/foods` | `201` created food | `400` invalid name, amount, unit or nutrients, missing objects, malformed JSON |
+| GET | `/api/foods?query=` | `200` lista de alimentos | `400` consulta ausente ou com menos de 2 caracteres |
+| POST | `/api/foods` | `201` alimento criado | `400` nome, quantidade, unidade ou nutrientes inválidos, objetos ausentes, JSON malformado |
 
-- Errors use **Problem Details** ([RFC 9457](https://www.rfc-editor.org/rfc/rfc9457)), `application/problem+json`, with `status`, `title` and `detail`.
-- Every rule is checked in the domain, including a missing `referenceAmount` or `nutrients` object (no bean validation in the web adapter). These errors have the title `Invalid input` and the domain message as detail. Errors raised by Spring before the domain is reached (malformed JSON, unknown unit, missing `query`) keep Spring's default Problem Details, with the title `Bad Request`.
-- Numbers are returned with full precision; rounding for display is done by the frontend.
-- The OpenAPI document is committed at `docs/api/openapi.json`. `OpenApiContractTest` fails when the generated document differs, so any contract change shows up in the pull request diff.
-- springdoc is a test dependency: the document is generated in the test and the application does not expose `/v3/api-docs`. The document declares `application/json` for successes and `application/problem+json` with the `ProblemDetail` schema for the `400`.
-- Because presence is checked in the domain, the schema no longer lists `required` fields. A client reading only the document sees every field as optional; the server still answers `400` when one is missing.
+- Os erros usam **Problem Details** ([RFC 9457](https://www.rfc-editor.org/rfc/rfc9457)), `application/problem+json`, com `status`, `title` e `detail`.
+- Toda regra é conferida no domínio, inclusive a ausência do objeto `referenceAmount` ou `nutrients` (sem bean validation no adaptador web). Esses erros têm o título `Invalid input` e a mensagem do domínio como detalhe. Os erros gerados pelo Spring antes de chegar ao domínio (JSON malformado, unidade desconhecida, `query` ausente) mantêm o Problem Details padrão do Spring, com o título `Bad Request`.
+- Os números são devolvidos com precisão total; o arredondamento para exibição é feito pelo frontend.
+- O documento OpenAPI fica no repositório em `docs/api/openapi.json`. O `OpenApiContractTest` falha quando o documento gerado é diferente, então qualquer mudança de contrato aparece no diff do pull request.
+- O springdoc é uma dependência de teste: o documento é gerado no teste e a aplicação não expõe `/v3/api-docs`. O documento declara `application/json` para os sucessos e `application/problem+json` com o schema `ProblemDetail` para o `400`.
+- Como a presença é conferida no domínio, o schema deixou de listar campos `required`. Um cliente que lê só o documento vê todo campo como opcional; o servidor continua respondendo `400` quando um falta.
 
-### Consequences
+### Consequências
 
-- Good: Brazilian foods available offline from the first start, with values traceable to the source.
-- Good: unknown values stay unknown instead of becoming zero.
-- Good: one error format (Problem Details) for the whole API, and one place for each rule.
-- Bad: the contract does not mark required fields. Marking them needs `swagger-annotations` in the main classpath (or bean validation again); revisit if a second client appears.
-- Bad: whole milk and four other common foods are missing until TACO re-evaluates them or the user adds them.
-- Bad: `contains` search on every term has no index; acceptable for hundreds of rows, to revisit with a trigram index when custom foods grow.
+- Bom: alimentos brasileiros disponíveis offline desde a primeira execução, com valores rastreáveis até a fonte.
+- Bom: valores desconhecidos continuam desconhecidos em vez de virarem zero.
+- Bom: um único formato de erro (Problem Details) para a API inteira, e um único lugar para cada regra.
+- Ruim: o contrato não marca os campos obrigatórios. Marcá-los exige `swagger-annotations` no classpath principal (ou o bean validation de volta); rever se aparecer um segundo cliente.
+- Ruim: o leite integral e outros quatro alimentos comuns ficam de fora até a TACO reavaliá-los ou o usuário adicioná-los.
+- Ruim: a busca `contains` em todos os termos não tem índice; aceitável para centenas de linhas, a rever com um índice trigram quando os alimentos personalizados crescerem.

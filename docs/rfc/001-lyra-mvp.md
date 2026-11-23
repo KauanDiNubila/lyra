@@ -1,139 +1,139 @@
-# RFC-001: Lyra MVP
+# RFC-001: MVP do Lyra
 
-- **Date**: 2026-11-18
-- **Status**: Draft
-- **Author**: Kauan Di Nubila
-- **Related ADRs**: [001](../adr/001-hexagonal-modular-monolith.md), [002](../adr/002-testing-strategy.md), [003](../adr/003-nutrient-snapshot-on-log.md), [004](../adr/004-pwa-with-astryx.md), [005](../adr/005-backend-stack.md), [006](../adr/006-food-data-sources.md)
+- **Data**: 2026-11-18
+- **Status**: Rascunho
+- **Autor**: Kauan Di Nubila
+- **ADRs relacionadas**: [001](../adr/001-hexagonal-modular-monolith.md), [002](../adr/002-testing-strategy.md), [003](../adr/003-nutrient-snapshot-on-log.md), [004](../adr/004-pwa-with-astryx.md), [005](../adr/005-backend-stack.md), [006](../adr/006-food-data-sources.md)
 
-## 1. Summary
+## 1. Resumo
 
-Lyra is a diet tracker built around a prescribed diet plan. The user registers the plan once (meals, foods and quantities), and every day Lyra opens a diary pre-filled from that plan. The user then records what actually happened: more rice, a skipped snack, a milkshake on the road. Every change recalculates the macros of the meal and of the day.
+O Lyra é um rastreador de dieta construído em torno de um plano alimentar prescrito. O usuário cadastra o plano uma vez (refeições, alimentos e quantidades), e todo dia o Lyra abre um diário já preenchido a partir desse plano. O usuário então registra o que realmente aconteceu: mais arroz, um lanche pulado, um milkshake na estrada. Toda mudança recalcula os macros da refeição e do dia.
 
-## 2. Motivation
+## 2. Motivação
 
-Generic trackers (MyFitnessPal, Cronometer, MacroFactor) start from an empty day: the user logs everything from scratch. Someone following a nutritionist's plan eats roughly the same thing every day, so logging from scratch is wasted effort and the most common action, "I ate the plan, but 100 g more rice", has no first-class support.
+Os rastreadores genéricos (MyFitnessPal, Cronometer, MacroFactor) começam de um dia vazio: o usuário registra tudo do zero. Quem segue o plano de um nutricionista come mais ou menos a mesma coisa todo dia, então registrar do zero é esforço perdido, e a ação mais comum, "comi o plano, mas 100 g a mais de arroz", não tem suporte de primeira classe.
 
-Lyra inverts the flow: **the plan is the default, the diary records the deviations.**
+O Lyra inverte o fluxo: **o plano é o padrão, o diário registra os desvios.**
 
-## 3. Goals
+## 3. Objetivos
 
-1. Register a diet plan with meals, foods, quantities and daily macro targets.
-2. Open a diary for any date, pre-filled from the active plan.
-3. Adjust any planned item (quantity up or down, swap the food, remove it) and add extra items.
-4. Recalculate macros per item, per meal and per day after every change, and show the difference against the plan and the targets.
-5. Find foods by text (Brazilian generic foods first) and by barcode.
-6. Log restaurant or unknown food with a quick add (name plus calories and macros) and reuse it later.
-7. Work on the phone while travelling: installable, usable with a weak connection.
-8. Log body weight.
+1. Cadastrar um plano alimentar com refeições, alimentos, quantidades e metas diárias de macros.
+2. Abrir o diário de qualquer data, já preenchido a partir do plano ativo.
+3. Ajustar qualquer item planejado (aumentar ou diminuir a quantidade, trocar o alimento, removê-lo) e adicionar itens extras.
+4. Recalcular os macros por item, por refeição e por dia depois de toda mudança, e mostrar a diferença em relação ao plano e às metas.
+5. Encontrar alimentos por texto (alimentos genéricos brasileiros primeiro) e por código de barras.
+6. Registrar comida de restaurante ou desconhecida com um quick add (nome mais calorias e macros) e reaproveitá-la depois.
+7. Funcionar no celular em viagem: instalável, utilizável com uma conexão fraca.
+8. Registrar o peso corporal.
 
-## 4. Non-goals for the MVP
+## 4. Fora do escopo do MVP
 
-- Social features (friends, sharing, streaks).
-- Adaptive calorie targets based on the weight trend.
-- AI logging (free text, photo) and importing a nutritionist's PDF.
-- Micronutrients beyond fiber and sodium, water tracking, reminders.
-- Publishing to the Play Store or the App Store.
+- Recursos sociais (amigos, compartilhamento, sequências).
+- Metas de calorias adaptativas a partir da tendência de peso.
+- Registro por IA (texto livre, foto) e importação do PDF de um nutricionista.
+- Micronutrientes além de fibra e sódio, controle de água, lembretes.
+- Publicação na Play Store ou na App Store.
 
-Each of these is a candidate for a later RFC. The architecture must not block them (see §7).
+Cada um desses itens é candidato a um RFC futuro. A arquitetura não pode bloqueá-los (ver §7).
 
-## 5. Domain model
+## 5. Modelo de domínio
 
-### 5.1 Concepts
+### 5.1 Conceitos
 
-| Concept | Meaning |
+| Conceito | Significado |
 |---|---|
-| **Food** | Something that can be eaten, with nutrients per a reference amount (100 g, 100 ml or 1 portion) and its source (TACO, Open Food Facts, USDA, custom). |
-| **Nutrients** | Value object: kcal, protein, carbohydrate, fat, fiber, sodium, per the food's reference amount. The scaling by quantity lives in the diary entry and the sum in `Macros` ([ADR-009](../adr/009-diary-entries-and-api.md)). |
-| **Quantity** | Value object: amount plus unit (`GRAM`, `MILLILITER`, `PORTION`). Never negative. |
-| **Diet plan** | Named set of planned meals plus daily targets. One plan is active per user at a time. |
-| **Planned meal** | A slot in the plan (breakfast, lunch, ...) with an order and an optional time. |
-| **Planned item** | A food and a quantity inside a planned meal. |
-| **Diary day** | What the user ate on a date. It is derived from the entries of that date and has no table of its own; a date without entries is an empty day. Slice 4 will create the entries of the active plan when the date is opened. |
-| **Diary entry** | One eaten item: the date, a free-text meal name, a snapshot of the food (name and nutrients) and the quantity eaten. The planned quantity and the origin arrive with slice 4. |
-| **Weight entry** | Body weight on a date. |
+| **Food** | Algo que pode ser comido, com nutrientes por uma quantidade de referência (100 g, 100 ml ou 1 porção) e sua fonte (TACO, Open Food Facts, USDA, personalizado). |
+| **Nutrients** | Value object: kcal, proteína, carboidrato, gordura, fibra e sódio, por quantidade de referência do alimento. O escalonamento pela quantidade fica na entrada do diário e a soma fica no `Macros` ([ADR-009](../adr/009-diary-entries-and-api.md)). |
+| **Quantity** | Value object: quantidade mais unidade (`GRAM`, `MILLILITER`, `PORTION`). Nunca negativa. |
+| **Diet plan** | Conjunto nomeado de refeições planejadas mais metas diárias. Um plano é o ativo por usuário por vez. |
+| **Planned meal** | Um espaço do plano (café da manhã, almoço, ...) com uma ordem e um horário opcional. |
+| **Planned item** | Um alimento e uma quantidade dentro de uma refeição planejada. |
+| **Diary day** | O que o usuário comeu em uma data. É derivado das entradas daquela data e não tem tabela própria; uma data sem entradas é um dia vazio. A slice 4 vai criar as entradas do plano ativo quando a data for aberta. |
+| **Diary entry** | Um item comido: a data, um nome de refeição em texto livre, um snapshot do alimento (nome e nutrientes) e a quantidade comida. A quantidade planejada e a origem chegam com a slice 4. |
+| **Weight entry** | Peso corporal em uma data. |
 
-### 5.2 Diary entry origin
+### 5.2 Origem da entrada do diário
 
-| Origin | Example |
+| Origem | Exemplo |
 |---|---|
-| `PLANNED` | Rice 150 g, as planned |
-| `ADJUSTED` | Rice planned 150 g, eaten 250 g; the entry keeps both and shows +100 g |
-| `SWAPPED` | Planned chicken replaced by fish |
-| `EXTRA` | An apple that was not in the plan |
-| `QUICK_ADD` | "McDonald's milkshake", 1 portion, with nutrients typed by the user |
+| `PLANNED` | Arroz 150 g, como planejado |
+| `ADJUSTED` | Arroz planejado em 150 g, comido 250 g; a entrada guarda os dois valores e mostra +100 g |
+| `SWAPPED` | Frango planejado trocado por peixe |
+| `EXTRA` | Uma maçã que não estava no plano |
+| `QUICK_ADD` | "Milkshake do McDonald's", 1 porção, com os nutrientes digitados pelo usuário |
 
-A planned item that was skipped is an entry with quantity zero, so the diary still shows what was planned and missed.
+Um item planejado que foi pulado é uma entrada com quantidade zero, para o diário continuar mostrando o que foi planejado e perdido.
 
-### 5.3 Calculation rules
+### 5.3 Regras de cálculo
 
-- Entry macros = `nutrient × quantity ÷ snapshot.referenceAmount`, multiplying first and dividing once. The units must match; a mismatch is a domain error, not a silent conversion. Totals cover kcal, protein, carbohydrate and fat ([ADR-009](../adr/009-diary-entries-and-api.md)).
-- Meal total = sum of its entries. Day total = sum of its meals.
-- Difference against the plan = day total minus the planned total; against the targets = day total minus the targets.
-- Arithmetic uses `BigDecimal`. Rounding happens only at the presentation edge (one decimal place).
+- Macros da entrada = `nutriente × quantidade ÷ snapshot.referenceAmount`, multiplicando primeiro e dividindo uma vez. As unidades precisam ser iguais; uma divergência é um erro de domínio, não uma conversão silenciosa. Os totais cobrem kcal, proteína, carboidrato e gordura ([ADR-009](../adr/009-diary-entries-and-api.md)).
+- Total da refeição = soma das entradas dela. Total do dia = soma das refeições.
+- Diferença em relação ao plano = total do dia menos o total planejado; em relação às metas = total do dia menos as metas.
+- A aritmética usa `BigDecimal`. O arredondamento acontece só na borda da apresentação (uma casa decimal).
 
-### 5.4 Why a snapshot
+### 5.4 Por que um snapshot
 
-A diary entry copies the food's name and nutrients at the moment it is logged. If the plan changes or an external source corrects a product later, past days stay as they were. See [ADR-003](../adr/003-nutrient-snapshot-on-log.md).
+Uma entrada do diário copia o nome e os nutrientes do alimento no momento em que é registrada. Se o plano mudar ou uma fonte externa corrigir um produto depois, os dias passados continuam como estavam. Ver [ADR-003](../adr/003-nutrient-snapshot-on-log.md).
 
-## 6. Food data sources
+## 6. Fontes de dados de alimentos
 
-All sources sit behind one outbound port, `FoodCatalog`, with one adapter per source. Details and trade-offs in [ADR-006](../adr/006-food-data-sources.md).
+Todas as fontes ficam atrás de uma porta de saída (outbound port), `FoodCatalog`, com um adaptador por fonte. Detalhes e trade-offs na [ADR-006](../adr/006-food-data-sources.md).
 
-| Order | Source | Used for |
+| Ordem | Fonte | Usada para |
 |---|---|---|
-| 1 | Custom foods and quick adds of the user | Anything already logged once, including restaurant items |
-| 2 | TACO, imported into Lyra's own database | Brazilian generic foods (rice, beans, chicken) |
-| 3 | Open Food Facts | Packaged products, mainly by barcode |
-| 4 | USDA FoodData Central | Fallback for generic foods missing from TACO |
+| 1 | Alimentos personalizados e quick adds do usuário | Qualquer coisa já registrada uma vez, inclusive itens de restaurante |
+| 2 | TACO, importada para o banco do próprio Lyra | Alimentos genéricos brasileiros (arroz, feijão, frango) |
+| 3 | Open Food Facts | Produtos embalados, principalmente por código de barras |
+| 4 | USDA FoodData Central | Alternativa para alimentos genéricos que faltam na TACO |
 
-External results are cached in the database the first time they are chosen, so the next search is local and works offline.
+Os resultados externos são guardados em cache no banco na primeira vez em que são escolhidos, então a busca seguinte é local e funciona offline.
 
-Restaurant food (the McDonald's case) has no free Brazilian source. The MVP covers it with quick add plus reuse; an AI estimation adapter can be added later behind the same port.
+Comida de restaurante (o caso do McDonald's) não tem fonte brasileira gratuita. O MVP a cobre com quick add mais reaproveitamento; um adaptador de estimativa por IA pode ser adicionado depois atrás da mesma porta.
 
-## 7. Architecture overview
+## 7. Visão geral da arquitetura
 
-- **Backend**: Java, hexagonal architecture (ports and adapters) as a modular monolith. Modules: `food`, `plan`, `diary`, `weight`, `identity`. See [ADR-001](../adr/001-hexagonal-modular-monolith.md) and [ADR-005](../adr/005-backend-stack.md).
-- **Frontend**: React 19 with the Astryx design system, shipped as a Progressive Web App. See [ADR-004](../adr/004-pwa-with-astryx.md).
-- **Tests**: unit tests for domain and application, integration tests for adapters, architecture rules enforced by ArchUnit. See [ADR-002](../adr/002-testing-strategy.md).
+- **Backend**: Java, arquitetura hexagonal (ports and adapters) como um monolito modular. Módulos: `food`, `plan`, `diary`, `weight`, `identity`. Ver [ADR-001](../adr/001-hexagonal-modular-monolith.md) e [ADR-005](../adr/005-backend-stack.md).
+- **Frontend**: React 19 com o design system Astryx, entregue como um Progressive Web App. Ver [ADR-004](../adr/004-pwa-with-astryx.md).
+- **Testes**: testes unitários para domain e application, testes de integração para os adaptadores, regras de arquitetura garantidas pelo ArchUnit. Ver [ADR-002](../adr/002-testing-strategy.md).
 
-Future features fit as new adapters or new modules: AI logging is another `FoodCatalog` adapter, social is a new module that reads diary data through an inbound port, a native app is another client of the same HTTP API.
+Os recursos futuros se encaixam como novos adaptadores ou novos módulos: o registro por IA é mais um adaptador do `FoodCatalog`, o social é um módulo novo que lê os dados do diário por uma porta de entrada (inbound port), um app nativo é mais um cliente da mesma API HTTP.
 
-## 8. HTTP API (draft)
+## 8. API HTTP (rascunho)
 
-| Method | Path | Purpose |
+| Método | Caminho | Finalidade |
 |---|---|---|
-| GET | `/api/foods?query=` | Search foods across sources |
-| GET | `/api/foods/barcode/{code}` | Find a packaged product |
-| POST | `/api/foods` | Create a custom food |
-| GET, POST | `/api/plans` | List and create diet plans |
-| GET, PUT | `/api/plans/{id}` | Read and replace a plan |
-| POST | `/api/plans/{id}/activation` | Make a plan the active one |
-| GET | `/api/diary/{date}` | Read the day with its meals and totals (empty when there are no entries; slice 4 fills it from the plan) |
-| POST | `/api/diary/{date}/entries` | Log a food in a meal |
-| PATCH | `/api/diary/entries/{id}` | Change the quantity (swapping the food comes with slice 4) |
-| DELETE | `/api/diary/entries/{id}` | Remove an entry |
-| GET, POST | `/api/weights` | List and log body weight |
+| GET | `/api/foods?query=` | Buscar alimentos entre as fontes |
+| GET | `/api/foods/barcode/{code}` | Encontrar um produto embalado |
+| POST | `/api/foods` | Criar um alimento personalizado |
+| GET, POST | `/api/plans` | Listar e criar planos alimentares |
+| GET, PUT | `/api/plans/{id}` | Ler e substituir um plano |
+| POST | `/api/plans/{id}/activation` | Tornar um plano o ativo |
+| GET | `/api/diary/{date}` | Ler o dia com suas refeições e totais (vazio quando não há entradas; a slice 4 o preenche a partir do plano) |
+| POST | `/api/diary/{date}/entries` | Registrar um alimento em uma refeição |
+| PATCH | `/api/diary/entries/{id}` | Mudar a quantidade (a troca do alimento chega com a slice 4) |
+| DELETE | `/api/diary/entries/{id}` | Remover uma entrada |
+| GET, POST | `/api/weights` | Listar e registrar o peso corporal |
 
-The contract of the routes already built is the committed `docs/api/openapi.json` ([ADR-008](../adr/008-food-catalog-import-and-api.md), [ADR-009](../adr/009-diary-entries-and-api.md)); the other routes are still a draft.
+O contrato das rotas já construídas é o `docs/api/openapi.json` que fica no repositório ([ADR-008](../adr/008-food-catalog-import-and-api.md), [ADR-009](../adr/009-diary-entries-and-api.md)); as outras rotas continuam sendo um rascunho.
 
-## 9. MVP slices
+## 9. Slices do MVP
 
-Each slice is built backend first (domain, adapters, tests, API contract) and the screen after, each in its own pull request, before the next slice starts.
+Cada slice é construída primeiro o backend (domínio, adaptadores, testes, contrato da API) e depois a tela, cada uma em seu próprio pull request, antes de a slice seguinte começar.
 
-1. Project skeleton: backend, frontend, CI, ArchUnit rules.
-2. Foods: TACO import, search, custom food.
-3. Diary: register foods by date and meal, totals per meal and per day, edit and remove entries. The backend is described in [ADR-009](../adr/009-diary-entries-and-api.md).
-4. Diet plan: create, edit, activate; pre-fill the diary and show the difference from the plan (adjust, swap).
-5. Quick add and reuse.
-6. Barcode with Open Food Facts.
-7. Weight log.
-8. PWA: install, offline read of today's diary.
+1. Esqueleto do projeto: backend, frontend, CI, regras do ArchUnit.
+2. Alimentos: importação da TACO, busca, alimento personalizado.
+3. Diário: registrar alimentos por data e refeição, totais por refeição e por dia, editar e remover entradas. O backend está descrito na [ADR-009](../adr/009-diary-entries-and-api.md).
+4. Plano alimentar: criar, editar, ativar; preencher o diário e mostrar a diferença em relação ao plano (ajustar, trocar).
+5. Quick add e reaproveitamento.
+6. Código de barras com o Open Food Facts.
+7. Registro de peso.
+8. PWA: instalar, leitura offline do diário de hoje.
 
-The diary comes before the plan because it is the smallest piece the user can use every day and the one with the most uncertainty (editing quantities and recalculating). The plan then pre-fills it. The order of the slices is chosen by what the user can use soonest, by risk and by dependency, in that order.
+O diário vem antes do plano porque é a menor peça que o usuário consegue usar todo dia e a que tem mais incerteza (editar quantidades e recalcular). O plano então o preenche. A ordem das slices é escolhida pelo que o usuário consegue usar mais cedo, pelo risco e pela dependência, nessa ordem.
 
-## 10. Open questions
+## 10. Questões em aberto
 
-1. **Authentication.** Single user at first, but social is on the roadmap. Options: Spring Security with session cookies, or an external provider. Until it is decided the MVP is single user and the diary entries have no owner, the same rule as custom foods ([ADR-008](../adr/008-food-catalog-import-and-api.md)); it needs its own ADR before the app holds data of more than one person.
-2. **Offline writes.** The MVP reads offline; queuing writes offline and syncing later is harder (conflicts). Deferred to after slice 8.
-3. ~~**TACO edition and format.**~~ Resolved in [ADR-008](../adr/008-food-catalog-import-and-api.md): official spreadsheet, converted to TSV and seeded by a Flyway migration.
-4. **Hosting.** Not decided; does not block development.
+1. **Autenticação.** Um usuário só no início, mas o social está no roadmap. Opções: Spring Security com cookies de sessão, ou um provedor externo. Até isso ser decidido, o MVP é de um usuário só e as entradas do diário não têm dono, a mesma regra dos alimentos personalizados ([ADR-008](../adr/008-food-catalog-import-and-api.md)); isso precisa de uma ADR própria antes de o app guardar dados de mais de uma pessoa.
+2. **Escritas offline.** O MVP lê offline; enfileirar escritas offline e sincronizar depois é mais difícil (conflitos). Adiado para depois da slice 8.
+3. ~~**Edição e formato da TACO.**~~ Resolvida na [ADR-008](../adr/008-food-catalog-import-and-api.md): planilha oficial, convertida para TSV e carregada por uma migração do Flyway.
+4. **Hospedagem.** Não decidida; não bloqueia o desenvolvimento.

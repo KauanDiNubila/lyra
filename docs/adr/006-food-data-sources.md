@@ -1,50 +1,50 @@
-# ADR-006: Food data sources
+# ADR-006: Fontes de dados de alimentos
 
-- **Date**: 2026-11-18
-- **Status**: Proposed
-- **Deciders**: Kauan Di Nubila
-- **Tags**: domain, integrations
+- **Data**: 2026-11-18
+- **Status**: Proposta
+- **Decisores**: Kauan Di Nubila
+- **Tags**: domínio, integrações
 
-## Context and Problem Statement
+## Contexto e problema
 
-Lyra needs nutrition data for Brazilian generic foods (rice, beans), packaged products (by barcode) and restaurant items (a McDonald's milkshake). No single API covers all three for Brazil at no cost.
+O Lyra precisa de dados nutricionais para alimentos genéricos brasileiros (arroz, feijão), produtos embalados (por código de barras) e itens de restaurante (um milkshake do McDonald's). Nenhuma API cobre os três casos para o Brasil sem custo.
 
-Research on 2026-11-18 (prices and limits from third-party pages, to be confirmed on the official sites):
+Pesquisa feita em 2026-11-18 (preços e limites vindos de páginas de terceiros, a confirmar nos sites oficiais):
 
-| Source | Coverage | Cost | Limitation |
+| Fonte | Cobertura | Custo | Limitação |
 |---|---|---|---|
-| TACO (NEPA/Unicamp), 4th edition | Brazilian generic foods (about 600) | Free, reproduction allowed with citation | No official API; third-party APIs are unmaintained |
-| TBCA (FoRC/USP) | Brazilian foods (3,000+) | Free to consult | No public API |
-| Open Food Facts | Packaged products, barcode | Free, no key for reads | Crowdsourced, quality varies |
-| USDA FoodData Central | Generic foods, US focus | Free, API key | English, US products |
-| FatSecret Platform | Global, has a Brazil dataset | Free basic tier | Brazil data requires a paid country licence |
-| Nutritionix (Syndigo) | Restaurants, natural language | Free only for testing | US focus, expensive paid tiers |
+| TACO (NEPA/Unicamp), 4ª edição | Alimentos genéricos brasileiros (cerca de 600) | Gratuita, reprodução permitida com citação | Sem API oficial; as APIs de terceiros não são mantidas |
+| TBCA (FoRC/USP) | Alimentos brasileiros (mais de 3.000) | Consulta gratuita | Sem API pública |
+| Open Food Facts | Produtos embalados, código de barras | Gratuito, sem chave para leitura | Colaborativo, a qualidade varia |
+| USDA FoodData Central | Alimentos genéricos, foco nos EUA | Gratuito, com chave de API | Em inglês, produtos dos EUA |
+| FatSecret Platform | Global, tem um conjunto de dados do Brasil | Plano básico gratuito | Os dados do Brasil exigem uma licença paga por país |
+| Nutritionix (Syndigo) | Restaurantes, linguagem natural | Gratuito só para testes | Foco nos EUA, planos pagos caros |
 
-## Decision Drivers
+## Fatores de decisão
 
-1. Brazilian foods first.
-2. No recurring cost for the MVP.
-3. Searches must work offline once a food has been used.
-4. Adding a source later must not touch the domain.
+1. Alimentos brasileiros em primeiro lugar.
+2. Nenhum custo recorrente no MVP.
+3. As buscas precisam funcionar offline depois que um alimento foi usado.
+4. Adicionar uma fonte depois não pode mexer no domínio.
 
-## Decision Outcome
+## Decisão
 
-One outbound port, `FoodCatalog`, with one adapter per source, queried in this order:
+Uma porta de saída (outbound port), `FoodCatalog`, com um adaptador por fonte, consultadas nesta ordem:
 
-1. **User foods**: custom foods and quick adds already saved.
-2. **TACO**, imported once into Lyra's database with a Flyway migration, citing the source.
-3. **Open Food Facts** for barcodes and packaged products, with a `User-Agent` that identifies the app as their terms ask.
-4. **USDA FoodData Central** as a fallback for generic foods.
+1. **Alimentos do usuário**: alimentos personalizados e quick adds já salvos.
+2. **TACO**, importada uma vez para o banco do Lyra com uma migração do Flyway, citando a fonte.
+3. **Open Food Facts** para códigos de barras e produtos embalados, com um `User-Agent` que identifica o app, como os termos deles pedem.
+4. **USDA FoodData Central** como alternativa para alimentos genéricos.
 
-A food chosen from an external source is stored locally on first use, so later searches hit the database.
+Um alimento escolhido de uma fonte externa é guardado localmente no primeiro uso, então as buscas seguintes acertam o banco.
 
-Restaurant items are covered by **quick add** (name, portion, calories and macros typed by the user from the restaurant's published table) and are reused from step 1. An AI estimation adapter is a later RFC.
+Os itens de restaurante são cobertos pelo **quick add** (nome, porção, calorias e macros digitados pelo usuário a partir da tabela publicada pelo restaurante) e são reaproveitados a partir do passo 1. Um adaptador de estimativa por IA fica para um RFC futuro.
 
-FatSecret and Nutritionix are rejected for the MVP because the data that matters (Brazil, restaurants) is behind paid licences.
+FatSecret e Nutritionix são rejeitados no MVP porque os dados que importam (Brasil, restaurantes) estão atrás de licenças pagas.
 
-### Consequences
+### Consequências
 
-- Good: zero cost, Brazilian data first, offline after first use.
-- Good: each source is an isolated adapter with its own WireMock tests.
-- Bad: restaurant items need manual input the first time.
-- Bad: TACO has about 600 foods; TBCA could be imported later if coverage is not enough.
+- Bom: custo zero, dados brasileiros em primeiro lugar, offline depois do primeiro uso.
+- Bom: cada fonte é um adaptador isolado, com seus próprios testes de WireMock.
+- Ruim: os itens de restaurante exigem digitação manual na primeira vez.
+- Ruim: a TACO tem cerca de 600 alimentos; a TBCA poderia ser importada depois se a cobertura não bastar.

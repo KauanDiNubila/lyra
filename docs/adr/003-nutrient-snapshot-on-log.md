@@ -1,36 +1,36 @@
-# ADR-003: Snapshot nutrients when an item is logged
+# ADR-003: Snapshot dos nutrientes quando um item é registrado
 
-- **Date**: 2026-11-18
-- **Status**: Proposed
-- **Deciders**: Kauan Di Nubila
-- **Tags**: domain, data
+- **Data**: 2026-11-18
+- **Status**: Proposta
+- **Decisores**: Kauan Di Nubila
+- **Tags**: domínio, dados
 
-## Context and Problem Statement
+## Contexto e problema
 
-A diary entry refers to a food. Food data changes: the user edits a custom food, the plan is edited, or Open Food Facts (crowdsourced) corrects a product. If a diary entry only stores a reference to the food, past days silently change their totals, and the history the user relies on to analyse the diet becomes unreliable.
+Uma entrada do diário se refere a um alimento. Os dados do alimento mudam: o usuário edita um alimento personalizado, o plano é editado, ou o Open Food Facts (colaborativo) corrige um produto. Se a entrada do diário guardar só uma referência ao alimento, os dias passados mudam seus totais em silêncio, e o histórico em que o usuário se apoia para analisar a dieta deixa de ser confiável.
 
-## Decision Drivers
+## Fatores de decisão
 
-1. Past diary days must never change unless the user edits them.
-2. The calculation must be reproducible from what is stored in the entry.
+1. Os dias passados do diário nunca podem mudar, a menos que o usuário os edite.
+2. O cálculo precisa poder ser reproduzido a partir do que está guardado na entrada.
 
-## Considered Options
+## Opções consideradas
 
-1. **Reference only**: the entry stores the food id and the quantity; nutrients are read from the food at query time.
-2. **Snapshot**: the entry stores the food id plus a copy of the name, reference amount and nutrients at log time.
-3. **Versioned foods**: every change to a food creates a new version; entries point to a version.
+1. **Só referência**: a entrada guarda o id do alimento e a quantidade; os nutrientes são lidos do alimento na hora da consulta.
+2. **Snapshot**: a entrada guarda o id do alimento mais uma cópia do nome, da quantidade de referência e dos nutrientes no momento do registro.
+3. **Alimentos versionados**: toda mudança em um alimento cria uma nova versão; as entradas apontam para uma versão.
 
-## Decision Outcome
+## Decisão
 
-Chosen option: **snapshot**.
+Opção escolhida: **snapshot**.
 
-The diary entry stores `foodId` (for reuse and statistics), `foodName`, `referenceAmount` and `nutrients` copied at the moment it is created or swapped. Changing the quantity of an entry keeps its snapshot. Changing the food of an entry takes a new snapshot.
+A entrada do diário guarda `foodId` (para reuso e estatísticas), `foodName`, `referenceAmount` e `nutrients`, copiados no momento em que ela é criada ou trocada. Mudar a quantidade de uma entrada mantém o snapshot dela. Mudar o alimento de uma entrada gera um novo snapshot.
 
-Versioned foods are rejected because they give the same guarantee with more tables and more queries.
+Os alimentos versionados são rejeitados porque dão a mesma garantia com mais tabelas e mais consultas.
 
-### Consequences
+### Consequências
 
-- Good: history is stable and every total can be recomputed from the entry alone.
-- Good: external sources can be down or change without affecting past days.
-- Bad: duplicated data per entry (a few columns); negligible for one user.
-- Bad: correcting a wrong food does not fix past days automatically; a future "reapply food to past entries" action can do it explicitly.
+- Bom: o histórico é estável e todo total pode ser recalculado só a partir da entrada.
+- Bom: as fontes externas podem sair do ar ou mudar sem afetar os dias passados.
+- Ruim: dados duplicados por entrada (algumas colunas); desprezível para um usuário só.
+- Ruim: corrigir um alimento errado não conserta os dias passados automaticamente; uma futura ação "reaplicar o alimento às entradas passadas" pode fazer isso de forma explícita.
