@@ -1,18 +1,23 @@
 package app.lyra.diary.adapter.in.web;
 
 import app.lyra.diary.application.port.in.ChangeEntryUseCase;
+import app.lyra.diary.application.port.in.ChangeEntryUseCase.ChangeEntryCommand;
 import app.lyra.diary.application.port.in.DeleteEntryUseCase;
+import app.lyra.diary.application.port.in.FillDayFromPlanUseCase;
 import app.lyra.diary.application.port.in.GetDiaryDayUseCase;
 import app.lyra.diary.application.port.in.LogEntryUseCase;
 import app.lyra.diary.domain.DiaryDay;
 import app.lyra.diary.domain.DiaryEntry;
 import app.lyra.diary.domain.DiaryEntryNotFoundException;
+import app.lyra.diary.domain.Macros;
+import app.lyra.diary.domain.NoActivePlanException;
 import app.lyra.food.domain.Food;
 import app.lyra.food.domain.FoodNotFoundException;
 import app.lyra.food.domain.FoodSource;
 import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
+import app.lyra.shared.domain.InvalidInputException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -25,8 +30,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -46,8 +55,14 @@ class DiaryControllerTest {
     private static final Quantity HUNDRED_GRAMS = new Quantity(new BigDecimal("100"), MeasurementUnit.GRAM);
     private static final Food RICE = new Food(RICE_ID, "Arroz", FoodSource.CUSTOM, HUNDRED_GRAMS,
             new Nutrients(new BigDecimal("128"), new BigDecimal("2"), new BigDecimal("28"), new BigDecimal("0.2"), null, null));
+    private static final UUID PLAN_ENTRY_ID = UUID.fromString("00000000-0000-0000-0000-0000000000a3");
+    private static final LocalDate PLAN_DATE = LocalDate.of(2026, 11, 25);
+    private static final LocalDate NO_PLAN_DATE = LocalDate.of(2026, 11, 26);
+    private static final Macros TARGETS = new Macros(new BigDecimal("2000"), new BigDecimal("140"),
+            new BigDecimal("200"), new BigDecimal("60"));
     private static final DiaryEntry LUNCH = entry(LUNCH_ID, "Almoço", "100");
     private static final DiaryEntry DINNER = entry(DINNER_ID, "Jantar", "50");
+    private static final AtomicReference<ChangeEntryCommand> LAST_CHANGE = new AtomicReference<>();
 
     @Autowired
     private MockMvc mvc;
@@ -57,7 +72,25 @@ class DiaryControllerTest {
 
         @Bean
         GetDiaryDayUseCase getDiaryDay() {
-            return date -> new DiaryDay(date, date.equals(DATE) ? List.of(LUNCH, DINNER) : List.of());
+            return date -> {
+                if (date.equals(DATE)) {
+                    return new DiaryDay(date, List.of(LUNCH, DINNER));
+                }
+                if (date.equals(PLAN_DATE)) {
+                    return planDay(date);
+                }
+                return new DiaryDay(date, List.of());
+            };
+        }
+
+        @Bean
+        FillDayFromPlanUseCase fillDayFromPlan() {
+            return date -> {
+                if (date.equals(NO_PLAN_DATE)) {
+                    throw new NoActivePlanException();
+                }
+                return planDay(date);
+            };
         }
 
         @Bean
@@ -76,13 +109,23 @@ class DiaryControllerTest {
                 if (!id.equals(LUNCH_ID)) {
                     throw new DiaryEntryNotFoundException(id);
                 }
-                return LUNCH.withQuantity(command.quantity());
+                LAST_CHANGE.set(command);
+                DiaryEntry changed = LUNCH;
+                if (command.foodId() != null) {
+                    changed = LUNCH.withFood(RICE, command.quantity());
+                } else if (command.quantity() != null) {
+                    changed = LUNCH.withQuantity(command.quantity());
+                }
+                return command.mealName() == null ? changed : changed.withMealName(command.mealName());
             };
         }
 
         @Bean
         DeleteEntryUseCase deleteEntry() {
             return id -> {
+                if (id.equals(PLAN_ENTRY_ID)) {
+                    throw new InvalidInputException("An entry of the plan cannot be deleted: change its quantity to zero to skip it");
+                }
                 if (!id.equals(LUNCH_ID)) {
                     throw new DiaryEntryNotFoundException(id);
                 }
@@ -220,7 +263,107 @@ class DiaryControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.detail").value("quantity is required"));
+                .andExpect(jsonPath("$.detail").value("Nothing to change: send a quantity, a food or a meal"));
+    }
+
+    @Test
+    void changeAcceptsTheFoodTheQuantityAndTheMealTogether() throws Exception {
+        mvc.perform(patch("/api/diary/entries/00000000-0000-0000-0000-0000000000a1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"foodId": "00000000-0000-0000-0000-000000000001", "mealName": "Pós-treino",
+                                 "quantity": {"amount": 80, "unit": "GRAM"}}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mealName").value("Pós-treino"))
+                .andExpect(jsonPath("$.quantity.amount").value(80))
+                .andExpect(jsonPath("$.origin").value("EXTRA"));
+
+        assertThat(LAST_CHANGE.get())
+                .isEqualTo(new ChangeEntryCommand(RICE_ID, grams("80"), "Pós-treino"));
+    }
+
+    @Test
+    void changeOfOnlyTheMealIsAccepted() throws Exception {
+        mvc.perform(patch("/api/diary/entries/00000000-0000-0000-0000-0000000000a1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"mealName\": \"Lanche\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mealName").value("Lanche"))
+                .andExpect(jsonPath("$.quantity.amount").value(100));
+    }
+
+    @Test
+    void changeOfTheFoodWithoutTheQuantityIsABadRequest() throws Exception {
+        mvc.perform(patch("/api/diary/entries/00000000-0000-0000-0000-0000000000a1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"foodId\": \"00000000-0000-0000-0000-000000000001\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Changing the food needs the quantity"));
+    }
+
+    @Test
+    void dayFromThePlanShowsTheOriginThePlannedAndTheDifferences() throws Exception {
+        mvc.perform(get("/api/diary/2026-11-25"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.meals[0].entries[0].origin").value("ADJUSTED"))
+                .andExpect(jsonPath("$.meals[0].entries[0].planned.foodId").value("00000000-0000-0000-0000-000000000001"))
+                .andExpect(jsonPath("$.meals[0].entries[0].planned.quantity.amount").value(150))
+                .andExpect(jsonPath("$.meals[0].entries[0].planned.quantity.unit").value("GRAM"))
+                .andExpect(jsonPath("$.meals[0].entries[0].planned.macros.kcal").value(192))
+                .andExpect(jsonPath("$.meals[0].plannedTotal.kcal").value(192))
+                .andExpect(jsonPath("$.meals[0].differenceFromPlan.kcal").value(128))
+                .andExpect(jsonPath("$.meals[1].entries[0].origin").value("SKIPPED"))
+                .andExpect(jsonPath("$.meals[1].entries[0].quantity.amount").value(0))
+                .andExpect(jsonPath("$.meals[1].differenceFromPlan.kcal").value(-128))
+                .andExpect(jsonPath("$.meals[2].entries[0].origin").value("EXTRA"))
+                .andExpect(jsonPath("$.meals[2].entries[0].planned").value(nullValue()))
+                .andExpect(jsonPath("$.total.kcal").value(384))
+                .andExpect(jsonPath("$.plannedTotal.kcal").value(320))
+                .andExpect(jsonPath("$.differenceFromPlan.kcal").value(64))
+                .andExpect(jsonPath("$.targets.kcal").value(2000))
+                .andExpect(jsonPath("$.differenceFromTargets.kcal").value(-1616));
+    }
+
+    @Test
+    void dayWithoutAPlanHasNoTargetsAndNothingPlanned() throws Exception {
+        mvc.perform(get("/api/diary/2026-11-19"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.meals[0].entries[0].origin").value("EXTRA"))
+                .andExpect(jsonPath("$.meals[0].entries[0].planned").value(nullValue()))
+                .andExpect(jsonPath("$.plannedTotal.kcal").value(0))
+                .andExpect(jsonPath("$.targets").value(nullValue()))
+                .andExpect(jsonPath("$.differenceFromTargets").value(nullValue()));
+    }
+
+    @Test
+    void fillingTheDayReturnsTheDayFilledFromThePlan() throws Exception {
+        mvc.perform(post("/api/diary/2026-11-25/plan"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.date").value("2026-11-25"))
+                .andExpect(jsonPath("$.meals[0].entries[0].origin").value("ADJUSTED"))
+                .andExpect(jsonPath("$.targets.kcal").value(2000));
+    }
+
+    @Test
+    void fillingTheDayWithoutAnActivePlanIsNotFound() throws Exception {
+        mvc.perform(post("/api/diary/2026-11-26/plan"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.title").value("Not found"))
+                .andExpect(jsonPath("$.detail").value("There is no active plan to fill the day"));
+    }
+
+    @Test
+    void fillingTheDayOfAMalformedDateIsABadRequest() throws Exception {
+        mvc.perform(post("/api/diary/not-a-date/plan")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deletingAnEntryOfThePlanIsABadRequestThatExplainsHowToSkipIt() throws Exception {
+        mvc.perform(delete("/api/diary/entries/00000000-0000-0000-0000-0000000000a3"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Invalid input"))
+                .andExpect(jsonPath("$.detail").value("An entry of the plan cannot be deleted: change its quantity to zero to skip it"));
     }
 
     @Test
@@ -233,6 +376,17 @@ class DiaryControllerTest {
     void deleteOfAnUnknownEntryIsNotFound() throws Exception {
         mvc.perform(delete("/api/diary/entries/00000000-0000-0000-0000-0000000000ff"))
                 .andExpect(status().isNotFound());
+    }
+
+    private static DiaryDay planDay(LocalDate date) {
+        DiaryEntry adjusted = DiaryEntry.fromPlan(RICE, date, "Almoço", grams("150"), 0).withQuantity(grams("250"));
+        DiaryEntry skipped = DiaryEntry.fromPlan(RICE, date, "Jantar", grams("100"), 1).withQuantity(grams("0"));
+        DiaryEntry extra = DiaryEntry.log(RICE, date, "Lanche", grams("50"));
+        return new DiaryDay(date, List.of(adjusted, skipped, extra), Optional.of(TARGETS));
+    }
+
+    private static Quantity grams(String amount) {
+        return new Quantity(new BigDecimal(amount), MeasurementUnit.GRAM);
     }
 
     private static DiaryEntry entry(UUID id, String mealName, String grams) {

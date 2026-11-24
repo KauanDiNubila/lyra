@@ -1,8 +1,8 @@
 package app.lyra.diary.adapter.in.web;
 
 import app.lyra.diary.application.port.in.ChangeEntryUseCase;
-import app.lyra.diary.application.port.in.ChangeEntryUseCase.ChangeEntryCommand;
 import app.lyra.diary.application.port.in.DeleteEntryUseCase;
+import app.lyra.diary.application.port.in.FillDayFromPlanUseCase;
 import app.lyra.diary.application.port.in.GetDiaryDayUseCase;
 import app.lyra.diary.application.port.in.LogEntryUseCase;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +28,7 @@ class DiaryController {
 
     private final GetDiaryDayUseCase getDiaryDay;
     private final LogEntryUseCase logEntry;
+    private final FillDayFromPlanUseCase fillDay;
     private final ChangeEntryUseCase changeEntry;
     private final DeleteEntryUseCase deleteEntry;
 
@@ -43,9 +44,14 @@ class DiaryController {
         return EntryResponse.from(logEntry.log(request.toCommand(date)));
     }
 
+    @PostMapping("/{date}/plan")
+    DiaryDayResponse fillDayFromPlan(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return DiaryDayResponse.from(fillDay.fillDay(date));
+    }
+
     @PatchMapping("/entries/{id}")
-    EntryResponse changeQuantity(@PathVariable UUID id, @RequestBody ChangeQuantityRequest request) {
-        return EntryResponse.from(changeEntry.change(id, new ChangeEntryCommand(null, request.toQuantity(), null)));
+    EntryResponse changeEntry(@PathVariable UUID id, @RequestBody ChangeEntryRequest request) {
+        return EntryResponse.from(changeEntry.change(id, request.toCommand()));
     }
 
     @DeleteMapping("/entries/{id}")
