@@ -32,12 +32,25 @@ it('keeps the diary day when the user goes to the foods and comes back', async (
   render(<App />)
   await screen.findByRole('heading', { name: 'Diário' })
   fireEvent.click(screen.getByRole('button', { name: 'Próximo dia' }))
-  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+  await waitFor(() => expect(diaryRequests()).toHaveLength(2))
 
   fireEvent.click(screen.getByRole('tab', { name: 'Alimentos' }))
   await screen.findByRole('heading', { name: 'Alimentos' })
   fireEvent.click(screen.getByRole('tab', { name: 'Diário' }))
 
   expect(await screen.findByRole('heading', { name: 'Diário' })).toBeInTheDocument()
-  expect(fetchMock).toHaveBeenCalledTimes(2)
+  expect(diaryRequests()).toHaveLength(2)
 })
+
+it('switches to the plans', async () => {
+  render(<App />)
+
+  fireEvent.click(await screen.findByRole('tab', { name: 'Plano' }))
+
+  expect(await screen.findByRole('heading', { name: 'Plano' })).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Diário' })).not.toBeInTheDocument()
+})
+
+function diaryRequests() {
+  return fetchMock.mock.calls.filter(([url]) => String(url).startsWith('/api/diary'))
+}

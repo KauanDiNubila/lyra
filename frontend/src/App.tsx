@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Tab, TabList } from '@astryxdesign/core/TabList'
 import { DiaryPage } from './diary/DiaryPage.tsx'
 import { FoodsPage } from './foods/FoodsPage.tsx'
+import { PlansPage } from './plans/PlansPage.tsx'
 
 function App() {
   const [tab, setTab] = useState('diary')
@@ -10,10 +11,14 @@ function App() {
     <>
       <TabList role="tablist" value={tab} onChange={setTab}>
         <Tab value="diary" label="Diário" panelId="diary-page" />
+        <Tab value="plans" label="Plano" panelId="plans-page" />
         <Tab value="foods" label="Alimentos" panelId="foods-page" />
       </TabList>
       <section id="diary-page" role="tabpanel" hidden={tab !== 'diary'}>
         <DiaryPage />
+      </section>
+      <section id="plans-page" role="tabpanel" hidden={tab !== 'plans'}>
+        <PlansPage />
       </section>
       <section id="foods-page" role="tabpanel" hidden={tab !== 'foods'}>
         <FoodsPage />
