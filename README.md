@@ -35,7 +35,16 @@ cd backend && ./mvnw spring-boot:test-run
 cd frontend && npm install && npm run dev
 ```
 
-Then open `http://localhost:5173`. The setup details (Google sign in, environment variables, tests and workflow) are in [CONTRIBUTING.md](CONTRIBUTING.md).
+Then open `http://localhost:5173`. The backend starts with fake Google values, so the sign in only works with real ones: create an OAuth client in the Google console (type "Web application", origin `http://localhost:5173`, redirect URI `http://localhost:5173/login/oauth2/code/google`) and export `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` before starting the backend. Never put them in the repository.
+
+The machine's `JAVA_HOME` must point to JDK 25. To run the checks:
+
+```bash
+cd backend && ./mvnw verify
+cd frontend && npm run lint && npm test && npm run build
+```
+
+The backend tests use Testcontainers, so Docker must be running. The commands, the architecture rules and the workflow are in [CLAUDE.md](CLAUDE.md).
 
 ## Data sources and credits
 
