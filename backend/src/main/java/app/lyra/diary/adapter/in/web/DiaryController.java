@@ -1,6 +1,7 @@
 package app.lyra.diary.adapter.in.web;
 
-import app.lyra.diary.application.port.in.ChangeEntryQuantityUseCase;
+import app.lyra.diary.application.port.in.ChangeEntryUseCase;
+import app.lyra.diary.application.port.in.ChangeEntryUseCase.ChangeEntryCommand;
 import app.lyra.diary.application.port.in.DeleteEntryUseCase;
 import app.lyra.diary.application.port.in.GetDiaryDayUseCase;
 import app.lyra.diary.application.port.in.LogEntryUseCase;
@@ -27,7 +28,7 @@ class DiaryController {
 
     private final GetDiaryDayUseCase getDiaryDay;
     private final LogEntryUseCase logEntry;
-    private final ChangeEntryQuantityUseCase changeEntryQuantity;
+    private final ChangeEntryUseCase changeEntry;
     private final DeleteEntryUseCase deleteEntry;
 
     @GetMapping("/{date}")
@@ -44,7 +45,7 @@ class DiaryController {
 
     @PatchMapping("/entries/{id}")
     EntryResponse changeQuantity(@PathVariable UUID id, @RequestBody ChangeQuantityRequest request) {
-        return EntryResponse.from(changeEntryQuantity.changeQuantity(id, request.toQuantity()));
+        return EntryResponse.from(changeEntry.change(id, new ChangeEntryCommand(null, request.toQuantity(), null)));
     }
 
     @DeleteMapping("/entries/{id}")

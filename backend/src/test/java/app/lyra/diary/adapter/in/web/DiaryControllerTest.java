@@ -1,6 +1,6 @@
 package app.lyra.diary.adapter.in.web;
 
-import app.lyra.diary.application.port.in.ChangeEntryQuantityUseCase;
+import app.lyra.diary.application.port.in.ChangeEntryUseCase;
 import app.lyra.diary.application.port.in.DeleteEntryUseCase;
 import app.lyra.diary.application.port.in.GetDiaryDayUseCase;
 import app.lyra.diary.application.port.in.LogEntryUseCase;
@@ -71,12 +71,12 @@ class DiaryControllerTest {
         }
 
         @Bean
-        ChangeEntryQuantityUseCase changeEntryQuantity() {
-            return (id, quantity) -> {
+        ChangeEntryUseCase changeEntry() {
+            return (id, command) -> {
                 if (!id.equals(LUNCH_ID)) {
                     throw new DiaryEntryNotFoundException(id);
                 }
-                return LUNCH.withQuantity(quantity);
+                return LUNCH.withQuantity(command.quantity());
             };
         }
 
