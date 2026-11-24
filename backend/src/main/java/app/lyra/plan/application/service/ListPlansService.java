@@ -17,6 +17,6 @@ class ListPlansService implements ListPlansUseCase {
 
     @Override
     public List<DietPlan> listPlans(UserId userId) {
-        return planRepository.findAll();
+        return planRepository.findAll(userId);
     }
 }

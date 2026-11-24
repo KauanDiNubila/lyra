@@ -1,6 +1,7 @@
 package app.lyra.plan.application.port.out;
 
 import app.lyra.plan.domain.DietPlan;
+import app.lyra.shared.domain.UserId;
 
 import java.util.List;
 import java.util.Optional;
@@ -8,13 +9,13 @@ import java.util.UUID;
 
 public interface PlanRepository {
 
-    void lockPlanChanges();
+    void lockPlanChanges(UserId user);
 
-    void save(DietPlan plan);
+    void save(UserId owner, DietPlan plan);
 
-    Optional<DietPlan> findById(UUID id);
+    Optional<DietPlan> findById(UserId user, UUID id);
 
-    List<DietPlan> findAll();
+    List<DietPlan> findAll(UserId user);
 
-    Optional<DietPlan> findActive();
+    Optional<DietPlan> findActive(UserId user);
 }

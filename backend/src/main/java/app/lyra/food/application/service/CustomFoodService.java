@@ -18,7 +18,7 @@ class CustomFoodService implements CreateCustomFoodUseCase {
     @Override
     public Food create(UserId userId, String name, Quantity referenceAmount, Nutrients nutrients) {
         Food food = Food.custom(name, referenceAmount, nutrients);
-        foodRepository.save(food);
+        foodRepository.save(userId, food);
         return food;
     }
 }

@@ -28,6 +28,7 @@ class DietPlanJpaEntity {
 
     @Id
     private UUID id;
+    private UUID userId;
     @Column(insertable = false, updatable = false)
     private Long planOrder;
     private String name;

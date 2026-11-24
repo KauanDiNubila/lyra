@@ -6,6 +6,7 @@ import app.lyra.diary.domain.Macros;
 import app.lyra.diary.domain.Planned;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
+import app.lyra.shared.domain.UserId;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,32 +28,38 @@ class DiaryEntryPersistenceAdapter implements DiaryEntryRepository {
 
     @Override
     @Transactional
-    public void lockDay(LocalDate date) {
-        entityManager.createNativeQuery("select count(*) from (select pg_advisory_xact_lock(:namespace, :day)) as locked")
+    public void lockDay(UserId user, LocalDate date) {
+        entityManager.createNativeQuery("select count(*) from (select pg_advisory_xact_lock(:userAndDay, :namespace)) as locked")
                 .setParameter("namespace", DAY_LOCK_NAMESPACE)
-                .setParameter("day", (int) date.toEpochDay())
+                .setParameter("userAndDay", Objects.hash(user.value(), date.toEpochDay()))
                 .getSingleResult();
     }
 
     @Override
     @Transactional
-    public void save(DiaryEntry entry) {
-        entityManager.merge(toEntity(entry));
+    public void save(UserId owner, DiaryEntry entry) {
+        entityManager.merge(toEntity(owner, entry));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<DiaryEntry> findById(UUID id) {
-        return Optional.ofNullable(entityManager.find(DiaryEntryJpaEntity.class, id))
+    public Optional<DiaryEntry> findById(UserId user, UUID id) {
+        return entityManager
+                .createQuery("select e from DiaryEntryJpaEntity e where e.id = :id and e.userId = :user", DiaryEntryJpaEntity.class)
+                .setParameter("id", id)
+                .setParameter("user", user.value())
+                .getResultStream()
+                .findFirst()
                 .map(DiaryEntryPersistenceAdapter::toDomain);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<DiaryEntry> findByDate(LocalDate date) {
+    public List<DiaryEntry> findByDate(UserId user, LocalDate date) {
         return entityManager
-                .createQuery("select e from DiaryEntryJpaEntity e where e.entryDate = :date order by e.entryOrder",
+                .createQuery("select e from DiaryEntryJpaEntity e where e.userId = :user and e.entryDate = :date order by e.entryOrder",
                         DiaryEntryJpaEntity.class)
+                .setParameter("user", user.value())
                 .setParameter("date", date)
                 .getResultList().stream()
                 .map(DiaryEntryPersistenceAdapter::toDomain)
@@ -60,15 +68,17 @@ class DiaryEntryPersistenceAdapter implements DiaryEntryRepository {
 
     @Override
     @Transactional
-    public void deleteById(UUID id) {
-        entityManager.createQuery("delete from DiaryEntryJpaEntity e where e.id = :id")
+    public void deleteById(UserId user, UUID id) {
+        entityManager.createQuery("delete from DiaryEntryJpaEntity e where e.id = :id and e.userId = :user")
                 .setParameter("id", id)
+                .setParameter("user", user.value())
                 .executeUpdate();
     }
 
-    private static DiaryEntryJpaEntity toEntity(DiaryEntry entry) {
+    private static DiaryEntryJpaEntity toEntity(UserId owner, DiaryEntry entry) {
         DiaryEntryJpaEntity entity = new DiaryEntryJpaEntity();
         entity.setId(entry.getId());
+        entity.setUserId(owner.value());
         entity.setEntryDate(entry.getDate());
         entity.setMealName(entry.getMealName());
         entity.setFoodId(entry.getFoodId());

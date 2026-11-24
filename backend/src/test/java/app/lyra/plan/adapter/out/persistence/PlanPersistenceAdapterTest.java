@@ -1,6 +1,7 @@
 package app.lyra.plan.adapter.out.persistence;
 
 import app.lyra.TestcontainersConfiguration;
+import app.lyra.TestUsers;
 import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Quantity;
 import app.lyra.plan.application.port.out.PlanRepository;
@@ -8,10 +9,12 @@ import app.lyra.plan.application.port.out.PlanRepositoryContract;
 import app.lyra.plan.domain.DietPlan;
 import app.lyra.plan.domain.PlannedItem;
 import app.lyra.plan.domain.PlannedMeal;
+import app.lyra.shared.domain.UserId;
 import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -42,6 +45,25 @@ class PlanPersistenceAdapterTest implements PlanRepositoryContract {
     @Autowired
     private JdbcClient jdbc;
 
+    private UserId owner;
+    private UserId otherOwner;
+
+    @BeforeEach
+    void createTheUsers() {
+        owner = TestUsers.insert(jdbc);
+        otherOwner = TestUsers.insert(jdbc);
+    }
+
+    @Override
+    public UserId owner() {
+        return owner;
+    }
+
+    @Override
+    public UserId otherOwner() {
+        return otherOwner;
+    }
+
     @Override
     public PlanRepository repository() {
         return adapter;
@@ -51,27 +73,30 @@ class PlanPersistenceAdapterTest implements PlanRepositoryContract {
     public UUID savedFoodId() {
         UUID id = UUID.randomUUID();
         jdbc.sql("""
-                        insert into food (id, name, search_name, source, reference_amount, reference_unit, kcal, protein, carbohydrate, fat)
-                        values (:id, 'Arroz', 'arroz', 'CUSTOM', 100, 'GRAM', 1, 1, 1, 1)
+                        insert into food (id, user_id, name, search_name, source, reference_amount, reference_unit, kcal, protein, carbohydrate, fat)
+                        values (:id, :user, 'Arroz', 'arroz', 'CUSTOM', 100, 'GRAM', 1, 1, 1, 1)
                         """)
                 .param("id", id)
+                .param("user", owner.value())
                 .update();
         return id;
     }
 
     @AfterEach
     void removeWhatTheTestCreated() {
+        jdbc.sql("delete from diary_entry").update();
         jdbc.sql("delete from diet_plan").update();
         jdbc.sql("delete from food where source_reference is null").update();
+        jdbc.sql("delete from app_user").update();
     }
 
     @Test
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void rejectsASecondActivePlan() {
-        adapter.save(plan("Primeiro").activated());
+        adapter.save(owner, plan("Primeiro").activated());
         DietPlan second = plan("Segundo").activated();
 
-        assertThatThrownBy(() -> adapter.save(second)).hasMessageContaining("diet_plan_single_active_idx");
+        assertThatThrownBy(() -> adapter.save(owner, second)).hasMessageContaining("diet_plan_single_active_per_user_idx");
     }
 
     @Test
@@ -81,18 +106,18 @@ class PlanPersistenceAdapterTest implements PlanRepositoryContract {
         DietPlan plan = DietPlan.create("Cutting", plan("Modelo").getTargets(),
                 List.of(new PlannedMeal("Almoço", null, List.of(orphan))));
 
-        assertThatThrownBy(() -> adapter.save(plan)).hasMessageContaining("planned_item_food_id_fkey");
+        assertThatThrownBy(() -> adapter.save(owner, plan)).hasMessageContaining("planned_item_food_id_fkey");
     }
 
     @Test
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void replacingThePlanLeavesNoMealOrItemBehind() {
         DietPlan plan = plan("Cutting");
-        adapter.save(plan);
+        adapter.save(owner, plan);
         assertThat(count("planned_meal")).isEqualTo(2);
         assertThat(count("planned_item")).isEqualTo(3);
 
-        adapter.save(plan.withContent("Cutting", plan.getTargets(), List.of(new PlannedMeal("Almoço", null, List.of(item("50"))))));
+        adapter.save(owner, plan.withContent("Cutting", plan.getTargets(), List.of(new PlannedMeal("Almoço", null, List.of(item("50"))))));
 
         assertThat(count("planned_meal")).isEqualTo(1);
         assertThat(count("planned_item")).isEqualTo(1);
@@ -102,10 +127,10 @@ class PlanPersistenceAdapterTest implements PlanRepositoryContract {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void activatingAPlanKeepsTheIdsOfItsMealsAndItems() {
         DietPlan plan = plan("Cutting");
-        adapter.save(plan);
+        adapter.save(owner, plan);
         List<UUID> before = childIds();
 
-        adapter.save(plan.activated());
+        adapter.save(owner, plan.activated());
 
         assertThat(before).hasSize(5);
         assertThat(childIds()).containsExactlyInAnyOrderElementsOf(before);
@@ -115,12 +140,12 @@ class PlanPersistenceAdapterTest implements PlanRepositoryContract {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void listingPlansLoadsTheirMealsAndItemsInBatches() {
         for (int index = 0; index < 5; index++) {
-            adapter.save(plan("Plano " + index));
+            adapter.save(owner, plan("Plano " + index));
         }
         Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
         statistics.clear();
 
-        assertThat(adapter.findAll()).hasSize(5);
+        assertThat(adapter.findAll(owner)).hasSize(5);
 
         assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(3);
     }

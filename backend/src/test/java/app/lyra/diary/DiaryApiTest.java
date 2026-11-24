@@ -3,9 +3,11 @@ package app.lyra.diary;
 import app.lyra.Concurrently;
 import app.lyra.TestSessions;
 import app.lyra.TestcontainersConfiguration;
+import app.lyra.TestUsers;
 import app.lyra.shared.domain.UserId;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -34,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(TestcontainersConfiguration.class)
 class DiaryApiTest {
 
-    private static final UserId USER = UserId.random();
+    private UserId user;
 
     private static final String DAY = "/api/diary/2026-11-19";
 
@@ -42,17 +44,23 @@ class DiaryApiTest {
     private MockMvc mvc;
 
     private ResultActions perform(MockHttpServletRequestBuilder request) throws Exception {
-        return mvc.perform(request.with(TestSessions.of(USER)));
+        return mvc.perform(request.with(TestSessions.of(user)));
     }
 
     @Autowired
     private JdbcClient jdbc;
+
+    @BeforeEach
+    void signInAUser() {
+        user = TestUsers.insert(jdbc);
+    }
 
     @AfterEach
     void removeWhatTheTestCreated() {
         jdbc.sql("delete from diary_entry").update();
         jdbc.sql("delete from diet_plan").update();
         jdbc.sql("delete from food where source_reference is null").update();
+        jdbc.sql("delete from app_user").update();
     }
 
     @Test

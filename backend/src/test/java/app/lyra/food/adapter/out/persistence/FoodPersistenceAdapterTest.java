@@ -1,13 +1,16 @@
 package app.lyra.food.adapter.out.persistence;
 
 import app.lyra.TestcontainersConfiguration;
+import app.lyra.TestUsers;
 import app.lyra.food.application.port.out.FoodRepository;
 import app.lyra.food.application.port.out.FoodRepositoryContract;
 import app.lyra.food.domain.Food;
 import app.lyra.food.domain.FoodSearchQuery;
 import app.lyra.food.domain.FoodSource;
 import app.lyra.food.domain.MeasurementUnit;
+import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -28,6 +31,25 @@ class FoodPersistenceAdapterTest implements FoodRepositoryContract {
     @Autowired
     private JdbcClient jdbc;
 
+    private UserId owner;
+    private UserId otherOwner;
+
+    @BeforeEach
+    void createTheUsers() {
+        owner = TestUsers.insert(jdbc);
+        otherOwner = TestUsers.insert(jdbc);
+    }
+
+    @Override
+    public UserId owner() {
+        return owner;
+    }
+
+    @Override
+    public UserId otherOwner() {
+        return otherOwner;
+    }
+
     @Override
     public FoodRepository repository() {
         return adapter;
@@ -36,6 +58,7 @@ class FoodPersistenceAdapterTest implements FoodRepositoryContract {
     @AfterEach
     void removeFoodsCreatedByTheTest() {
         jdbc.sql("delete from food where source_reference is null").update();
+        jdbc.sql("delete from app_user").update();
     }
 
     @Test
@@ -47,7 +70,7 @@ class FoodPersistenceAdapterTest implements FoodRepositoryContract {
 
     @Test
     void tacoFoodsKeepTheirPublishedValues() {
-        Food rice = adapter.search(FoodSearchQuery.of("arroz tipo 1 cozido"), 1).getFirst();
+        Food rice = adapter.search(owner, FoodSearchQuery.of("arroz tipo 1 cozido"), 1).getFirst();
 
         assertThat(rice.getName()).isEqualTo("Arroz, tipo 1, cozido");
         assertThat(rice.getSource()).isEqualTo(FoodSource.TACO);

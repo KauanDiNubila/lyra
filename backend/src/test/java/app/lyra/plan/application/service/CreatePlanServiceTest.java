@@ -25,6 +25,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class CreatePlanServiceTest {
 
+    private static final UserId USER = UserId.random();
+
     private final InMemoryPlanRepository repository = new InMemoryPlanRepository();
 
     private CreatePlanService serviceFinding(FindFoodsByIdsUseCase findFoods) {
@@ -33,11 +35,11 @@ class CreatePlanServiceTest {
 
     @Test
     void savesAnInactivePlanAndReturnsIt() {
-        DietPlan plan = serviceFinding((userId, ids) -> Map.of(RICE.getId(), RICE)).create(UserId.random(), "  Cutting ", targets(), lunchAndDinner());
+        DietPlan plan = serviceFinding((userId, ids) -> Map.of(RICE.getId(), RICE)).create(USER, "  Cutting ", targets(), lunchAndDinner());
 
         assertThat(plan.getName()).isEqualTo("Cutting");
         assertThat(plan.isActive()).isFalse();
-        assertThat(repository.findById(plan.getId())).contains(plan);
+        assertThat(repository.findById(USER, plan.getId())).contains(plan);
     }
 
     @Test
@@ -48,8 +50,8 @@ class CreatePlanServiceTest {
         CreatePlanService service = serviceFinding(unknownFood);
         List<PlannedMeal> meals = lunchAndDinner();
 
-        assertThatThrownBy(() -> service.create(UserId.random(), "Cutting", targets(), meals)).isInstanceOf(FoodNotFoundException.class);
-        assertThat(repository.findAll()).isEmpty();
+        assertThatThrownBy(() -> service.create(USER, "Cutting", targets(), meals)).isInstanceOf(FoodNotFoundException.class);
+        assertThat(repository.findAll(USER)).isEmpty();
     }
 
     @Test
@@ -57,10 +59,10 @@ class CreatePlanServiceTest {
         CreatePlanService service = serviceFinding((userId, ids) -> Map.of(RICE.getId(), RICE));
         List<PlannedMeal> meals = List.of(meal("Almoço", riceInPortions("1")));
 
-        assertThatThrownBy(() -> service.create(UserId.random(), "Cutting", targets(), meals))
+        assertThatThrownBy(() -> service.create(USER, "Cutting", targets(), meals))
                 .isInstanceOf(InvalidInputException.class)
                 .hasMessage("Quantity of Arroz must be in GRAM");
-        assertThat(repository.findAll()).isEmpty();
+        assertThat(repository.findAll(USER)).isEmpty();
     }
 
     @Test
@@ -71,7 +73,7 @@ class CreatePlanServiceTest {
             return Map.of(RICE.getId(), RICE);
         });
 
-        assertThatThrownBy(() -> service.create(UserId.random(), "Cutting", targets(), List.of())).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> service.create(USER, "Cutting", targets(), List.of())).isInstanceOf(InvalidInputException.class);
         assertThat(requests).isEmpty();
     }
 
@@ -83,7 +85,7 @@ class CreatePlanServiceTest {
             return Map.of(RICE.getId(), RICE);
         });
 
-        service.create(UserId.random(), "Cutting", targets(), List.of(
+        service.create(USER, "Cutting", targets(), List.of(
                 meal("Almoço", riceInGrams("150"), riceInGrams("50")),
                 meal("Jantar", riceInGrams("100"))));
 

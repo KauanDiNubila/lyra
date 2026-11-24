@@ -10,27 +10,29 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class GetActivePlanServiceTest {
 
+    private static final UserId USER = UserId.random();
+
     private final InMemoryPlanRepository repository = new InMemoryPlanRepository();
     private final GetActivePlanService service = new GetActivePlanService(repository);
 
     @Test
     void returnsThePlanThatIsActive() {
         DietPlan active = DietPlan.create("Cutting", targets(), lunchAndDinner()).activated();
-        repository.save(DietPlan.create("Bulking", targets(), lunchAndDinner()));
-        repository.save(active);
+        repository.save(USER, DietPlan.create("Bulking", targets(), lunchAndDinner()));
+        repository.save(USER, active);
 
-        assertThat(service.getActivePlan(UserId.random())).contains(active);
+        assertThat(service.getActivePlan(USER)).contains(active);
     }
 
     @Test
     void returnsNothingWhenNoPlanIsActive() {
-        repository.save(DietPlan.create("Cutting", targets(), lunchAndDinner()));
+        repository.save(USER, DietPlan.create("Cutting", targets(), lunchAndDinner()));
 
-        assertThat(service.getActivePlan(UserId.random())).isEmpty();
+        assertThat(service.getActivePlan(USER)).isEmpty();
     }
 
     @Test
     void returnsNothingWhenThereAreNoPlans() {
-        assertThat(service.getActivePlan(UserId.random())).isEmpty();
+        assertThat(service.getActivePlan(USER)).isEmpty();
     }
 }

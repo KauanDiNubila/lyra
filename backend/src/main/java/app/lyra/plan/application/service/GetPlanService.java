@@ -18,6 +18,6 @@ class GetPlanService implements GetPlanUseCase {
 
     @Override
     public DietPlan getPlan(UserId userId, UUID id) {
-        return planRepository.findById(id).orElseThrow(() -> new PlanNotFoundException(id));
+        return planRepository.findById(userId, id).orElseThrow(() -> new PlanNotFoundException(id));
     }
 }

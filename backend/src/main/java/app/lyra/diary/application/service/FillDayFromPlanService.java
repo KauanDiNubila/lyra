@@ -34,8 +34,8 @@ class FillDayFromPlanService implements FillDayFromPlanUseCase {
     @Transactional
     public DiaryDay fillDay(UserId userId, LocalDate date) {
         DietPlan plan = getActivePlan.getActivePlan(userId).orElseThrow(NoActivePlanException::new);
-        diaryEntryRepository.lockDay(date);
-        if (!diaryEntryRepository.findByDate(date).isEmpty()) {
+        diaryEntryRepository.lockDay(userId, date);
+        if (!diaryEntryRepository.findByDate(userId, date).isEmpty()) {
             return getDiaryDay.getDay(userId, date);
         }
         Map<UUID, Food> foods = findFoods.findByIds(userId, plan.foodIds());
@@ -43,7 +43,7 @@ class FillDayFromPlanService implements FillDayFromPlanUseCase {
         for (PlannedMeal meal : plan.getMeals()) {
             for (PlannedItem item : meal.items()) {
                 Food food = foods.get(item.foodId());
-                diaryEntryRepository.save(DiaryEntry.fromPlan(food, date, meal.name(), item.quantity(), slot));
+                diaryEntryRepository.save(userId, DiaryEntry.fromPlan(food, date, meal.name(), item.quantity(), slot));
                 slot++;
             }
         }

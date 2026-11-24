@@ -20,6 +20,6 @@ class FoodSearchService implements SearchFoodsUseCase {
 
     @Override
     public List<Food> search(UserId userId, String query) {
-        return foodRepository.search(FoodSearchQuery.of(query), MAX_RESULTS);
+        return foodRepository.search(userId, FoodSearchQuery.of(query), MAX_RESULTS);
     }
 }

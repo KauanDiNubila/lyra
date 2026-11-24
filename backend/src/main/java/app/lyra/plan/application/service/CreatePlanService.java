@@ -22,7 +22,7 @@ class CreatePlanService implements CreatePlanUseCase {
     public DietPlan create(UserId userId, String name, DailyTargets targets, List<PlannedMeal> meals) {
         DietPlan plan = DietPlan.create(name, targets, meals);
         foodChecker.check(userId, plan);
-        planRepository.save(plan);
+        planRepository.save(userId, plan);
         return plan;
     }
 }

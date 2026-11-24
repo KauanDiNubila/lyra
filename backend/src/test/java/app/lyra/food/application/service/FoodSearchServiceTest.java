@@ -16,6 +16,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class FoodSearchServiceTest {
 
+    private static final UserId USER = UserId.random();
+
     private static final Quantity HUNDRED_GRAMS = new Quantity(new BigDecimal("100"), MeasurementUnit.GRAM);
     private static final Nutrients ANY = new Nutrients(BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, null, null);
 
@@ -24,23 +26,23 @@ class FoodSearchServiceTest {
 
     @Test
     void findsFoodsMatchingEveryTermIgnoringAccentsAndCase() {
-        repository.save(Food.custom("Feijão, carioca, cozido", HUNDRED_GRAMS, ANY));
-        repository.save(Food.custom("Feijão, preto, cozido", HUNDRED_GRAMS, ANY));
-        repository.save(Food.custom("Arroz, tipo 1, cozido", HUNDRED_GRAMS, ANY));
+        repository.save(USER, Food.custom("Feijão, carioca, cozido", HUNDRED_GRAMS, ANY));
+        repository.save(USER, Food.custom("Feijão, preto, cozido", HUNDRED_GRAMS, ANY));
+        repository.save(USER, Food.custom("Arroz, tipo 1, cozido", HUNDRED_GRAMS, ANY));
 
-        assertThat(service.search(UserId.random(), "FEIJAO cozido")).extracting(Food::getName)
+        assertThat(service.search(USER, "FEIJAO cozido")).extracting(Food::getName)
                 .containsExactlyInAnyOrder("Feijão, carioca, cozido", "Feijão, preto, cozido");
     }
 
     @Test
     void returnsAtMostTwentyFoods() {
-        IntStream.range(0, 25).forEach(i -> repository.save(Food.custom("Arroz " + i, HUNDRED_GRAMS, ANY)));
+        IntStream.range(0, 25).forEach(i -> repository.save(USER, Food.custom("Arroz " + i, HUNDRED_GRAMS, ANY)));
 
-        assertThat(service.search(UserId.random(), "arroz")).hasSize(FoodSearchService.MAX_RESULTS);
+        assertThat(service.search(USER, "arroz")).hasSize(FoodSearchService.MAX_RESULTS);
     }
 
     @Test
     void rejectsAQueryThatIsTooShort() {
-        assertThatThrownBy(() -> service.search(UserId.random(), "a")).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> service.search(USER, "a")).isInstanceOf(InvalidInputException.class);
     }
 }

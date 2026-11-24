@@ -21,7 +21,7 @@ class ChangeEntryService implements ChangeEntryUseCase {
 
     @Override
     public DiaryEntry change(UserId userId, UUID entryId, ChangeEntryCommand command) {
-        DiaryEntry entry = diaryEntryRepository.findById(entryId).orElseThrow(() -> new DiaryEntryNotFoundException(entryId));
+        DiaryEntry entry = diaryEntryRepository.findById(userId, entryId).orElseThrow(() -> new DiaryEntryNotFoundException(entryId));
         DiaryEntry changed = entry;
         if (command.foodId() != null) {
             Food food = findFood.findById(userId, command.foodId());
@@ -32,7 +32,7 @@ class ChangeEntryService implements ChangeEntryUseCase {
         if (command.mealName() != null) {
             changed = changed.withMealName(command.mealName());
         }
-        diaryEntryRepository.save(changed);
+        diaryEntryRepository.save(userId, changed);
         return changed;
     }
 }

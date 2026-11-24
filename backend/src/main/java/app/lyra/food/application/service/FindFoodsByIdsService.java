@@ -25,7 +25,7 @@ class FindFoodsByIdsService implements FindFoodsByIdsUseCase {
     @Override
     public Map<UUID, Food> findByIds(UserId userId, Collection<UUID> ids) {
         Set<UUID> distinctIds = new LinkedHashSet<>(ids);
-        Map<UUID, Food> found = foodRepository.findAllById(distinctIds).stream()
+        Map<UUID, Food> found = foodRepository.findAllById(userId, distinctIds).stream()
                 .collect(Collectors.toMap(Food::getId, Function.identity()));
         for (UUID id : distinctIds) {
             if (!found.containsKey(id)) {

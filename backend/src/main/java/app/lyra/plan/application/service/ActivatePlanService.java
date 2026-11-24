@@ -20,14 +20,14 @@ class ActivatePlanService implements ActivatePlanUseCase {
     @Override
     @Transactional
     public DietPlan activate(UserId userId, UUID id) {
-        planRepository.lockPlanChanges();
-        DietPlan plan = planRepository.findById(id).orElseThrow(() -> new PlanNotFoundException(id));
+        planRepository.lockPlanChanges(userId);
+        DietPlan plan = planRepository.findById(userId, id).orElseThrow(() -> new PlanNotFoundException(id));
         if (plan.isActive()) {
             return plan;
         }
-        planRepository.findActive().ifPresent(current -> planRepository.save(current.deactivated()));
+        planRepository.findActive(userId).ifPresent(current -> planRepository.save(userId, current.deactivated()));
         DietPlan activated = plan.activated();
-        planRepository.save(activated);
+        planRepository.save(userId, activated);
         return activated;
     }
 }
