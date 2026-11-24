@@ -9,6 +9,7 @@ import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
 import app.lyra.shared.domain.InvalidInputException;
+import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -28,9 +29,9 @@ class LogEntryServiceTest {
 
     @Test
     void savesAnEntryWithACopyOfTheFood() {
-        LogEntryService service = new LogEntryService(id -> RICE, repository);
+        LogEntryService service = new LogEntryService((userId, id) -> RICE, repository);
 
-        DiaryEntry entry = service.log(new LogEntryCommand(DATE, "Almoço", RICE.getId(), grams("150")));
+        DiaryEntry entry = service.log(UserId.random(), new LogEntryCommand(DATE, "Almoço", RICE.getId(), grams("150")));
 
         assertThat(entry.getFoodId()).isEqualTo(RICE.getId());
         assertThat(entry.getFoodName()).isEqualTo("Arroz");
@@ -40,23 +41,23 @@ class LogEntryServiceTest {
 
     @Test
     void savesNothingWhenTheFoodDoesNotExist() {
-        FindFoodUseCase unknownFood = id -> {
+        FindFoodUseCase unknownFood = (userId, id) -> {
             throw new FoodNotFoundException(id);
         };
         LogEntryService service = new LogEntryService(unknownFood, repository);
         LogEntryCommand command = new LogEntryCommand(DATE, "Almoço", RICE.getId(), grams("150"));
 
-        assertThatThrownBy(() -> service.log(command)).isInstanceOf(FoodNotFoundException.class);
+        assertThatThrownBy(() -> service.log(UserId.random(), command)).isInstanceOf(FoodNotFoundException.class);
         assertThat(repository.findByDate(DATE)).isEmpty();
     }
 
     @Test
     void savesNothingWhenTheUnitIsNotTheFoodUnit() {
-        LogEntryService service = new LogEntryService(id -> RICE, repository);
+        LogEntryService service = new LogEntryService((userId, id) -> RICE, repository);
         Quantity milliliters = new Quantity(new BigDecimal("150"), MeasurementUnit.MILLILITER);
         LogEntryCommand command = new LogEntryCommand(DATE, "Almoço", RICE.getId(), milliliters);
 
-        assertThatThrownBy(() -> service.log(command)).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> service.log(UserId.random(), command)).isInstanceOf(InvalidInputException.class);
         assertThat(repository.findByDate(DATE)).isEmpty();
     }
 

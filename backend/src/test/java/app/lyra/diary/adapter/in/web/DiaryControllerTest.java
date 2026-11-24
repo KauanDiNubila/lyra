@@ -1,5 +1,6 @@
 package app.lyra.diary.adapter.in.web;
 
+import app.lyra.TestSessions;
 import app.lyra.diary.application.port.in.ChangeEntryUseCase;
 import app.lyra.diary.application.port.in.ChangeEntryUseCase.ChangeEntryCommand;
 import app.lyra.diary.application.port.in.DeleteEntryUseCase;
@@ -18,6 +19,9 @@ import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
 import app.lyra.shared.domain.InvalidInputException;
+import app.lyra.shared.domain.UserId;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -30,6 +34,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -65,16 +70,30 @@ class DiaryControllerTest {
     private static final DiaryEntry LUNCH = entry(LUNCH_ID, "Almoço", "100");
     private static final DiaryEntry DINNER = entry(DINNER_ID, "Jantar", "50");
     private static final AtomicReference<ChangeEntryCommand> LAST_CHANGE = new AtomicReference<>();
+    private static final UserId SIGNED_IN = UserId.random();
+    private static final List<UserId> CALLERS = new ArrayList<>();
 
     @Autowired
     private MockMvc mvc;
+
+    @BeforeEach
+    void signIn() {
+        TestSessions.signIn(SIGNED_IN);
+        CALLERS.clear();
+    }
+
+    @AfterEach
+    void signOut() {
+        TestSessions.signOut();
+    }
 
     @TestConfiguration
     static class FakeUseCases {
 
         @Bean
         GetDiaryDayUseCase getDiaryDay() {
-            return date -> {
+            return (userId, date) -> {
+                CALLERS.add(userId);
                 if (date.equals(DATE)) {
                     return new DiaryDay(date, List.of(LUNCH, DINNER));
                 }
@@ -87,7 +106,8 @@ class DiaryControllerTest {
 
         @Bean
         FillDayFromPlanUseCase fillDayFromPlan() {
-            return date -> {
+            return (userId, date) -> {
+                CALLERS.add(userId);
                 if (date.equals(NO_PLAN_DATE)) {
                     throw new NoActivePlanException();
                 }
@@ -97,7 +117,8 @@ class DiaryControllerTest {
 
         @Bean
         LogEntryUseCase logEntry() {
-            return command -> {
+            return (userId, command) -> {
+                CALLERS.add(userId);
                 if (!command.foodId().equals(RICE_ID)) {
                     throw new FoodNotFoundException(command.foodId());
                 }
@@ -107,7 +128,8 @@ class DiaryControllerTest {
 
         @Bean
         ChangeEntryUseCase changeEntry() {
-            return (id, command) -> {
+            return (userId, id, command) -> {
+                CALLERS.add(userId);
                 if (!id.equals(LUNCH_ID)) {
                     throw new DiaryEntryNotFoundException(id);
                 }
@@ -124,7 +146,8 @@ class DiaryControllerTest {
 
         @Bean
         DeleteEntryUseCase deleteEntry() {
-            return id -> {
+            return (userId, id) -> {
+                CALLERS.add(userId);
                 if (id.equals(PLAN_ENTRY_ID)) {
                     throw new InvalidInputException("An entry of the plan cannot be deleted: change its quantity to zero to skip it");
                 }
@@ -135,6 +158,21 @@ class DiaryControllerTest {
         }
     }
 
+
+    @Test
+    void everyRouteAsksTheUseCaseOnBehalfOfTheSignedInUser() throws Exception {
+        mvc.perform(get("/api/diary/2026-11-19"));
+        mvc.perform(post("/api/diary/2026-11-19/entries").contentType(MediaType.APPLICATION_JSON).content("""
+                {"foodId": "00000000-0000-0000-0000-000000000001", "mealName": "Almoço",
+                 "quantity": {"amount": 150, "unit": "GRAM"}}
+                """));
+        mvc.perform(post("/api/diary/2026-11-25/plan"));
+        mvc.perform(patch("/api/diary/entries/" + LUNCH_ID).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"mealName\": \"Jantar\"}"));
+        mvc.perform(delete("/api/diary/entries/" + LUNCH_ID));
+
+        assertThat(CALLERS).hasSize(5).containsOnly(SIGNED_IN);
+    }
     @Test
     void dayGroupsEntriesByMealWithTotals() throws Exception {
         mvc.perform(get("/api/diary/2026-11-19"))

@@ -40,21 +40,21 @@ class PlanController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     PlanResponse createPlan(UserId userId, @RequestBody PlanRequest request) {
-        return responses.of(createPlanUseCase.create(userId, request.name(), request.toTargets(), request.toMeals()));
+        return responses.of(userId, createPlanUseCase.create(userId, request.name(), request.toTargets(), request.toMeals()));
     }
 
     @GetMapping("/{id}")
     PlanResponse getPlan(UserId userId, @PathVariable UUID id) {
-        return responses.of(getPlanUseCase.getPlan(userId, id));
+        return responses.of(userId, getPlanUseCase.getPlan(userId, id));
     }
 
     @PutMapping("/{id}")
     PlanResponse replacePlan(UserId userId, @PathVariable UUID id, @RequestBody PlanRequest request) {
-        return responses.of(replacePlanUseCase.replace(userId, id, request.name(), request.toTargets(), request.toMeals()));
+        return responses.of(userId, replacePlanUseCase.replace(userId, id, request.name(), request.toTargets(), request.toMeals()));
     }
 
     @PostMapping("/{id}/activation")
     PlanResponse activatePlan(UserId userId, @PathVariable UUID id) {
-        return responses.of(activatePlanUseCase.activate(userId, id));
+        return responses.of(userId, activatePlanUseCase.activate(userId, id));
     }
 }

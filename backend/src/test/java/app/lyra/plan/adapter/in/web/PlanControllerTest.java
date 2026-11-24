@@ -100,7 +100,7 @@ class PlanControllerTest {
 
         @Bean
         FindFoodsByIdsUseCase findFoods() {
-            return ids -> {
+            return (userId, ids) -> {
                 Map<UUID, Food> found = new HashMap<>();
                 for (UUID id : ids) {
                     if (!id.equals(RICE_ID)) {
@@ -136,7 +136,7 @@ class PlanControllerTest {
             return (userId, name, targets, meals) -> {
                 CALLERS.add(userId);
                 DietPlan plan = DietPlan.create(name, targets, meals);
-                findFoods.findByIds(plan.foodIds());
+                findFoods.findByIds(userId, plan.foodIds());
                 return plan;
             };
         }

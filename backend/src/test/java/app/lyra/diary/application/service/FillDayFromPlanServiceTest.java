@@ -15,6 +15,7 @@ import app.lyra.plan.domain.DailyTargets;
 import app.lyra.plan.domain.DietPlan;
 import app.lyra.plan.domain.PlannedItem;
 import app.lyra.plan.domain.PlannedMeal;
+import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -27,6 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class FillDayFromPlanServiceTest {
+
+    private static final UserId USER = UserId.random();
 
     private static final LocalDate DATE = LocalDate.of(2026, 11, 19);
     private static final Food RICE = Food.custom("Arroz", grams("100"),
@@ -45,7 +48,7 @@ class FillDayFromPlanServiceTest {
 
     @Test
     void fillsAnEmptyDayWithOneEntryForEachItemOfThePlan() {
-        DiaryDay day = service(Optional.of(PLAN)).fillDay(DATE);
+        DiaryDay day = service(Optional.of(PLAN)).fillDay(USER, DATE);
 
         assertThat(day.date()).isEqualTo(DATE);
         assertThat(day.entries()).extracting(DiaryEntry::getMealName).containsExactly("Almoço", "Almoço", "Jantar");
@@ -60,7 +63,7 @@ class FillDayFromPlanServiceTest {
 
     @Test
     void returnsTheDayWithTheTargetsOfThePlanAndNoDifferenceFromIt() {
-        DiaryDay day = service(Optional.of(PLAN)).fillDay(DATE);
+        DiaryDay day = service(Optional.of(PLAN)).fillDay(USER, DATE);
 
         assertThat(day.targets().orElseThrow().kcal()).isEqualByComparingTo("2000");
         assertThat(day.differenceFromPlan().kcal()).isEqualByComparingTo("0");
@@ -69,7 +72,7 @@ class FillDayFromPlanServiceTest {
 
     @Test
     void copiesTheFoodAndTheMacrosThatWerePlanned() {
-        DiaryEntry rice = service(Optional.of(PLAN)).fillDay(DATE).entries().get(0);
+        DiaryEntry rice = service(Optional.of(PLAN)).fillDay(USER, DATE).entries().get(0);
 
         assertThat(rice.getFoodId()).isEqualTo(RICE.getId());
         assertThat(rice.getNutrients()).isEqualTo(RICE.getNutrients());
@@ -83,7 +86,7 @@ class FillDayFromPlanServiceTest {
         DiaryEntry extra = DiaryEntry.log(CHICKEN, DATE, "Lanche", grams("50"));
         repository.save(extra);
 
-        DiaryDay day = service(Optional.of(PLAN)).fillDay(DATE);
+        DiaryDay day = service(Optional.of(PLAN)).fillDay(USER, DATE);
 
         assertThat(day.entries()).containsExactly(extra);
         assertThat(repository.findByDate(DATE)).containsExactly(extra);
@@ -93,8 +96,8 @@ class FillDayFromPlanServiceTest {
     void fillingTwiceDoesNotDuplicateTheEntries() {
         FillDayFromPlanService service = service(Optional.of(PLAN));
 
-        DiaryDay first = service.fillDay(DATE);
-        DiaryDay second = service.fillDay(DATE);
+        DiaryDay first = service.fillDay(USER, DATE);
+        DiaryDay second = service.fillDay(USER, DATE);
 
         assertThat(second.entries()).isEqualTo(first.entries());
         assertThat(repository.findByDate(DATE)).hasSize(3);
@@ -102,7 +105,7 @@ class FillDayFromPlanServiceTest {
 
     @Test
     void fillsOnlyTheDateThatWasAsked() {
-        service(Optional.of(PLAN)).fillDay(DATE);
+        service(Optional.of(PLAN)).fillDay(USER, DATE);
 
         assertThat(repository.findByDate(DATE.plusDays(1))).isEmpty();
         assertThat(repository.findByDate(DATE.minusDays(1))).isEmpty();
@@ -112,7 +115,7 @@ class FillDayFromPlanServiceTest {
     void failsWhenThereIsNoActivePlanAndSavesNothing() {
         FillDayFromPlanService service = service(Optional.empty());
 
-        assertThatThrownBy(() -> service.fillDay(DATE))
+        assertThatThrownBy(() -> service.fillDay(USER, DATE))
                 .isInstanceOf(NoActivePlanException.class)
                 .hasMessage("There is no active plan to fill the day");
         assertThat(repository.findByDate(DATE)).isEmpty();
@@ -123,25 +126,25 @@ class FillDayFromPlanServiceTest {
         repository.save(DiaryEntry.log(CHICKEN, DATE, "Lanche", grams("50")));
         FillDayFromPlanService service = service(Optional.empty());
 
-        assertThatThrownBy(() -> service.fillDay(DATE)).isInstanceOf(NoActivePlanException.class);
+        assertThatThrownBy(() -> service.fillDay(USER, DATE)).isInstanceOf(NoActivePlanException.class);
     }
 
     @Test
     void savesNothingWhenAFoodOfThePlanIsMissing() {
-        FindFoodsByIdsUseCase missingFood = ids -> {
+        FindFoodsByIdsUseCase missingFood = (userId, ids) -> {
             throw new FoodNotFoundException(CHICKEN.getId());
         };
-        GetActivePlanUseCase activePlan = () -> Optional.of(PLAN);
+        GetActivePlanUseCase activePlan = userId -> Optional.of(PLAN);
         FillDayFromPlanService service = new FillDayFromPlanService(activePlan, missingFood,
                 new GetDiaryDayService(activePlan, repository), repository);
 
-        assertThatThrownBy(() -> service.fillDay(DATE)).isInstanceOf(FoodNotFoundException.class);
+        assertThatThrownBy(() -> service.fillDay(USER, DATE)).isInstanceOf(FoodNotFoundException.class);
         assertThat(repository.findByDate(DATE)).isEmpty();
     }
 
     private FillDayFromPlanService service(Optional<DietPlan> activePlan) {
-        GetActivePlanUseCase getActivePlan = () -> activePlan;
-        FindFoodsByIdsUseCase findFoods = ids -> Map.of(RICE.getId(), RICE, CHICKEN.getId(), CHICKEN);
+        GetActivePlanUseCase getActivePlan = userId -> activePlan;
+        FindFoodsByIdsUseCase findFoods = (userId, ids) -> Map.of(RICE.getId(), RICE, CHICKEN.getId(), CHICKEN);
         return new FillDayFromPlanService(getActivePlan, findFoods, new GetDiaryDayService(getActivePlan, repository), repository);
     }
 

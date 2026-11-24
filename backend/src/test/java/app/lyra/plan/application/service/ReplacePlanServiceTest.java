@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ReplacePlanServiceTest {
 
     private final InMemoryPlanRepository repository = new InMemoryPlanRepository();
-    private final ReplacePlanService service = new ReplacePlanService(repository, new PlanFoodChecker(ids -> Map.of(RICE.getId(), RICE)));
+    private final ReplacePlanService service = new ReplacePlanService(repository, new PlanFoodChecker((userId, ids) -> Map.of(RICE.getId(), RICE)));
 
     @Test
     void replacesTheContentKeepingTheIdAndTheActiveState() {

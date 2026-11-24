@@ -5,6 +5,7 @@ import app.lyra.food.domain.FoodNotFoundException;
 import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
+import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -30,7 +31,7 @@ class FindFoodsByIdsServiceTest {
         repository.save(beans);
         repository.save(Food.custom("Frango", HUNDRED_GRAMS, ANY));
 
-        assertThat(service.findByIds(List.of(rice.getId(), beans.getId())))
+        assertThat(service.findByIds(UserId.random(), List.of(rice.getId(), beans.getId())))
                 .containsOnlyKeys(rice.getId(), beans.getId())
                 .containsEntry(rice.getId(), rice)
                 .containsEntry(beans.getId(), beans);
@@ -41,14 +42,14 @@ class FindFoodsByIdsServiceTest {
         Food rice = Food.custom("Arroz", HUNDRED_GRAMS, ANY);
         repository.save(rice);
 
-        assertThat(service.findByIds(List.of(rice.getId(), rice.getId(), rice.getId()))).containsOnlyKeys(rice.getId());
+        assertThat(service.findByIds(UserId.random(), List.of(rice.getId(), rice.getId(), rice.getId()))).containsOnlyKeys(rice.getId());
     }
 
     @Test
     void returnsNothingWhenNoIdIsRequested() {
         repository.save(Food.custom("Arroz", HUNDRED_GRAMS, ANY));
 
-        assertThat(service.findByIds(List.of())).isEmpty();
+        assertThat(service.findByIds(UserId.random(), List.of())).isEmpty();
     }
 
     @Test
@@ -58,7 +59,7 @@ class FindFoodsByIdsServiceTest {
         UUID unknown = UUID.randomUUID();
         List<UUID> ids = List.of(rice.getId(), unknown);
 
-        assertThatThrownBy(() -> service.findByIds(ids))
+        assertThatThrownBy(() -> service.findByIds(UserId.random(), ids))
                 .isInstanceOf(FoodNotFoundException.class)
                 .hasMessage("Food not found: " + unknown);
     }

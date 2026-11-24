@@ -3,12 +3,13 @@ package app.lyra.diary.application.port.in;
 import app.lyra.diary.domain.DiaryEntry;
 import app.lyra.food.domain.Quantity;
 import app.lyra.shared.domain.InvalidInputException;
+import app.lyra.shared.domain.UserId;
 
 import java.util.UUID;
 
 public interface ChangeEntryUseCase {
 
-    DiaryEntry change(UUID entryId, ChangeEntryCommand command);
+    DiaryEntry change(UserId userId, UUID entryId, ChangeEntryCommand command);
 
     record ChangeEntryCommand(UUID foodId, Quantity quantity, String mealName) {
 

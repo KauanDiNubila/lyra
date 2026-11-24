@@ -33,7 +33,7 @@ class CreatePlanServiceTest {
 
     @Test
     void savesAnInactivePlanAndReturnsIt() {
-        DietPlan plan = serviceFinding(ids -> Map.of(RICE.getId(), RICE)).create(UserId.random(), "  Cutting ", targets(), lunchAndDinner());
+        DietPlan plan = serviceFinding((userId, ids) -> Map.of(RICE.getId(), RICE)).create(UserId.random(), "  Cutting ", targets(), lunchAndDinner());
 
         assertThat(plan.getName()).isEqualTo("Cutting");
         assertThat(plan.isActive()).isFalse();
@@ -42,7 +42,7 @@ class CreatePlanServiceTest {
 
     @Test
     void savesNothingWhenAFoodDoesNotExist() {
-        FindFoodsByIdsUseCase unknownFood = ids -> {
+        FindFoodsByIdsUseCase unknownFood = (userId, ids) -> {
             throw new FoodNotFoundException(ids.iterator().next());
         };
         CreatePlanService service = serviceFinding(unknownFood);
@@ -54,7 +54,7 @@ class CreatePlanServiceTest {
 
     @Test
     void savesNothingWhenTheUnitIsNotTheFoodUnit() {
-        CreatePlanService service = serviceFinding(ids -> Map.of(RICE.getId(), RICE));
+        CreatePlanService service = serviceFinding((userId, ids) -> Map.of(RICE.getId(), RICE));
         List<PlannedMeal> meals = List.of(meal("Almoço", riceInPortions("1")));
 
         assertThatThrownBy(() -> service.create(UserId.random(), "Cutting", targets(), meals))
@@ -66,7 +66,7 @@ class CreatePlanServiceTest {
     @Test
     void rejectsAnInvalidPlanBeforeLookingUpAnyFood() {
         List<Collection<UUID>> requests = new ArrayList<>();
-        CreatePlanService service = serviceFinding(ids -> {
+        CreatePlanService service = serviceFinding((userId, ids) -> {
             requests.add(ids);
             return Map.of(RICE.getId(), RICE);
         });
@@ -78,7 +78,7 @@ class CreatePlanServiceTest {
     @Test
     void asksForAllTheFoodsOfThePlanInOneCallWithoutRepeatingIds() {
         List<Collection<UUID>> requests = new ArrayList<>();
-        CreatePlanService service = serviceFinding(ids -> {
+        CreatePlanService service = serviceFinding((userId, ids) -> {
             requests.add(ids);
             return Map.of(RICE.getId(), RICE);
         });

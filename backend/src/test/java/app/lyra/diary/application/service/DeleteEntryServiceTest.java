@@ -7,6 +7,7 @@ import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
 import app.lyra.shared.domain.InvalidInputException;
+import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -33,7 +34,7 @@ class DeleteEntryServiceTest {
         repository.save(entry);
         repository.save(other);
 
-        service.delete(entry.getId());
+        service.delete(UserId.random(), entry.getId());
 
         assertThat(repository.findByDate(DATE)).containsExactly(other);
     }
@@ -44,7 +45,7 @@ class DeleteEntryServiceTest {
         repository.save(planned);
         UUID id = planned.getId();
 
-        assertThatThrownBy(() -> service.delete(id))
+        assertThatThrownBy(() -> service.delete(UserId.random(), id))
                 .isInstanceOf(InvalidInputException.class)
                 .hasMessage("An entry of the plan cannot be deleted: change its quantity to zero to skip it");
         assertThat(repository.findByDate(DATE)).containsExactly(planned);
@@ -54,7 +55,7 @@ class DeleteEntryServiceTest {
     void failsWhenThereIsNoEntryWithThatId() {
         UUID unknown = UUID.randomUUID();
 
-        assertThatThrownBy(() -> service.delete(unknown))
+        assertThatThrownBy(() -> service.delete(UserId.random(), unknown))
                 .isInstanceOf(DiaryEntryNotFoundException.class)
                 .hasMessage("Diary entry not found: " + unknown);
     }

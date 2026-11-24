@@ -21,7 +21,7 @@ class CreatePlanService implements CreatePlanUseCase {
     @Override
     public DietPlan create(UserId userId, String name, DailyTargets targets, List<PlannedMeal> meals) {
         DietPlan plan = DietPlan.create(name, targets, meals);
-        foodChecker.check(plan);
+        foodChecker.check(userId, plan);
         planRepository.save(plan);
         return plan;
     }

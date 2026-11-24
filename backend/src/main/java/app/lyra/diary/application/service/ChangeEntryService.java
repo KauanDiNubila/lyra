@@ -6,6 +6,7 @@ import app.lyra.diary.domain.DiaryEntry;
 import app.lyra.diary.domain.DiaryEntryNotFoundException;
 import app.lyra.food.application.port.in.FindFoodUseCase;
 import app.lyra.food.domain.Food;
+import app.lyra.shared.domain.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,11 +20,11 @@ class ChangeEntryService implements ChangeEntryUseCase {
     private final DiaryEntryRepository diaryEntryRepository;
 
     @Override
-    public DiaryEntry change(UUID entryId, ChangeEntryCommand command) {
+    public DiaryEntry change(UserId userId, UUID entryId, ChangeEntryCommand command) {
         DiaryEntry entry = diaryEntryRepository.findById(entryId).orElseThrow(() -> new DiaryEntryNotFoundException(entryId));
         DiaryEntry changed = entry;
         if (command.foodId() != null) {
-            Food food = findFood.findById(command.foodId());
+            Food food = findFood.findById(userId, command.foodId());
             changed = changed.withFood(food, command.quantity());
         } else if (command.quantity() != null) {
             changed = changed.withQuantity(command.quantity());

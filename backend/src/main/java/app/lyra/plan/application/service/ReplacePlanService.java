@@ -27,7 +27,7 @@ class ReplacePlanService implements ReplacePlanUseCase {
         planRepository.lockPlanChanges();
         DietPlan plan = planRepository.findById(id).orElseThrow(() -> new PlanNotFoundException(id));
         DietPlan changed = plan.withContent(name, targets, meals);
-        foodChecker.check(changed);
+        foodChecker.check(userId, changed);
         planRepository.save(changed);
         return changed;
     }
