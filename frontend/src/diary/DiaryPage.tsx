@@ -18,15 +18,15 @@ import { planNote } from './diaryFormat.ts'
 import { EditEntryForm } from './EditEntryForm.tsx'
 import { PlanSummary } from './PlanSummary.tsx'
 import { useDiaryDay } from './useDiaryDay.ts'
-import { useFillFromPlan } from './useFillFromPlan.ts'
 
 export function DiaryPage() {
   const [date, setDate] = useState(() => todayIso())
   const [isAdding, setIsAdding] = useState(false)
   const [editing, setEditing] = useState<DiaryEntry | null>(null)
-  const { day, reload } = useDiaryDay(date)
-  const fill = useFillFromPlan(date, day, reload)
-  const mealNames = day.status === 'success' ? day.data.meals.map((meal) => meal.name) : []
+  const { day, reload, fill } = useDiaryDay(date)
+  const loaded = day.status === 'success' ? day.data : null
+  const diary = loaded?.day ?? null
+  const mealNames = diary ? diary.meals.map((meal) => meal.name) : []
 
   function showAdded() {
     setIsAdding(false)
@@ -56,36 +56,35 @@ export function DiaryPage() {
           <Button label="Tentar de novo" variant="secondary" onClick={reload} />
         </>
       )}
-      {fill.isEmpty && fill.isFilling && <Spinner label="Preenchendo o dia com o plano" />}
-      {fill.isEmpty && !fill.isFilling && (
+      {loaded && diary && diary.meals.length === 0 && (
         <>
-          {fill.failure && <Banner status="error" title="Não foi possível preencher o dia" description={fill.failure} />}
+          {loaded.fillFailure && (
+            <Banner status="error" title="Não foi possível preencher o dia" description={loaded.fillFailure} />
+          )}
           <EmptyState
             title="Nada registrado neste dia"
             description={
-              fill.hasNoPlan
+              loaded.hasNoPlan
                 ? 'Ative um plano na aba Plano para o diário abrir preenchido.'
                 : 'Quando você registrar o que comeu, as refeições e os totais aparecem aqui.'
             }
             actions={
               <HStack gap={2} wrap="wrap">
-                {(date < todayIso() || fill.hasNoPlan || fill.failure !== null) && (
-                  <Button label="Preencher com o plano" variant="secondary" onClick={fill.fill} />
-                )}
+                <Button label="Preencher com o plano" variant="secondary" onClick={fill} />
                 <Button label="Adicionar alimento" variant="secondary" onClick={() => setIsAdding(true)} />
               </HStack>
             }
           />
         </>
       )}
-      {day.status === 'success' && day.data.meals.length > 0 && (
+      {diary && diary.meals.length > 0 && (
         <>
           <VStack gap={1}>
             <Text type="label">Total do dia</Text>
-            <Text type="large">{formatMacroValues(day.data.total)}</Text>
+            <Text type="large">{formatMacroValues(diary.total)}</Text>
           </VStack>
-          <PlanSummary day={day.data} />
-          {day.data.meals.map((meal) => (
+          <PlanSummary day={diary} />
+          {diary.meals.map((meal) => (
             <VStack key={meal.name} gap={1}>
               <Heading level={2}>{meal.name}</Heading>
               <Text type="supporting">{formatMacroValues(meal.total)}</Text>

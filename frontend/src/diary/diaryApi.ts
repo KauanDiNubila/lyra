@@ -1,4 +1,4 @@
-import { ensureOk, readJson, send } from '../http.ts'
+import { ApiError, ensureOk, readJson, send } from '../http.ts'
 import type { Quantity } from '../foods/foodApi.ts'
 
 export type Macros = {
@@ -64,9 +64,14 @@ export async function fetchDay(date: string, signal: AbortSignal): Promise<Diary
   return readJson<DiaryDay>(response)
 }
 
-export async function fillDay(date: string): Promise<DiaryDay> {
+export async function fillDay(date: string): Promise<DiaryDay | null> {
   const response = await send(`/api/diary/${date}/plan`, { method: 'POST' })
-  return readJson<DiaryDay>(response)
+  try {
+    return await readJson<DiaryDay>(response)
+  } catch (cause) {
+    if (cause instanceof ApiError && cause.status === 404) return null
+    throw cause
+  }
 }
 
 export async function addEntry(date: string, entry: NewEntry): Promise<DiaryEntry> {

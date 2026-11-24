@@ -10,6 +10,7 @@ const fetchMock = vi.fn<typeof fetch>()
 function serve(options: { day?: DiaryDay; foods?: Food[]; post?: (init: RequestInit) => Promise<Response> }) {
   fetchMock.mockImplementation(async (url, init) => {
     const path = String(url)
+    if (path.endsWith('/plan')) return jsonResponse({ detail: 'There is no active plan to fill the day' }, 404)
     if (init?.method === 'POST') {
       return options.post ? options.post(init) : jsonResponse(lunchRice, 201)
     }

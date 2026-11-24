@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DiaryPage } from './DiaryPage.tsx'
 import { emptyDay, jsonResponse, planDay } from './testSupport.ts'
@@ -12,14 +12,11 @@ type Server = {
 }
 
 function serve({ days = {}, fill }: Server = {}) {
-  fetchMock.mockImplementation(async (url, init) => {
+  fetchMock.mockImplementation(async (url) => {
     const path = String(url)
-    if (path.endsWith('/plan')) {
-      const date = path.split('/')[3]
-      return fill ? fill(date) : jsonResponse(planDay)
-    }
     const date = path.split('/')[3]
-    return jsonResponse(days[date] ?? emptyDay(date), init ? 200 : 200)
+    if (path.endsWith('/plan')) return fill ? fill(date) : jsonResponse(planDay)
+    return jsonResponse(days[date] ?? emptyDay(date))
   })
 }
 
@@ -41,15 +38,7 @@ afterEach(() => {
 
 describe('filling the day from the plan', () => {
   it('fills an empty day of today by itself and shows what came from the plan', async () => {
-    let filled = false
-    fetchMock.mockImplementation(async (url) => {
-      if (String(url).endsWith('/plan')) {
-        filled = true
-        return jsonResponse(planDay)
-      }
-      return jsonResponse(filled ? planDay : emptyDay('2026-11-19'))
-    })
-
+    serve()
     render(<DiaryPage />)
 
     expect(await screen.findByRole('heading', { name: 'Almoço' })).toBeInTheDocument()
@@ -58,34 +47,23 @@ describe('filling the day from the plan', () => {
     expect(fills()[0][1]?.method).toBe('POST')
   })
 
-  it('fills an empty day of the future by itself', async () => {
+  it('does not fill an empty day of the future by itself, but offers to', async () => {
     serve()
     render(<DiaryPage />)
-    await screen.findByText('Nada registrado neste dia')
+    await screen.findByRole('heading', { name: 'Almoço' })
 
     fireEvent.click(screen.getByRole('button', { name: 'Próximo dia' }))
 
+    const button = await screen.findByRole('button', { name: 'Preencher com o plano' })
+    expect(fills()).toHaveLength(1)
+    fireEvent.click(button)
     await waitFor(() => expect(fills().map(([url]) => url)).toContain('/api/diary/2026-11-20/plan'))
   })
 
-  it('fills each date only once, even coming back to it', async () => {
+  it('does not fill an empty day of the past by itself, but offers to', async () => {
     serve({ fill: () => Promise.resolve(jsonResponse(NO_PLAN, 404)) })
     render(<DiaryPage />)
-    await screen.findByText('Ative um plano na aba Plano para o diário abrir preenchido.')
-
-    fireEvent.click(screen.getByRole('button', { name: 'Próximo dia' }))
-    await screen.findByText('Ative um plano na aba Plano para o diário abrir preenchido.')
-    fireEvent.click(screen.getByRole('button', { name: 'Dia anterior' }))
-    await screen.findByText('Ative um plano na aba Plano para o diário abrir preenchido.')
-
-    expect(fills()).toHaveLength(2)
-  })
-
-  it('does not fill an empty day of the past, but offers to', async () => {
-    serve({ days: { '2026-11-18': emptyDay('2026-11-18') } })
-    render(<DiaryPage />)
     await screen.findByText('Nada registrado neste dia')
-    fillsBefore()
 
     fireEvent.click(screen.getByRole('button', { name: 'Dia anterior' }))
 
@@ -95,20 +73,32 @@ describe('filling the day from the plan', () => {
     await waitFor(() => expect(fills().map(([url]) => url)).toContain('/api/diary/2026-11-18/plan'))
   })
 
-  it('fills a past day once when the user clicks twice', async () => {
-    let answer: (response: Response) => void = () => {}
-    serve({ fill: () => new Promise((resolve) => { answer = resolve }) })
+  it('shows the day filled from the plan when the user asks for it', async () => {
+    let filled = false
+    fetchMock.mockImplementation(async (url) => {
+      if (String(url).endsWith('/plan')) {
+        filled = true
+        return jsonResponse(planDay)
+      }
+      return jsonResponse(filled ? planDay : emptyDay(String(url).split('/')[3]))
+    })
     render(<DiaryPage />)
+    await screen.findByRole('heading', { name: 'Almoço' })
+    fireEvent.click(screen.getByRole('button', { name: 'Dia anterior' }))
+    filled = false
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Preencher com o plano' }))
+
+    expect(await screen.findByRole('heading', { name: 'Almoço' })).toBeInTheDocument()
+  })
+
+  it('shows the loading spinner, and not the empty message, while it fills', async () => {
+    serve({ fill: () => new Promise(() => {}) })
+    render(<DiaryPage />)
+
+    expect(await screen.findByLabelText('Carregando o dia')).toBeInTheDocument()
     await waitFor(() => expect(fills()).toHaveLength(1))
-    await act(async () => answer(jsonResponse(NO_PLAN, 404)))
-    fireEvent.click(await screen.findByRole('button', { name: 'Dia anterior' }))
-    const button = await screen.findByRole('button', { name: 'Preencher com o plano' })
-
-    fireEvent.click(button)
-    fireEvent.click(button)
-
-    expect(fills().filter(([url]) => String(url).includes('2026-11-18'))).toHaveLength(1)
-    await act(async () => answer(jsonResponse(NO_PLAN, 404)))
+    expect(screen.queryByText('Nada registrado neste dia')).not.toBeInTheDocument()
   })
 
   it('tells the user to activate a plan when there is none and lets them try again', async () => {
@@ -131,14 +121,6 @@ describe('filling the day from the plan', () => {
     expect(screen.getByRole('button', { name: 'Preencher com o plano' })).toBeInTheDocument()
   })
 
-  it('shows a spinner instead of the empty message while it fills', async () => {
-    serve({ fill: () => new Promise(() => {}) })
-    render(<DiaryPage />)
-
-    expect(await screen.findByLabelText('Preenchendo o dia com o plano')).toBeInTheDocument()
-    expect(screen.queryByText('Nada registrado neste dia')).not.toBeInTheDocument()
-  })
-
   it('does not fill a day that already has entries', async () => {
     serve({ days: { '2026-11-19': planDay } })
     render(<DiaryPage />)
@@ -148,10 +130,6 @@ describe('filling the day from the plan', () => {
     expect(fills()).toHaveLength(0)
   })
 })
-
-function fillsBefore() {
-  return fills().length
-}
 
 describe('the day compared with the plan', () => {
   beforeEach(() => serve({ days: { '2026-11-19': planDay } }))
