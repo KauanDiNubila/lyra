@@ -2,17 +2,14 @@ import { useState, type FormEvent } from 'react'
 import { Banner } from '@astryxdesign/core/Banner'
 import { Button } from '@astryxdesign/core/Button'
 import { Heading } from '@astryxdesign/core/Heading'
-import { HStack } from '@astryxdesign/core/HStack'
 import { NumberInput } from '@astryxdesign/core/NumberInput'
-import { Text } from '@astryxdesign/core/Text'
 import { TextInput } from '@astryxdesign/core/TextInput'
-import { TimeInput } from '@astryxdesign/core/TimeInput'
 import { VStack } from '@astryxdesign/core/VStack'
 import type { Food } from '../foods/foodApi.ts'
 import { FoodSearchPanel } from '../foods/FoodSearchPanel.tsx'
-import { quantityLabel } from '../foods/formatNutrients.ts'
 import { useFoodSearch } from '../foods/useFoodSearch.ts'
 import { useSubmit } from '../useSubmit.ts'
+import { MealFields } from './MealFields.tsx'
 import type { PlanRequest } from './planApi.ts'
 import { emptyMeal, newKey, toRequest, type MealDraft, type PlanFormState } from './planDraft.ts'
 
@@ -39,11 +36,15 @@ export function PlanForm({ initial, save, onSaved }: Props) {
   const { run, isRunning, error } = useSubmit()
   const request = toRequest(form)
 
-  function changeMeal(key: number, change: (meal: MealDraft) => MealDraft) {
+  function replaceMeal(changed: MealDraft) {
     setForm((current) => ({
       ...current,
-      meals: current.meals.map((meal) => (meal.key === key ? change(meal) : meal)),
+      meals: current.meals.map((meal) => (meal.key === changed.key ? changed : meal)),
     }))
+  }
+
+  function removeMeal(key: number) {
+    setForm((current) => ({ ...current, meals: current.meals.filter((meal) => meal.key !== key) }))
   }
 
   function addItem(mealKey: number, food: Food) {
@@ -54,7 +55,10 @@ export function PlanForm({ initial, save, onSaved }: Props) {
       unit: food.referenceAmount.unit,
       amount: food.referenceAmount.amount,
     }
-    changeMeal(mealKey, (meal) => ({ ...meal, items: [...meal.items, item] }))
+    setForm((current) => ({
+      ...current,
+      meals: current.meals.map((meal) => (meal.key === mealKey ? { ...meal, items: [...meal.items, item] } : meal)),
+    }))
     setPickingForMeal(null)
     setQuery('')
   }
@@ -109,61 +113,14 @@ export function PlanForm({ initial, save, onSaved }: Props) {
           ))}
         </VStack>
         {form.meals.map((meal, index) => (
-          <VStack key={meal.key} gap={2} role="group" aria-label={`Refeição ${index + 1}`}>
-            <Heading level={2}>{`Refeição ${index + 1}`}</Heading>
-            <TextInput
-              label="Nome da refeição"
-              value={meal.name}
-              onChange={(name) => changeMeal(meal.key, (current) => ({ ...current, name }))}
-              isRequired
-            />
-            <TimeInput
-              label="Horário"
-              value={meal.time ?? undefined}
-              onChange={(time) => changeMeal(meal.key, (current) => ({ ...current, time: time ?? null }))}
-              isOptional
-              hasClear
-            />
-            {meal.items.map((item) => (
-              <VStack key={item.key} gap={1} role="group" aria-label={item.foodName}>
-                <Text type="label">{item.foodName}</Text>
-                <HStack gap={2} align="end">
-                  <NumberInput
-                    label={quantityLabel(item.unit)}
-                    value={item.amount}
-                    onChange={(amount) =>
-                      changeMeal(meal.key, (current) => ({
-                        ...current,
-                        items: current.items.map((other) => (other.key === item.key ? { ...other, amount } : other)),
-                      }))
-                    }
-                    min={0}
-                    isRequired
-                  />
-                  <Button
-                    label="Remover item"
-                    variant="ghost"
-                    onClick={() =>
-                      changeMeal(meal.key, (current) => ({
-                        ...current,
-                        items: current.items.filter((other) => other.key !== item.key),
-                      }))
-                    }
-                  />
-                </HStack>
-              </VStack>
-            ))}
-            <HStack gap={2} wrap="wrap">
-              <Button label="Adicionar alimento" variant="secondary" onClick={() => setPickingForMeal(meal.key)} />
-              <Button
-                label="Remover refeição"
-                variant="ghost"
-                onClick={() =>
-                  setForm((current) => ({ ...current, meals: current.meals.filter((other) => other.key !== meal.key) }))
-                }
-              />
-            </HStack>
-          </VStack>
+          <MealFields
+            key={meal.key}
+            meal={meal}
+            index={index}
+            onChange={replaceMeal}
+            onRemove={() => removeMeal(meal.key)}
+            onAddFood={() => setPickingForMeal(meal.key)}
+          />
         ))}
         <Button
           label="Adicionar refeição"
