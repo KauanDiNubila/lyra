@@ -114,6 +114,14 @@ public interface DiaryEntryRepositoryContract {
     }
 
     @Test
+    default void aDayCanBeLockedMoreThanOnceInARow() {
+        assertThatCode(() -> {
+            repository().lockDay(DATE);
+            repository().lockDay(DATE);
+        }).doesNotThrowAnyException();
+    }
+
+    @Test
     default void anEntryLoggedByHandComesBackWithoutPlan() {
         DiaryEntry entry = entry(DATE, "Almoço", "150", nutrients(null, null));
         repository().save(entry);

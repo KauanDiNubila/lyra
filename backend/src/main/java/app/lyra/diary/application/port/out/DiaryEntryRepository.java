@@ -9,6 +9,8 @@ import java.util.UUID;
 
 public interface DiaryEntryRepository {
 
+    void lockDay(LocalDate date);
+
     void save(DiaryEntry entry);
 
     Optional<DiaryEntry> findById(UUID id);

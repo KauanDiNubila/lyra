@@ -15,6 +15,10 @@ class InMemoryDiaryEntryRepository implements DiaryEntryRepository {
     private final Map<UUID, DiaryEntry> entries = new LinkedHashMap<>();
 
     @Override
+    public void lockDay(LocalDate date) {
+    }
+
+    @Override
     public void save(DiaryEntry entry) {
         entries.put(entry.getId(), entry);
     }

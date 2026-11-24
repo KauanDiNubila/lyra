@@ -20,7 +20,18 @@ import java.util.UUID;
 @RequiredArgsConstructor
 class DiaryEntryPersistenceAdapter implements DiaryEntryRepository {
 
+    private static final int DAY_LOCK_NAMESPACE = 7_402;
+
     private final EntityManager entityManager;
+
+    @Override
+    @Transactional
+    public void lockDay(LocalDate date) {
+        entityManager.createNativeQuery("select count(*) from (select pg_advisory_xact_lock(:namespace, :day)) as locked")
+                .setParameter("namespace", DAY_LOCK_NAMESPACE)
+                .setParameter("day", (int) date.toEpochDay())
+                .getSingleResult();
+    }
 
     @Override
     @Transactional
