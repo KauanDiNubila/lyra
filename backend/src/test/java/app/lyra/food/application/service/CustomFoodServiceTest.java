@@ -6,6 +6,7 @@ import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
 import app.lyra.shared.domain.InvalidInputException;
+import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -24,7 +25,7 @@ class CustomFoodServiceTest {
 
     @Test
     void createsAndStoresACustomFood() {
-        Food food = service.create("Milkshake McDonald's", ONE_PORTION, MILKSHAKE);
+        Food food = service.create(UserId.random(), "Milkshake McDonald's", ONE_PORTION, MILKSHAKE);
 
         assertThat(food.getSource()).isEqualTo(FoodSource.CUSTOM);
         assertThat(repository.all()).containsExactly(food);
@@ -32,7 +33,7 @@ class CustomFoodServiceTest {
 
     @Test
     void storesNothingWhenTheFoodIsInvalid() {
-        assertThatThrownBy(() -> service.create("", ONE_PORTION, MILKSHAKE)).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> service.create(UserId.random(), "", ONE_PORTION, MILKSHAKE)).isInstanceOf(InvalidInputException.class);
 
         assertThat(repository.all()).isEmpty();
     }

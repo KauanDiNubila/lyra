@@ -12,6 +12,7 @@ import app.lyra.plan.application.port.in.GetActivePlanUseCase;
 import app.lyra.plan.domain.DietPlan;
 import app.lyra.plan.domain.PlannedItem;
 import app.lyra.plan.domain.PlannedMeal;
+import app.lyra.shared.domain.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,13 +32,13 @@ class FillDayFromPlanService implements FillDayFromPlanUseCase {
 
     @Override
     @Transactional
-    public DiaryDay fillDay(LocalDate date) {
-        DietPlan plan = getActivePlan.getActivePlan().orElseThrow(NoActivePlanException::new);
+    public DiaryDay fillDay(UserId userId, LocalDate date) {
+        DietPlan plan = getActivePlan.getActivePlan(userId).orElseThrow(NoActivePlanException::new);
         diaryEntryRepository.lockDay(date);
         if (!diaryEntryRepository.findByDate(date).isEmpty()) {
-            return getDiaryDay.getDay(date);
+            return getDiaryDay.getDay(userId, date);
         }
-        Map<UUID, Food> foods = findFoods.findByIds(plan.foodIds());
+        Map<UUID, Food> foods = findFoods.findByIds(userId, plan.foodIds());
         int slot = 0;
         for (PlannedMeal meal : plan.getMeals()) {
             for (PlannedItem item : meal.items()) {
@@ -46,6 +47,6 @@ class FillDayFromPlanService implements FillDayFromPlanUseCase {
                 slot++;
             }
         }
-        return getDiaryDay.getDay(date);
+        return getDiaryDay.getDay(userId, date);
     }
 }

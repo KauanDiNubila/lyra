@@ -5,6 +5,7 @@ import app.lyra.diary.application.port.in.DeleteEntryUseCase;
 import app.lyra.diary.application.port.in.FillDayFromPlanUseCase;
 import app.lyra.diary.application.port.in.GetDiaryDayUseCase;
 import app.lyra.diary.application.port.in.LogEntryUseCase;
+import app.lyra.shared.domain.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -33,30 +34,30 @@ class DiaryController {
     private final DeleteEntryUseCase deleteEntry;
 
     @GetMapping("/{date}")
-    DiaryDayResponse getDay(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return DiaryDayResponse.from(getDiaryDay.getDay(date));
+    DiaryDayResponse getDay(UserId userId, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return DiaryDayResponse.from(getDiaryDay.getDay(userId, date));
     }
 
     @PostMapping("/{date}/entries")
     @ResponseStatus(HttpStatus.CREATED)
-    EntryResponse addEntry(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+    EntryResponse addEntry(UserId userId, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                       @RequestBody LogEntryRequest request) {
-        return EntryResponse.from(logEntry.log(request.toCommand(date)));
+        return EntryResponse.from(logEntry.log(userId, request.toCommand(date)));
     }
 
     @PostMapping("/{date}/plan")
-    DiaryDayResponse fillDayFromPlan(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return DiaryDayResponse.from(fillDay.fillDay(date));
+    DiaryDayResponse fillDayFromPlan(UserId userId, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return DiaryDayResponse.from(fillDay.fillDay(userId, date));
     }
 
     @PatchMapping("/entries/{id}")
-    EntryResponse changeEntry(@PathVariable UUID id, @RequestBody ChangeEntryRequest request) {
-        return EntryResponse.from(changeEntry.change(id, request.toCommand()));
+    EntryResponse changeEntry(UserId userId, @PathVariable UUID id, @RequestBody ChangeEntryRequest request) {
+        return EntryResponse.from(changeEntry.change(userId, id, request.toCommand()));
     }
 
     @DeleteMapping("/entries/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void removeEntry(@PathVariable UUID id) {
-        deleteEntry.delete(id);
+    void removeEntry(UserId userId, @PathVariable UUID id) {
+        deleteEntry.delete(userId, id);
     }
 }

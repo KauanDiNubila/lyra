@@ -1,6 +1,7 @@
 package app.lyra.plan.application.service;
 
 import app.lyra.plan.domain.DietPlan;
+import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.Test;
 
 import static app.lyra.plan.application.service.PlanTestData.lunchAndDinner;
@@ -18,18 +19,18 @@ class GetActivePlanServiceTest {
         repository.save(DietPlan.create("Bulking", targets(), lunchAndDinner()));
         repository.save(active);
 
-        assertThat(service.getActivePlan()).contains(active);
+        assertThat(service.getActivePlan(UserId.random())).contains(active);
     }
 
     @Test
     void returnsNothingWhenNoPlanIsActive() {
         repository.save(DietPlan.create("Cutting", targets(), lunchAndDinner()));
 
-        assertThat(service.getActivePlan()).isEmpty();
+        assertThat(service.getActivePlan(UserId.random())).isEmpty();
     }
 
     @Test
     void returnsNothingWhenThereAreNoPlans() {
-        assertThat(service.getActivePlan()).isEmpty();
+        assertThat(service.getActivePlan(UserId.random())).isEmpty();
     }
 }

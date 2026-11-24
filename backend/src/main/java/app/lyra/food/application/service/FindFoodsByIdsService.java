@@ -4,6 +4,7 @@ import app.lyra.food.application.port.in.FindFoodsByIdsUseCase;
 import app.lyra.food.application.port.out.FoodRepository;
 import app.lyra.food.domain.Food;
 import app.lyra.food.domain.FoodNotFoundException;
+import app.lyra.shared.domain.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +23,7 @@ class FindFoodsByIdsService implements FindFoodsByIdsUseCase {
     private final FoodRepository foodRepository;
 
     @Override
-    public Map<UUID, Food> findByIds(Collection<UUID> ids) {
+    public Map<UUID, Food> findByIds(UserId userId, Collection<UUID> ids) {
         Set<UUID> distinctIds = new LinkedHashSet<>(ids);
         Map<UUID, Food> found = foodRepository.findAllById(distinctIds).stream()
                 .collect(Collectors.toMap(Food::getId, Function.identity()));

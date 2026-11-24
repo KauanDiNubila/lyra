@@ -5,6 +5,7 @@ import app.lyra.food.domain.Food;
 import app.lyra.plan.domain.DietPlan;
 import app.lyra.plan.domain.PlannedItem;
 import app.lyra.plan.domain.PlannedMeal;
+import app.lyra.shared.domain.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -17,8 +18,8 @@ class PlanResponseFactory {
 
     private final FindFoodsByIdsUseCase findFoods;
 
-    PlanResponse of(DietPlan plan) {
-        Map<UUID, Food> foods = findFoods.findByIds(plan.foodIds());
+    PlanResponse of(UserId userId, DietPlan plan) {
+        Map<UUID, Food> foods = findFoods.findByIds(userId, plan.foodIds());
         return new PlanResponse(
                 plan.getId(),
                 plan.getName(),

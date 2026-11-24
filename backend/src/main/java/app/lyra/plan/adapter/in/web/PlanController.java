@@ -5,6 +5,7 @@ import app.lyra.plan.application.port.in.CreatePlanUseCase;
 import app.lyra.plan.application.port.in.GetPlanUseCase;
 import app.lyra.plan.application.port.in.ListPlansUseCase;
 import app.lyra.plan.application.port.in.ReplacePlanUseCase;
+import app.lyra.shared.domain.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,28 +33,28 @@ class PlanController {
     private final PlanResponseFactory responses;
 
     @GetMapping
-    List<PlanSummaryResponse> listPlans() {
-        return listPlansUseCase.listPlans().stream().map(PlanSummaryResponse::from).toList();
+    List<PlanSummaryResponse> listPlans(UserId userId) {
+        return listPlansUseCase.listPlans(userId).stream().map(PlanSummaryResponse::from).toList();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    PlanResponse createPlan(@RequestBody PlanRequest request) {
-        return responses.of(createPlanUseCase.create(request.name(), request.toTargets(), request.toMeals()));
+    PlanResponse createPlan(UserId userId, @RequestBody PlanRequest request) {
+        return responses.of(userId, createPlanUseCase.create(userId, request.name(), request.toTargets(), request.toMeals()));
     }
 
     @GetMapping("/{id}")
-    PlanResponse getPlan(@PathVariable UUID id) {
-        return responses.of(getPlanUseCase.getPlan(id));
+    PlanResponse getPlan(UserId userId, @PathVariable UUID id) {
+        return responses.of(userId, getPlanUseCase.getPlan(userId, id));
     }
 
     @PutMapping("/{id}")
-    PlanResponse replacePlan(@PathVariable UUID id, @RequestBody PlanRequest request) {
-        return responses.of(replacePlanUseCase.replace(id, request.name(), request.toTargets(), request.toMeals()));
+    PlanResponse replacePlan(UserId userId, @PathVariable UUID id, @RequestBody PlanRequest request) {
+        return responses.of(userId, replacePlanUseCase.replace(userId, id, request.name(), request.toTargets(), request.toMeals()));
     }
 
     @PostMapping("/{id}/activation")
-    PlanResponse activatePlan(@PathVariable UUID id) {
-        return responses.of(activatePlanUseCase.activate(id));
+    PlanResponse activatePlan(UserId userId, @PathVariable UUID id) {
+        return responses.of(userId, activatePlanUseCase.activate(userId, id));
     }
 }

@@ -12,6 +12,7 @@ import app.lyra.plan.domain.DailyTargets;
 import app.lyra.plan.domain.DietPlan;
 import app.lyra.plan.domain.PlannedItem;
 import app.lyra.plan.domain.PlannedMeal;
+import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -39,7 +40,7 @@ class GetDiaryDayServiceTest {
         repository.save(today);
         repository.save(DiaryEntry.log(RICE, DATE.minusDays(1), "Almoço", grams("100")));
 
-        DiaryDay day = service(Optional.empty()).getDay(DATE);
+        DiaryDay day = service(Optional.empty()).getDay(UserId.random(), DATE);
 
         assertThat(day.date()).isEqualTo(DATE);
         assertThat(day.entries()).containsExactly(today);
@@ -47,7 +48,7 @@ class GetDiaryDayServiceTest {
 
     @Test
     void returnsAnEmptyDayWhenNothingWasEaten() {
-        DiaryDay day = service(Optional.empty()).getDay(DATE);
+        DiaryDay day = service(Optional.empty()).getDay(UserId.random(), DATE);
 
         assertThat(day.entries()).isEmpty();
         assertThat(day.total()).isEqualTo(Macros.ZERO);
@@ -57,7 +58,7 @@ class GetDiaryDayServiceTest {
     void takesTheTargetsFromThePlanThatIsActiveNow() {
         repository.save(DiaryEntry.log(RICE, DATE, "Almoço", grams("100")));
 
-        DiaryDay day = service(Optional.of(ACTIVE_PLAN)).getDay(DATE);
+        DiaryDay day = service(Optional.of(ACTIVE_PLAN)).getDay(UserId.random(), DATE);
 
         Macros targets = day.targets().orElseThrow();
         assertThat(targets.kcal()).isEqualByComparingTo("2000");
@@ -69,7 +70,7 @@ class GetDiaryDayServiceTest {
 
     @Test
     void hasNoTargetsWhenNoPlanIsActive() {
-        DiaryDay day = service(Optional.empty()).getDay(DATE);
+        DiaryDay day = service(Optional.empty()).getDay(UserId.random(), DATE);
 
         assertThat(day.targets()).isEmpty();
         assertThat(day.differenceFromTargets()).isEmpty();
@@ -77,13 +78,13 @@ class GetDiaryDayServiceTest {
 
     @Test
     void doesNotFillTheDayItReads() {
-        service(Optional.of(ACTIVE_PLAN)).getDay(DATE);
+        service(Optional.of(ACTIVE_PLAN)).getDay(UserId.random(), DATE);
 
         assertThat(repository.findByDate(DATE)).isEmpty();
     }
 
     private GetDiaryDayService service(Optional<DietPlan> activePlan) {
-        GetActivePlanUseCase getActivePlan = () -> activePlan;
+        GetActivePlanUseCase getActivePlan = userId -> activePlan;
         return new GetDiaryDayService(getActivePlan, repository);
     }
 

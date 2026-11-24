@@ -16,7 +16,7 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-@SpringBootTest(properties = "springdoc.default-produces-media-type=application/json")
+@SpringBootTest(properties = {"springdoc.api-docs.enabled=true", "springdoc.default-produces-media-type=application/json"})
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 class OpenApiContractTest {

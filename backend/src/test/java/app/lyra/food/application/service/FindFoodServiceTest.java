@@ -5,6 +5,7 @@ import app.lyra.food.domain.FoodNotFoundException;
 import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
+import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -27,14 +28,14 @@ class FindFoodServiceTest {
         repository.save(rice);
         repository.save(Food.custom("Feijão", HUNDRED_GRAMS, ANY));
 
-        assertThat(service.findById(rice.getId())).isEqualTo(rice);
+        assertThat(service.findById(UserId.random(), rice.getId())).isEqualTo(rice);
     }
 
     @Test
     void failsWhenThereIsNoFoodWithThatId() {
         UUID unknown = UUID.randomUUID();
 
-        assertThatThrownBy(() -> service.findById(unknown))
+        assertThatThrownBy(() -> service.findById(UserId.random(), unknown))
                 .isInstanceOf(FoodNotFoundException.class)
                 .hasMessage("Food not found: " + unknown);
     }

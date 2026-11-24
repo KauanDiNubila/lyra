@@ -1,5 +1,6 @@
 package app.lyra.shared.adapter.in.web;
 
+import app.lyra.TestSessions;
 import app.lyra.shared.domain.InvalidInputException;
 import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.AfterEach;
@@ -12,7 +13,6 @@ import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.lang.reflect.Method;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -23,7 +23,7 @@ class CurrentUserArgumentResolverTest {
 
     @AfterEach
     void clearTheContext() {
-        SecurityContextHolder.clearContext();
+        TestSessions.signOut();
     }
 
     @Test
@@ -34,13 +34,12 @@ class CurrentUserArgumentResolverTest {
 
     @Test
     void givesTheIdOfTheUserThatIsSignedIn() throws Exception {
-        UUID uuid = UUID.randomUUID();
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(uuid.toString(), "n/a", AuthorityUtils.NO_AUTHORITIES));
+        UserId signedIn = UserId.random();
+        TestSessions.signIn(signedIn);
 
         UserId id = resolver.resolveArgument(parameter("userId", 0), null, null, null);
 
-        assertThat(id).isEqualTo(new UserId(uuid));
+        assertThat(id).isEqualTo(signedIn);
     }
 
     @Test

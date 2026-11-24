@@ -6,6 +6,7 @@ import app.lyra.diary.domain.DiaryDay;
 import app.lyra.diary.domain.Macros;
 import app.lyra.plan.application.port.in.GetActivePlanUseCase;
 import app.lyra.plan.domain.DailyTargets;
+import app.lyra.shared.domain.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,8 +21,8 @@ class GetDiaryDayService implements GetDiaryDayUseCase {
     private final DiaryEntryRepository diaryEntryRepository;
 
     @Override
-    public DiaryDay getDay(LocalDate date) {
-        Optional<Macros> targets = getActivePlan.getActivePlan().map(plan -> toMacros(plan.getTargets()));
+    public DiaryDay getDay(UserId userId, LocalDate date) {
+        Optional<Macros> targets = getActivePlan.getActivePlan(userId).map(plan -> toMacros(plan.getTargets()));
         return new DiaryDay(date, diaryEntryRepository.findByDate(date), targets);
     }
 

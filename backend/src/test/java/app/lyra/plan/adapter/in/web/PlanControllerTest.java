@@ -1,5 +1,6 @@
 package app.lyra.plan.adapter.in.web;
 
+import app.lyra.SignedInControllerTest;
 import app.lyra.food.application.port.in.FindFoodsByIdsUseCase;
 import app.lyra.food.domain.Food;
 import app.lyra.food.domain.FoodNotFoundException;
@@ -38,6 +39,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -48,7 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(PlanController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import({PlanControllerTest.FakeUseCases.class, PlanResponseFactory.class})
-class PlanControllerTest {
+class PlanControllerTest extends SignedInControllerTest {
 
     private static final UUID RICE_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final UUID PLAN_ID = UUID.fromString("00000000-0000-0000-0000-0000000000b1");
@@ -72,6 +74,7 @@ class PlanControllerTest {
                                    "quantity": {"amount": 200, "unit": "GRAM"}}]}]}
             """;
 
+
     @Autowired
     private MockMvc mvc;
 
@@ -80,7 +83,7 @@ class PlanControllerTest {
 
         @Bean
         FindFoodsByIdsUseCase findFoods() {
-            return ids -> {
+            return (userId, ids) -> {
                 Map<UUID, Food> found = new HashMap<>();
                 for (UUID id : ids) {
                     if (!id.equals(RICE_ID)) {
@@ -94,12 +97,16 @@ class PlanControllerTest {
 
         @Bean
         ListPlansUseCase listPlans() {
-            return () -> List.of(PLAN, PLAN.activated());
+            return userId -> {
+                CALLERS.add(userId);
+                return List.of(PLAN, PLAN.activated());
+            };
         }
 
         @Bean
         GetPlanUseCase getPlan() {
-            return id -> {
+            return (userId, id) -> {
+                CALLERS.add(userId);
                 if (!id.equals(PLAN_ID)) {
                     throw new PlanNotFoundException(id);
                 }
@@ -109,16 +116,18 @@ class PlanControllerTest {
 
         @Bean
         CreatePlanUseCase createPlan(FindFoodsByIdsUseCase findFoods) {
-            return (name, targets, meals) -> {
+            return (userId, name, targets, meals) -> {
+                CALLERS.add(userId);
                 DietPlan plan = DietPlan.create(name, targets, meals);
-                findFoods.findByIds(plan.foodIds());
+                findFoods.findByIds(userId, plan.foodIds());
                 return plan;
             };
         }
 
         @Bean
         ReplacePlanUseCase replacePlan() {
-            return (id, name, targets, meals) -> {
+            return (userId, id, name, targets, meals) -> {
+                CALLERS.add(userId);
                 if (!id.equals(PLAN_ID)) {
                     throw new PlanNotFoundException(id);
                 }
@@ -128,7 +137,8 @@ class PlanControllerTest {
 
         @Bean
         ActivatePlanUseCase activatePlan() {
-            return id -> {
+            return (userId, id) -> {
+                CALLERS.add(userId);
                 if (!id.equals(PLAN_ID)) {
                     throw new PlanNotFoundException(id);
                 }
@@ -136,6 +146,18 @@ class PlanControllerTest {
             };
         }
     }
+
+    @Test
+    void everyRouteAsksTheUseCaseOnBehalfOfTheSignedInUser() throws Exception {
+        mvc.perform(get("/api/plans"));
+        mvc.perform(get("/api/plans/" + PLAN_ID));
+        mvc.perform(post("/api/plans").contentType(MediaType.APPLICATION_JSON).content(VALID_PLAN));
+        mvc.perform(put("/api/plans/" + PLAN_ID).contentType(MediaType.APPLICATION_JSON).content(VALID_PLAN));
+        mvc.perform(post("/api/plans/" + PLAN_ID + "/activation"));
+
+        assertThat(CALLERS).hasSize(5).containsOnly(SIGNED_IN);
+    }
+
 
     @Test
     void listReturnsASummaryOfEachPlan() throws Exception {

@@ -1,5 +1,6 @@
 package app.lyra.diary.adapter.in.web;
 
+import app.lyra.SignedInControllerTest;
 import app.lyra.diary.application.port.in.ChangeEntryUseCase;
 import app.lyra.diary.application.port.in.ChangeEntryUseCase.ChangeEntryCommand;
 import app.lyra.diary.application.port.in.DeleteEntryUseCase;
@@ -48,7 +49,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(DiaryController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(DiaryControllerTest.FakeUseCases.class)
-class DiaryControllerTest {
+class DiaryControllerTest extends SignedInControllerTest {
 
     private static final LocalDate DATE = LocalDate.of(2026, 11, 19);
     private static final UUID RICE_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
@@ -74,7 +75,8 @@ class DiaryControllerTest {
 
         @Bean
         GetDiaryDayUseCase getDiaryDay() {
-            return date -> {
+            return (userId, date) -> {
+                CALLERS.add(userId);
                 if (date.equals(DATE)) {
                     return new DiaryDay(date, List.of(LUNCH, DINNER));
                 }
@@ -87,7 +89,8 @@ class DiaryControllerTest {
 
         @Bean
         FillDayFromPlanUseCase fillDayFromPlan() {
-            return date -> {
+            return (userId, date) -> {
+                CALLERS.add(userId);
                 if (date.equals(NO_PLAN_DATE)) {
                     throw new NoActivePlanException();
                 }
@@ -97,7 +100,8 @@ class DiaryControllerTest {
 
         @Bean
         LogEntryUseCase logEntry() {
-            return command -> {
+            return (userId, command) -> {
+                CALLERS.add(userId);
                 if (!command.foodId().equals(RICE_ID)) {
                     throw new FoodNotFoundException(command.foodId());
                 }
@@ -107,7 +111,8 @@ class DiaryControllerTest {
 
         @Bean
         ChangeEntryUseCase changeEntry() {
-            return (id, command) -> {
+            return (userId, id, command) -> {
+                CALLERS.add(userId);
                 if (!id.equals(LUNCH_ID)) {
                     throw new DiaryEntryNotFoundException(id);
                 }
@@ -124,7 +129,8 @@ class DiaryControllerTest {
 
         @Bean
         DeleteEntryUseCase deleteEntry() {
-            return id -> {
+            return (userId, id) -> {
+                CALLERS.add(userId);
                 if (id.equals(PLAN_ENTRY_ID)) {
                     throw new InvalidInputException("An entry of the plan cannot be deleted: change its quantity to zero to skip it");
                 }
@@ -135,6 +141,21 @@ class DiaryControllerTest {
         }
     }
 
+
+    @Test
+    void everyRouteAsksTheUseCaseOnBehalfOfTheSignedInUser() throws Exception {
+        mvc.perform(get("/api/diary/2026-11-19"));
+        mvc.perform(post("/api/diary/2026-11-19/entries").contentType(MediaType.APPLICATION_JSON).content("""
+                {"foodId": "00000000-0000-0000-0000-000000000001", "mealName": "Almoço",
+                 "quantity": {"amount": 150, "unit": "GRAM"}}
+                """));
+        mvc.perform(post("/api/diary/2026-11-25/plan"));
+        mvc.perform(patch("/api/diary/entries/" + LUNCH_ID).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"mealName\": \"Jantar\"}"));
+        mvc.perform(delete("/api/diary/entries/" + LUNCH_ID));
+
+        assertThat(CALLERS).hasSize(5).containsOnly(SIGNED_IN);
+    }
     @Test
     void dayGroupsEntriesByMealWithTotals() throws Exception {
         mvc.perform(get("/api/diary/2026-11-19"))

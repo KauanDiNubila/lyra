@@ -1,5 +1,7 @@
 package app.lyra.food.adapter.in.web;
 
+import app.lyra.SignedInControllerTest;
+import app.lyra.TestSessions;
 import app.lyra.food.application.port.in.CreateCustomFoodUseCase;
 import app.lyra.food.application.port.in.SearchFoodsUseCase;
 import app.lyra.food.domain.Food;
@@ -22,6 +24,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -31,13 +34,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(FoodController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(FoodControllerTest.FakeUseCases.class)
-class FoodControllerTest {
+class FoodControllerTest extends SignedInControllerTest {
 
     private static final UUID RICE_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final Food RICE = new Food(RICE_ID, "Arroz, tipo 1, cozido", FoodSource.TACO,
             new Quantity(new BigDecimal("100"), MeasurementUnit.GRAM),
             new Nutrients(new BigDecimal("128.2585"), new BigDecimal("2.5208"), new BigDecimal("28.0598"),
                     new BigDecimal("0.227"), new BigDecimal("1.561"), null));
+
 
     @Autowired
     private MockMvc mvc;
@@ -47,7 +51,8 @@ class FoodControllerTest {
 
         @Bean
         SearchFoodsUseCase searchFoods() {
-            return query -> {
+            return (userId, query) -> {
+                CALLERS.add(userId);
                 FoodSearchQuery.of(query);
                 return List.of(RICE);
             };
@@ -55,8 +60,39 @@ class FoodControllerTest {
 
         @Bean
         CreateCustomFoodUseCase createCustomFood() {
-            return Food::custom;
+            return (userId, name, amount, nutrients) -> {
+                CALLERS.add(userId);
+                return Food.custom(name, amount, nutrients);
+            };
         }
+    }
+
+    @Test
+    void withoutASignedInUserTheAnswerIsAnUnauthorizedProblem() throws Exception {
+        TestSessions.signOut();
+
+        mvc.perform(get("/api/foods").param("query", "arroz"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Unauthorized"));
+    }
+
+    @Test
+    void searchAsksTheUseCaseOnBehalfOfTheSignedInUser() throws Exception {
+        mvc.perform(get("/api/foods").param("query", "arroz")).andExpect(status().isOk());
+
+        assertThat(CALLERS).containsExactly(SIGNED_IN);
+    }
+
+    @Test
+    void createAsksTheUseCaseOnBehalfOfTheSignedInUser() throws Exception {
+        mvc.perform(post("/api/foods").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"name": "Milkshake", "referenceAmount": {"amount": 1, "unit": "PORTION"},
+                         "nutrients": {"kcal": 1, "protein": 1, "carbohydrate": 1, "fat": 1}}
+                        """))
+                .andExpect(status().isCreated());
+
+        assertThat(CALLERS).containsExactly(SIGNED_IN);
     }
 
     @Test
