@@ -9,6 +9,242 @@
     "description" : "Generated server url"
   } ],
   "paths" : {
+    "/api/plans/{id}" : {
+      "get" : {
+        "tags" : [ "plan-controller" ],
+        "operationId" : "getPlan",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PlanResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "plan-controller" ],
+        "operationId" : "replacePlan",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PlanRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PlanResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plans" : {
+      "get" : {
+        "tags" : [ "plan-controller" ],
+        "operationId" : "listPlans",
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/PlanSummaryResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "plan-controller" ],
+        "operationId" : "createPlan",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PlanRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PlanResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plans/{id}/activation" : {
+      "post" : {
+        "tags" : [ "plan-controller" ],
+        "operationId" : "activatePlan",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PlanResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/foods" : {
       "get" : {
         "tags" : [ "food-controller" ],
@@ -333,6 +569,139 @@
           }
         }
       },
+      "PlanItemRequest" : {
+        "type" : "object",
+        "properties" : {
+          "foodId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "quantity" : {
+            "$ref" : "#/components/schemas/QuantityJson"
+          }
+        }
+      },
+      "PlanMealRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "time" : {
+            "type" : "string",
+            "format" : "time-local"
+          },
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PlanItemRequest"
+            }
+          }
+        }
+      },
+      "PlanRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "targets" : {
+            "$ref" : "#/components/schemas/TargetsJson"
+          },
+          "meals" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PlanMealRequest"
+            }
+          }
+        }
+      },
+      "QuantityJson" : {
+        "type" : "object",
+        "properties" : {
+          "amount" : {
+            "type" : "number"
+          },
+          "unit" : {
+            "type" : "string",
+            "enum" : [ "GRAM", "MILLILITER", "PORTION" ]
+          }
+        }
+      },
+      "TargetsJson" : {
+        "type" : "object",
+        "properties" : {
+          "kcal" : {
+            "type" : "number"
+          },
+          "protein" : {
+            "type" : "number"
+          },
+          "carbohydrate" : {
+            "type" : "number"
+          },
+          "fat" : {
+            "type" : "number"
+          }
+        }
+      },
+      "PlanItemResponse" : {
+        "type" : "object",
+        "properties" : {
+          "foodId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "foodName" : {
+            "type" : "string"
+          },
+          "quantity" : {
+            "$ref" : "#/components/schemas/QuantityJson"
+          }
+        }
+      },
+      "PlanMealResponse" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "time" : {
+            "type" : "string",
+            "format" : "time-local"
+          },
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PlanItemResponse"
+            }
+          }
+        }
+      },
+      "PlanResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "active" : {
+            "type" : "boolean"
+          },
+          "targets" : {
+            "$ref" : "#/components/schemas/TargetsJson"
+          },
+          "meals" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PlanMealResponse"
+            }
+          }
+        }
+      },
       "CreateFoodRequest" : {
         "type" : "object",
         "properties" : {
@@ -367,18 +736,6 @@
           },
           "sodium" : {
             "type" : "number"
-          }
-        }
-      },
-      "QuantityJson" : {
-        "type" : "object",
-        "properties" : {
-          "amount" : {
-            "type" : "number"
-          },
-          "unit" : {
-            "type" : "string",
-            "enum" : [ "GRAM", "MILLILITER", "PORTION" ]
           }
         }
       },
@@ -470,6 +827,21 @@
         "properties" : {
           "quantity" : {
             "$ref" : "#/components/schemas/QuantityJson"
+          }
+        }
+      },
+      "PlanSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "active" : {
+            "type" : "boolean"
           }
         }
       },
