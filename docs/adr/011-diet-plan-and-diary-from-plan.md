@@ -30,6 +30,8 @@ Um `DietPlan` tem nome, metas diárias (kcal, proteína, carboidrato e gordura),
 - O plano guarda só o `foodId` de cada item; nome e nutrientes são lidos do alimento na hora de mostrar o plano. O snapshot continua sendo da entrada do diário, não do plano.
 - Existe **um único plano ativo**, global: ainda não há autenticação, então o plano não tem dono, a mesma regra dos alimentos personalizados e das entradas do diário. O banco garante a unicidade (índice único parcial sobre o plano ativo), e ativar um plano desativa o anterior na mesma transação.
 - Editar um plano troca o plano inteiro (`PUT`), sem editar item por item. Não há exclusão de plano nesta slice.
+- Ativar e editar um plano são serializados por um lock advisory do PostgreSQL (`pg_advisory_xact_lock`), tomado no início da transação pela operação `lockPlanChanges` da porta `PlanRepository`. Sem ele, duas ativações ao mesmo tempo, ou uma edição durante uma ativação, liam o mesmo estado e uma delas terminava em erro `500` (violação do índice único ou gravação obsoleta). Com o lock, a segunda operação espera, lê o estado já confirmado e termina sem erro. O lock é global porque o plano ativo também é: passa a ser por usuário quando existir autenticação.
+- Refeições e itens têm o id derivado da posição (id do pai e ordem), então gravar de novo um plano que só mudou de ativo não reescreve nenhuma linha. Isso combina com o `planned_slot` do diário, que também identifica o item pela posição.
 
 ### Preencher o dia
 
@@ -103,3 +105,4 @@ Os erros seguem o Problem Details das ADRs 008 e 010: o módulo `plan` lança as
 - Ruim: não se pode apagar uma entrada do plano; quem preencheu o dia por engano precisa pular item por item.
 - Ruim: as metas dos dias antigos acompanham o plano ativo de hoje.
 - Ruim: um plano só, global, vale até existir autenticação.
+- Ruim: o lock global serializa a edição de qualquer plano e prende o adaptador ao PostgreSQL; ambos mudam junto com o plano por usuário.
