@@ -112,6 +112,7 @@ Fixed accepted decisions:
 | Generated `taco-foods.tsv` and `docs/api/openapi.json` committed | ADR-008 | |
 | Contract without `required` fields; errors raised by Spring keep the default `Bad Request` title | ADR-008 | Until a second API client exists |
 | TACO converter tests not wired to the CI | ADR-008 | Until the converter is run more than once |
+| Three copies of `QuantityJson` (food, diary and plan web adapters) | ADR-010 | Until a fourth module needs `Quantity`, a copy diverges, or an ADR allows a shared web kit |
 
 Fixed push-hard items: code a junior developer could not read at a glance; `domain` depending on anything outside the JDK; rounding outside the presentation edge; `@Data` or `@Setter` on domain entities; silent fallbacks in configuration or error handling; logic in the wrong module or layer; tests that only verify mocks.
 
