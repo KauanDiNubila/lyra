@@ -1,5 +1,6 @@
 package app.lyra.food.adapter.in.web;
 
+import app.lyra.TestSessions;
 import app.lyra.food.application.port.in.CreateCustomFoodUseCase;
 import app.lyra.food.application.port.in.SearchFoodsUseCase;
 import app.lyra.food.domain.Food;
@@ -8,6 +9,9 @@ import app.lyra.food.domain.FoodSource;
 import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
+import app.lyra.shared.domain.UserId;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -19,9 +23,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -39,15 +45,30 @@ class FoodControllerTest {
             new Nutrients(new BigDecimal("128.2585"), new BigDecimal("2.5208"), new BigDecimal("28.0598"),
                     new BigDecimal("0.227"), new BigDecimal("1.561"), null));
 
+    private static final UserId SIGNED_IN = UserId.random();
+    private static final List<UserId> CALLERS = new ArrayList<>();
+
     @Autowired
     private MockMvc mvc;
+
+    @BeforeEach
+    void signIn() {
+        TestSessions.signIn(SIGNED_IN);
+        CALLERS.clear();
+    }
+
+    @AfterEach
+    void signOut() {
+        TestSessions.signOut();
+    }
 
     @TestConfiguration
     static class FakeUseCases {
 
         @Bean
         SearchFoodsUseCase searchFoods() {
-            return query -> {
+            return (userId, query) -> {
+                CALLERS.add(userId);
                 FoodSearchQuery.of(query);
                 return List.of(RICE);
             };
@@ -55,8 +76,29 @@ class FoodControllerTest {
 
         @Bean
         CreateCustomFoodUseCase createCustomFood() {
-            return Food::custom;
+            return (userId, name, amount, nutrients) -> {
+                CALLERS.add(userId);
+                return Food.custom(name, amount, nutrients);
+            };
         }
+    }
+
+    @Test
+    void searchAsksTheUseCaseOnBehalfOfTheSignedInUser() throws Exception {
+        mvc.perform(get("/api/foods").param("query", "arroz")).andExpect(status().isOk());
+
+        assertThat(CALLERS).containsExactly(SIGNED_IN);
+    }
+
+    @Test
+    void createAsksTheUseCaseOnBehalfOfTheSignedInUser() throws Exception {
+        mvc.perform(post("/api/foods").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"name": "Milkshake", "referenceAmount": {"amount": 1, "unit": "PORTION"},
+                         "nutrients": {"kcal": 1, "protein": 1, "carbohydrate": 1, "fat": 1}}
+                        """))
+                .andExpect(status().isCreated());
+
+        assertThat(CALLERS).containsExactly(SIGNED_IN);
     }
 
     @Test

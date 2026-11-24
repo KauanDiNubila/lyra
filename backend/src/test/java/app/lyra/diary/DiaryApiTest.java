@@ -1,7 +1,9 @@
 package app.lyra.diary;
 
 import app.lyra.Concurrently;
+import app.lyra.TestSessions;
 import app.lyra.TestcontainersConfiguration;
+import app.lyra.shared.domain.UserId;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +31,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 class DiaryApiTest {
+
+    private static final UserId USER = UserId.random();
 
     private static final String DAY = "/api/diary/2026-11-19";
 
@@ -78,7 +82,7 @@ class DiaryApiTest {
 
     @Test
     void aTacoFoodGivesItsPublishedValuesForTheQuantityEaten() throws Exception {
-        String search = mvc.perform(get("/api/foods").param("query", "arroz tipo 1 cozido"))
+        String search = mvc.perform(get("/api/foods").with(TestSessions.of(USER)).param("query", "arroz tipo 1 cozido"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         String riceId = JsonPath.read(search, "$[0].id");
@@ -293,7 +297,7 @@ class DiaryApiTest {
     }
 
     private String createFood(String name, int kcal) throws Exception {
-        String body = mvc.perform(post("/api/foods").contentType(MediaType.APPLICATION_JSON).content("""
+        String body = mvc.perform(post("/api/foods").with(TestSessions.of(USER)).contentType(MediaType.APPLICATION_JSON).content("""
                         {"name": "%s", "referenceAmount": {"amount": 100, "unit": "GRAM"},
                          "nutrients": {"kcal": %d, "protein": 10, "carbohydrate": 20, "fat": 5}}
                         """.formatted(name, kcal)))

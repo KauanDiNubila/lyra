@@ -4,6 +4,7 @@ import app.lyra.food.application.port.in.SearchFoodsUseCase;
 import app.lyra.food.application.port.out.FoodRepository;
 import app.lyra.food.domain.Food;
 import app.lyra.food.domain.FoodSearchQuery;
+import app.lyra.shared.domain.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +19,7 @@ class FoodSearchService implements SearchFoodsUseCase {
     private final FoodRepository foodRepository;
 
     @Override
-    public List<Food> search(String query) {
+    public List<Food> search(UserId userId, String query) {
         return foodRepository.search(FoodSearchQuery.of(query), MAX_RESULTS);
     }
 }

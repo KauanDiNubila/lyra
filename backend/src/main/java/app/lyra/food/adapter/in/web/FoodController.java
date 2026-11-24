@@ -2,6 +2,7 @@ package app.lyra.food.adapter.in.web;
 
 import app.lyra.food.application.port.in.CreateCustomFoodUseCase;
 import app.lyra.food.application.port.in.SearchFoodsUseCase;
+import app.lyra.shared.domain.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,14 +24,14 @@ class FoodController {
     private final CreateCustomFoodUseCase createCustomFood;
 
     @GetMapping
-    List<FoodResponse> search(@RequestParam String query) {
-        return searchFoods.search(query).stream().map(FoodResponse::from).toList();
+    List<FoodResponse> search(UserId userId, @RequestParam String query) {
+        return searchFoods.search(userId, query).stream().map(FoodResponse::from).toList();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    FoodResponse create(@RequestBody CreateFoodRequest request) {
-        return FoodResponse.from(createCustomFood.create(
+    FoodResponse create(UserId userId, @RequestBody CreateFoodRequest request) {
+        return FoodResponse.from(createCustomFood.create(userId,
                 request.name(), request.toReferenceAmount(), request.toNutrients()));
     }
 }

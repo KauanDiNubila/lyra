@@ -1,7 +1,9 @@
 package app.lyra.plan;
 
 import app.lyra.Concurrently;
+import app.lyra.TestSessions;
 import app.lyra.TestcontainersConfiguration;
+import app.lyra.shared.domain.UserId;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 class PlanApiTest {
+
+    private static final UserId USER = UserId.random();
 
     @Autowired
     private MockMvc mvc;
@@ -214,7 +218,7 @@ class PlanApiTest {
     }
 
     private List<String> tacoFoodIds() throws Exception {
-        String body = mvc.perform(get("/api/foods").param("query", "cozido"))
+        String body = mvc.perform(get("/api/foods").with(TestSessions.of(USER)).param("query", "cozido"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         return JsonPath.read(body, "$[*].id");
