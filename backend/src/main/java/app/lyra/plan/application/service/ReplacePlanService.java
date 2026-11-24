@@ -23,7 +23,7 @@ class ReplacePlanService implements ReplacePlanUseCase {
     public DietPlan replace(UUID id, String name, DailyTargets targets, List<PlannedMeal> meals) {
         DietPlan plan = planRepository.findById(id).orElseThrow(() -> new PlanNotFoundException(id));
         DietPlan changed = plan.withContent(name, targets, meals);
-        foodChecker.check(changed.getMeals());
+        foodChecker.check(changed);
         planRepository.save(changed);
         return changed;
     }

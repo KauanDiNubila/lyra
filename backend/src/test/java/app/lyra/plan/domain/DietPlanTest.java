@@ -1,13 +1,17 @@
 package app.lyra.plan.domain;
 
+import app.lyra.food.domain.MeasurementUnit;
+import app.lyra.food.domain.Quantity;
 import app.lyra.shared.domain.InvalidInputException;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static app.lyra.plan.domain.PlanFixtures.item;
 import static app.lyra.plan.domain.PlanFixtures.meal;
 import static app.lyra.plan.domain.PlanFixtures.targets;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -110,6 +114,17 @@ class DietPlanTest {
         List<PlannedMeal> none = List.of();
 
         assertThatThrownBy(() -> plan.withContent("Cutting", targets(), none)).isInstanceOf(InvalidInputException.class);
+    }
+
+    @Test
+    void listsTheFoodsOfThePlanOnceEach() {
+        UUID other = UUID.randomUUID();
+        PlannedItem otherItem = new PlannedItem(other, new Quantity(new BigDecimal("30"), MeasurementUnit.GRAM));
+        DietPlan plan = DietPlan.create("Cutting", targets(), List.of(
+                meal("Almoço"),
+                new PlannedMeal("Jantar", null, List.of(item("100"), otherItem))));
+
+        assertThat(plan.foodIds()).containsExactly(PlanFixtures.RICE_ID, other);
     }
 
     @Test

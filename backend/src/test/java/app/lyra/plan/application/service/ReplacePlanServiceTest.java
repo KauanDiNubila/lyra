@@ -7,6 +7,7 @@ import app.lyra.shared.domain.InvalidInputException;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static app.lyra.plan.application.service.PlanTestData.RICE;
@@ -21,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ReplacePlanServiceTest {
 
     private final InMemoryPlanRepository repository = new InMemoryPlanRepository();
-    private final ReplacePlanService service = new ReplacePlanService(repository, new PlanFoodChecker(id -> RICE));
+    private final ReplacePlanService service = new ReplacePlanService(repository, new PlanFoodChecker(ids -> Map.of(RICE.getId(), RICE)));
 
     @Test
     void replacesTheContentKeepingTheIdAndTheActiveState() {

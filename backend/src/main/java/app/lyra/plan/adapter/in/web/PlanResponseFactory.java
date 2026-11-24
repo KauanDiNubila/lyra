@@ -1,6 +1,6 @@
 package app.lyra.plan.adapter.in.web;
 
-import app.lyra.food.application.port.in.FindFoodUseCase;
+import app.lyra.food.application.port.in.FindFoodsByIdsUseCase;
 import app.lyra.food.domain.Food;
 import app.lyra.plan.domain.DietPlan;
 import app.lyra.plan.domain.PlannedItem;
@@ -8,7 +8,6 @@ import app.lyra.plan.domain.PlannedMeal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -16,10 +15,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 class PlanResponseFactory {
 
-    private final FindFoodUseCase findFood;
+    private final FindFoodsByIdsUseCase findFoods;
 
     PlanResponse of(DietPlan plan) {
-        Map<UUID, Food> foods = new HashMap<>();
+        Map<UUID, Food> foods = findFoods.findByIds(plan.foodIds());
         return new PlanResponse(
                 plan.getId(),
                 plan.getName(),
@@ -36,7 +35,7 @@ class PlanResponseFactory {
     }
 
     private PlanResponse.PlanItemResponse itemOf(PlannedItem item, Map<UUID, Food> foods) {
-        Food food = foods.computeIfAbsent(item.foodId(), findFood::findById);
-        return new PlanResponse.PlanItemResponse(item.foodId(), food.getName(), QuantityJson.from(item.quantity()));
+        return new PlanResponse.PlanItemResponse(
+                item.foodId(), foods.get(item.foodId()).getName(), QuantityJson.from(item.quantity()));
     }
 }

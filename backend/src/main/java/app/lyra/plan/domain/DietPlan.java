@@ -4,8 +4,11 @@ import app.lyra.shared.domain.InvalidInputException;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -47,6 +50,13 @@ public class DietPlan {
 
     public DietPlan withContent(String newName, DailyTargets newTargets, List<PlannedMeal> newMeals) {
         return new DietPlan(id, newName, newTargets, newMeals, active);
+    }
+
+    public Set<UUID> foodIds() {
+        return meals.stream()
+                .flatMap(meal -> meal.items().stream())
+                .map(PlannedItem::foodId)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     public DietPlan activated() {

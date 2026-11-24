@@ -1,6 +1,6 @@
 package app.lyra.plan.adapter.in.web;
 
-import app.lyra.food.application.port.in.FindFoodUseCase;
+import app.lyra.food.application.port.in.FindFoodsByIdsUseCase;
 import app.lyra.food.domain.Food;
 import app.lyra.food.domain.FoodNotFoundException;
 import app.lyra.food.domain.FoodSource;
@@ -31,7 +31,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -75,12 +77,16 @@ class PlanControllerTest {
     static class FakeUseCases {
 
         @Bean
-        FindFoodUseCase findFood() {
-            return id -> {
-                if (!id.equals(RICE_ID)) {
-                    throw new FoodNotFoundException(id);
+        FindFoodsByIdsUseCase findFoods() {
+            return ids -> {
+                Map<UUID, Food> found = new HashMap<>();
+                for (UUID id : ids) {
+                    if (!id.equals(RICE_ID)) {
+                        throw new FoodNotFoundException(id);
+                    }
+                    found.put(id, RICE);
                 }
-                return RICE;
+                return found;
             };
         }
 
@@ -100,10 +106,11 @@ class PlanControllerTest {
         }
 
         @Bean
-        CreatePlanUseCase createPlan(FindFoodUseCase findFood) {
+        CreatePlanUseCase createPlan(FindFoodsByIdsUseCase findFoods) {
             return (name, targets, meals) -> {
-                meals.forEach(meal -> meal.items().forEach(item -> findFood.findById(item.foodId())));
-                return DietPlan.create(name, targets, meals);
+                DietPlan plan = DietPlan.create(name, targets, meals);
+                findFoods.findByIds(plan.foodIds());
+                return plan;
             };
         }
 

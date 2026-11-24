@@ -1,14 +1,17 @@
 package app.lyra.plan.application.service;
 
-import app.lyra.food.application.port.in.FindFoodUseCase;
+import app.lyra.food.application.port.in.FindFoodsByIdsUseCase;
 import app.lyra.food.domain.FoodNotFoundException;
 import app.lyra.plan.domain.DietPlan;
 import app.lyra.plan.domain.PlannedMeal;
 import app.lyra.shared.domain.InvalidInputException;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Map;
+import java.util.UUID;
 
 import static app.lyra.plan.application.service.PlanTestData.RICE;
 import static app.lyra.plan.application.service.PlanTestData.lunchAndDinner;
@@ -23,13 +26,13 @@ class CreatePlanServiceTest {
 
     private final InMemoryPlanRepository repository = new InMemoryPlanRepository();
 
-    private CreatePlanService serviceFinding(FindFoodUseCase findFood) {
-        return new CreatePlanService(repository, new PlanFoodChecker(findFood));
+    private CreatePlanService serviceFinding(FindFoodsByIdsUseCase findFoods) {
+        return new CreatePlanService(repository, new PlanFoodChecker(findFoods));
     }
 
     @Test
     void savesAnInactivePlanAndReturnsIt() {
-        DietPlan plan = serviceFinding(id -> RICE).create("  Cutting ", targets(), lunchAndDinner());
+        DietPlan plan = serviceFinding(ids -> Map.of(RICE.getId(), RICE)).create("  Cutting ", targets(), lunchAndDinner());
 
         assertThat(plan.getName()).isEqualTo("Cutting");
         assertThat(plan.isActive()).isFalse();
@@ -38,8 +41,8 @@ class CreatePlanServiceTest {
 
     @Test
     void savesNothingWhenAFoodDoesNotExist() {
-        FindFoodUseCase unknownFood = id -> {
-            throw new FoodNotFoundException(id);
+        FindFoodsByIdsUseCase unknownFood = ids -> {
+            throw new FoodNotFoundException(ids.iterator().next());
         };
         CreatePlanService service = serviceFinding(unknownFood);
         List<PlannedMeal> meals = lunchAndDinner();
@@ -50,7 +53,7 @@ class CreatePlanServiceTest {
 
     @Test
     void savesNothingWhenTheUnitIsNotTheFoodUnit() {
-        CreatePlanService service = serviceFinding(id -> RICE);
+        CreatePlanService service = serviceFinding(ids -> Map.of(RICE.getId(), RICE));
         List<PlannedMeal> meals = List.of(meal("Almoço", riceInPortions("1")));
 
         assertThatThrownBy(() -> service.create("Cutting", targets(), meals))
@@ -61,28 +64,29 @@ class CreatePlanServiceTest {
 
     @Test
     void rejectsAnInvalidPlanBeforeLookingUpAnyFood() {
-        AtomicInteger lookups = new AtomicInteger();
-        CreatePlanService service = serviceFinding(id -> {
-            lookups.incrementAndGet();
-            return RICE;
+        List<Collection<UUID>> requests = new ArrayList<>();
+        CreatePlanService service = serviceFinding(ids -> {
+            requests.add(ids);
+            return Map.of(RICE.getId(), RICE);
         });
 
         assertThatThrownBy(() -> service.create("Cutting", targets(), List.of())).isInstanceOf(InvalidInputException.class);
-        assertThat(lookups).hasValue(0);
+        assertThat(requests).isEmpty();
     }
 
     @Test
-    void looksUpARepeatedFoodOnce() {
-        AtomicInteger lookups = new AtomicInteger();
-        CreatePlanService service = serviceFinding(id -> {
-            lookups.incrementAndGet();
-            return RICE;
+    void asksForAllTheFoodsOfThePlanInOneCallWithoutRepeatingIds() {
+        List<Collection<UUID>> requests = new ArrayList<>();
+        CreatePlanService service = serviceFinding(ids -> {
+            requests.add(ids);
+            return Map.of(RICE.getId(), RICE);
         });
 
         service.create("Cutting", targets(), List.of(
                 meal("Almoço", riceInGrams("150"), riceInGrams("50")),
                 meal("Jantar", riceInGrams("100"))));
 
-        assertThat(lookups).hasValue(1);
+        assertThat(requests).hasSize(1);
+        assertThat(requests.getFirst()).containsExactly(RICE.getId());
     }
 }
