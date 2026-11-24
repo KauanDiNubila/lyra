@@ -56,6 +56,7 @@ Opção escolhida: **login social com Google e sessão em cookie**, com **login 
 ### Como os outros módulos conhecem o usuário
 
 - O núcleo compartilhado ganha `shared.domain.UserId`, um record sobre um UUID, e um resolvedor de argumento de controller em `shared.adapter.in.web` que lê o principal da sessão e entrega o `UserId` ao método do controller. Isso é uma emenda à [ADR-010](010-shared-kernel-for-errors.md): é um identificador técnico, sem regra de negócio, usado por vários módulos, o que cumpre a regra de entrada do núcleo. O núcleo pode depender de `org.springframework`, então o Spring Security não o quebra.
+- O resolvedor entrega o `UserId` a **qualquer parâmetro de controller desse tipo**, sem anotação. Uma anotação `@CurrentUser` em `shared.adapter.in.web` foi tentada e recusada pelo ArchUnit: um controller de outro módulo a importaria, e a regra `modulesTalkOnlyThroughInboundPortsAndDomain` só deixa módulos se alcançarem por `application.port.in` e `domain`. O `UserId` mora em `shared.domain`, que a regra permite, e o resolvedor é registrado pelo Spring sem que nenhum módulo o importe. O documento OpenAPI ignora o tipo `UserId`, para o id da sessão não aparecer como parâmetro da API.
 - Os adaptadores web passam o `UserId` nos comandos dos casos de uso. `application` e `domain` nunca importam o Spring Security.
 
 ### Dono dos dados

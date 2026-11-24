@@ -28,7 +28,7 @@ cd frontend && npm run lint && npm test && npm run build
 cd tools/taco && python -X utf8 -m unittest
 ```
 
-Integration tests use Testcontainers and need Docker Desktop running. The application reads the database from `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` and `SPRING_DATASOURCE_PASSWORD` and fails to start without them; for local runs use `TestLyraApplication`, which starts PostgreSQL in a container.
+Integration tests use Testcontainers and need Docker Desktop running. The application reads the database from `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` and `SPRING_DATASOURCE_PASSWORD` and fails to start without them. It also needs `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (the Google sign-in client) and fails to start without them. For local runs use `TestLyraApplication`, which starts PostgreSQL in a container and fills the Google values with fake ones, so the sign-in only works when the real ones are exported. The session cookie is `Secure`, so a deployment needs HTTPS.
 
 ## Architecture rules (ADR-001)
 
@@ -113,6 +113,7 @@ Fixed accepted decisions:
 | Contract without `required` fields; errors raised by Spring keep the default `Bad Request` title | ADR-008 | Until a second API client exists |
 | TACO converter tests not wired to the CI | ADR-008 | Until the converter is run more than once |
 | Three copies of `QuantityJson` (food, diary and plan web adapters) | ADR-010 | Until a fourth module needs `Quantity`, a copy diverges, or an ADR allows a shared web kit |
+| Only `/api/me` and `/api/logout` ask for a session, and only they need the CSRF token (`PROTECTED_PATHS` in `SecurityConfiguration`) | ADR-012 | Until the data ownership PR makes every `/api/**` route ask for a session |
 
 Fixed push-hard items: code a junior developer could not read at a glance; `domain` depending on anything outside the JDK; rounding outside the presentation edge; `@Data` or `@Setter` on domain entities; silent fallbacks in configuration or error handling; logic in the wrong module or layer; tests that only verify mocks.
 
