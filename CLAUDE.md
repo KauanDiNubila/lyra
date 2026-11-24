@@ -28,7 +28,7 @@ cd frontend && npm run lint && npm test && npm run build
 cd tools/taco && python -X utf8 -m unittest
 ```
 
-Integration tests use Testcontainers and need Docker Desktop running. The application reads the database from `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` and `SPRING_DATASOURCE_PASSWORD` and fails to start without them; for local runs use `TestLyraApplication`, which starts PostgreSQL in a container.
+Integration tests use Testcontainers and need Docker Desktop running. The application reads the database from `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` and `SPRING_DATASOURCE_PASSWORD` and fails to start without them. It also needs `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (the Google sign-in client) and fails to start without them. For local runs use `TestLyraApplication`, which starts PostgreSQL in a container and fills the Google values with fake ones, so the sign-in only works when the real ones are exported. The session cookie is `Secure`, so a deployment needs HTTPS.
 
 ## Architecture rules (ADR-001)
 

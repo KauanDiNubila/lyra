@@ -11,6 +11,9 @@ import org.springframework.security.web.authentication.logout.HttpStatusReturnin
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
+import java.util.List;
+import java.util.stream.Stream;
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -23,14 +26,9 @@ class SecurityConfiguration {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) {
-        RequestMatcher protectedPaths = request -> {
-            for (String path : PROTECTED_PATHS) {
-                if (PathPatternRequestMatcher.withDefaults().matcher(path).matches(request)) {
-                    return true;
-                }
-            }
-            return false;
-        };
+        PathPatternRequestMatcher.Builder paths = PathPatternRequestMatcher.withDefaults();
+        List<RequestMatcher> protectedMatchers = Stream.of(PROTECTED_PATHS).<RequestMatcher>map(paths::matcher).toList();
+        RequestMatcher protectedPaths = request -> protectedMatchers.stream().anyMatch(matcher -> matcher.matches(request));
         http
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers(PROTECTED_PATHS).authenticated()
