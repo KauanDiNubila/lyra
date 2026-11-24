@@ -133,7 +133,7 @@ O diário vem antes do plano porque é a menor peça que o usuário consegue usa
 
 ## 10. Questões em aberto
 
-1. **Autenticação.** Um usuário só no início, mas o social está no roadmap. Opções: Spring Security com cookies de sessão, ou um provedor externo. Até isso ser decidido, o MVP é de um usuário só e as entradas do diário não têm dono, a mesma regra dos alimentos personalizados ([ADR-008](../adr/008-food-catalog-import-and-api.md)); isso precisa de uma ADR própria antes de o app guardar dados de mais de uma pessoa.
+1. ~~**Autenticação.**~~ Resolvida na [ADR-012](../adr/012-user-identity-and-data-ownership.md): login social com Google e sessão em cookie, login obrigatório e dono em todos os dados de usuário. Até a implementação, o app continua de um usuário só.
 2. **Escritas offline.** O MVP lê offline; enfileirar escritas offline e sincronizar depois é mais difícil (conflitos). Adiado para depois da slice 8.
 3. ~~**Edição e formato da TACO.**~~ Resolvida na [ADR-008](../adr/008-food-catalog-import-and-api.md): planilha oficial, convertida para TSV e carregada por uma migração do Flyway.
 4. **Hospedagem.** Não decidida; não bloqueia o desenvolvimento.

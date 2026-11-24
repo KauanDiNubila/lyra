@@ -1,7 +1,7 @@
 # ADR-011: Plano alimentar e diário preenchido a partir do plano
 
 - **Data**: 2026-11-23
-- **Status**: Proposta
+- **Status**: Proposta, alterada pela [ADR-012](012-user-identity-and-data-ownership.md) (o plano ativo e os locks passam a ser por usuário)
 - **Decisores**: Kauan Di Nubila
 - **Tags**: plano, diário, domínio, dados, api
 

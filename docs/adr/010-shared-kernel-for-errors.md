@@ -1,7 +1,7 @@
 # ADR-010: Núcleo compartilhado para erros de domínio e Problem Details
 
 - **Data**: 2026-11-23
-- **Status**: Proposta
+- **Status**: Proposta, alterada pela [ADR-012](012-user-identity-and-data-ownership.md) (o `UserId` entra no núcleo compartilhado)
 - **Decisores**: Kauan Di Nubila
 - **Tags**: arquitetura, erros, api
 
