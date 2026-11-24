@@ -24,6 +24,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ChangeEntryServiceTest {
 
+    private static final UserId USER = UserId.random();
+
     private static final LocalDate DATE = LocalDate.of(2026, 11, 19);
     private static final Food RICE = Food.custom("Arroz", grams("100"),
             new Nutrients(new BigDecimal("128.2585"), new BigDecimal("2.5208"), new BigDecimal("28.0598"),
@@ -40,31 +42,31 @@ class ChangeEntryServiceTest {
     void changesTheQuantityAndSavesIt() {
         DiaryEntry entry = saved(DiaryEntry.log(RICE, DATE, "Almoço", grams("150")));
 
-        DiaryEntry changed = service.change(UserId.random(), entry.getId(), new ChangeEntryCommand(null, grams("200"), null));
+        DiaryEntry changed = service.change(USER, entry.getId(), new ChangeEntryCommand(null, grams("200"), null));
 
         assertThat(changed.macros().kcal()).isEqualByComparingTo("256.517");
         assertThat(changed.getFoodId()).isEqualTo(RICE.getId());
         assertThat(changed.getMealName()).isEqualTo("Almoço");
-        assertThat(repository.findById(entry.getId())).contains(changed);
-        assertThat(repository.findById(entry.getId()).orElseThrow().getQuantity()).isEqualTo(grams("200"));
+        assertThat(repository.findById(USER, entry.getId())).contains(changed);
+        assertThat(repository.findById(USER, entry.getId()).orElseThrow().getQuantity()).isEqualTo(grams("200"));
     }
 
     @Test
     void changesOnlyTheMeal() {
         DiaryEntry entry = saved(DiaryEntry.log(RICE, DATE, "Almoço", grams("150")));
 
-        DiaryEntry changed = service.change(UserId.random(), entry.getId(), new ChangeEntryCommand(null, null, "  Pós-treino "));
+        DiaryEntry changed = service.change(USER, entry.getId(), new ChangeEntryCommand(null, null, "  Pós-treino "));
 
         assertThat(changed.getMealName()).isEqualTo("Pós-treino");
         assertThat(changed.getQuantity()).isEqualTo(grams("150"));
-        assertThat(repository.findById(entry.getId()).orElseThrow().getMealName()).isEqualTo("Pós-treino");
+        assertThat(repository.findById(USER, entry.getId()).orElseThrow().getMealName()).isEqualTo("Pós-treino");
     }
 
     @Test
     void swapsTheFoodWithANewSnapshotAndTheNewQuantity() {
         DiaryEntry entry = saved(DiaryEntry.fromPlan(RICE, DATE, "Almoço", grams("150"), 0));
 
-        DiaryEntry changed = service.change(UserId.random(), entry.getId(), new ChangeEntryCommand(CHICKEN.getId(), grams("120"), null));
+        DiaryEntry changed = service.change(USER, entry.getId(), new ChangeEntryCommand(CHICKEN.getId(), grams("120"), null));
 
         assertThat(changed.getFoodId()).isEqualTo(CHICKEN.getId());
         assertThat(changed.getFoodName()).isEqualTo("Frango");
@@ -72,7 +74,7 @@ class ChangeEntryServiceTest {
         assertThat(changed.getQuantity()).isEqualTo(grams("120"));
         assertThat(changed.origin()).isEqualTo(Origin.SWAPPED);
         assertThat(changed.getPlanned()).isEqualTo(entry.getPlanned());
-        assertThat(repository.findById(entry.getId())).contains(changed);
+        assertThat(repository.findById(USER, entry.getId())).contains(changed);
     }
 
     @Test
@@ -80,7 +82,7 @@ class ChangeEntryServiceTest {
         DiaryEntry entry = saved(DiaryEntry.log(RICE, DATE, "Lanche", grams("150")));
         Quantity onePortion = new Quantity(BigDecimal.ONE, MeasurementUnit.PORTION);
 
-        DiaryEntry changed = service.change(UserId.random(), entry.getId(), new ChangeEntryCommand(MILKSHAKE.getId(), onePortion, null));
+        DiaryEntry changed = service.change(USER, entry.getId(), new ChangeEntryCommand(MILKSHAKE.getId(), onePortion, null));
 
         assertThat(changed.getQuantity()).isEqualTo(onePortion);
         assertThat(changed.getFoodReference().unit()).isEqualTo(MeasurementUnit.PORTION);
@@ -90,7 +92,7 @@ class ChangeEntryServiceTest {
     void changesTheFoodTheQuantityAndTheMealTogether() {
         DiaryEntry entry = saved(DiaryEntry.log(RICE, DATE, "Almoço", grams("150")));
 
-        DiaryEntry changed = service.change(UserId.random(), entry.getId(), new ChangeEntryCommand(CHICKEN.getId(), grams("80"), "Jantar"));
+        DiaryEntry changed = service.change(USER, entry.getId(), new ChangeEntryCommand(CHICKEN.getId(), grams("80"), "Jantar"));
 
         assertThat(changed.getFoodName()).isEqualTo("Frango");
         assertThat(changed.getQuantity()).isEqualTo(grams("80"));
@@ -101,10 +103,10 @@ class ChangeEntryServiceTest {
     void skipsAnEntryOfThePlanWithAQuantityOfZero() {
         DiaryEntry entry = saved(DiaryEntry.fromPlan(RICE, DATE, "Almoço", grams("150"), 0));
 
-        DiaryEntry skipped = service.change(UserId.random(), entry.getId(), new ChangeEntryCommand(null, grams("0"), null));
+        DiaryEntry skipped = service.change(USER, entry.getId(), new ChangeEntryCommand(null, grams("0"), null));
 
         assertThat(skipped.origin()).isEqualTo(Origin.SKIPPED);
-        assertThat(repository.findById(entry.getId()).orElseThrow().origin()).isEqualTo(Origin.SKIPPED);
+        assertThat(repository.findById(USER, entry.getId()).orElseThrow().origin()).isEqualTo(Origin.SKIPPED);
     }
 
     @Test
@@ -112,7 +114,7 @@ class ChangeEntryServiceTest {
         UUID unknown = UUID.randomUUID();
         ChangeEntryCommand command = new ChangeEntryCommand(null, grams("200"), null);
 
-        assertThatThrownBy(() -> service.change(UserId.random(), unknown, command))
+        assertThatThrownBy(() -> service.change(USER, unknown, command))
                 .isInstanceOf(DiaryEntryNotFoundException.class)
                 .hasMessage("Diary entry not found: " + unknown);
     }
@@ -123,9 +125,9 @@ class ChangeEntryServiceTest {
         UUID id = entry.getId();
         ChangeEntryCommand command = new ChangeEntryCommand(UUID.randomUUID(), grams("100"), "Jantar");
 
-        assertThatThrownBy(() -> service.change(UserId.random(), id, command)).isInstanceOf(FoodNotFoundException.class);
-        assertThat(repository.findById(id)).contains(entry);
-        assertThat(repository.findById(id).orElseThrow().getMealName()).isEqualTo("Almoço");
+        assertThatThrownBy(() -> service.change(USER, id, command)).isInstanceOf(FoodNotFoundException.class);
+        assertThat(repository.findById(USER, id)).contains(entry);
+        assertThat(repository.findById(USER, id).orElseThrow().getMealName()).isEqualTo("Almoço");
     }
 
     @Test
@@ -133,14 +135,14 @@ class ChangeEntryServiceTest {
         DiaryEntry entry = saved(DiaryEntry.log(RICE, DATE, "Almoço", grams("150")));
         UUID id = entry.getId();
 
-        assertThatThrownBy(() -> service.change(UserId.random(), id, new ChangeEntryCommand(null, grams("0"), "Jantar")))
+        assertThatThrownBy(() -> service.change(USER, id, new ChangeEntryCommand(null, grams("0"), "Jantar")))
                 .isInstanceOf(InvalidInputException.class);
-        assertThatThrownBy(() -> service.change(UserId.random(), id, new ChangeEntryCommand(null, grams("100"), "  ")))
+        assertThatThrownBy(() -> service.change(USER, id, new ChangeEntryCommand(null, grams("100"), "  ")))
                 .isInstanceOf(InvalidInputException.class);
-        assertThatThrownBy(() -> service.change(UserId.random(), id, new ChangeEntryCommand(MILKSHAKE.getId(), grams("1"), null)))
+        assertThatThrownBy(() -> service.change(USER, id, new ChangeEntryCommand(MILKSHAKE.getId(), grams("1"), null)))
                 .isInstanceOf(InvalidInputException.class);
 
-        DiaryEntry kept = repository.findById(id).orElseThrow();
+        DiaryEntry kept = repository.findById(USER, id).orElseThrow();
         assertThat(kept.getQuantity()).isEqualTo(grams("150"));
         assertThat(kept.getMealName()).isEqualTo("Almoço");
         assertThat(kept.getFoodId()).isEqualTo(RICE.getId());
@@ -163,7 +165,7 @@ class ChangeEntryServiceTest {
     }
 
     private DiaryEntry saved(DiaryEntry entry) {
-        repository.save(entry);
+        repository.save(USER, entry);
         return entry;
     }
 

@@ -17,6 +17,6 @@ class GetActivePlanService implements GetActivePlanUseCase {
 
     @Override
     public Optional<DietPlan> getActivePlan(UserId userId) {
-        return planRepository.findActive();
+        return planRepository.findActive(userId);
     }
 }

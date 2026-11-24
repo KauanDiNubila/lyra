@@ -19,6 +19,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DeleteEntryServiceTest {
 
+    private static final UserId USER = UserId.random();
+
     private static final LocalDate DATE = LocalDate.of(2026, 11, 19);
     private static final Quantity HUNDRED_GRAMS = new Quantity(new BigDecimal("100"), MeasurementUnit.GRAM);
     private static final Food RICE = Food.custom("Arroz", HUNDRED_GRAMS,
@@ -31,31 +33,31 @@ class DeleteEntryServiceTest {
     void deletesTheEntry() {
         DiaryEntry entry = DiaryEntry.log(RICE, DATE, "Almoço", HUNDRED_GRAMS);
         DiaryEntry other = DiaryEntry.log(RICE, DATE, "Jantar", HUNDRED_GRAMS);
-        repository.save(entry);
-        repository.save(other);
+        repository.save(USER, entry);
+        repository.save(USER, other);
 
-        service.delete(UserId.random(), entry.getId());
+        service.delete(USER, entry.getId());
 
-        assertThat(repository.findByDate(DATE)).containsExactly(other);
+        assertThat(repository.findByDate(USER, DATE)).containsExactly(other);
     }
 
     @Test
     void refusesToDeleteAnEntryOfThePlanAndKeepsIt() {
         DiaryEntry planned = DiaryEntry.fromPlan(RICE, DATE, "Almoço", HUNDRED_GRAMS, 0);
-        repository.save(planned);
+        repository.save(USER, planned);
         UUID id = planned.getId();
 
-        assertThatThrownBy(() -> service.delete(UserId.random(), id))
+        assertThatThrownBy(() -> service.delete(USER, id))
                 .isInstanceOf(InvalidInputException.class)
                 .hasMessage("An entry of the plan cannot be deleted: change its quantity to zero to skip it");
-        assertThat(repository.findByDate(DATE)).containsExactly(planned);
+        assertThat(repository.findByDate(USER, DATE)).containsExactly(planned);
     }
 
     @Test
     void failsWhenThereIsNoEntryWithThatId() {
         UUID unknown = UUID.randomUUID();
 
-        assertThatThrownBy(() -> service.delete(UserId.random(), unknown))
+        assertThatThrownBy(() -> service.delete(USER, unknown))
                 .isInstanceOf(DiaryEntryNotFoundException.class)
                 .hasMessage("Diary entry not found: " + unknown);
     }

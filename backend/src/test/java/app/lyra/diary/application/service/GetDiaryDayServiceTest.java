@@ -24,6 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class GetDiaryDayServiceTest {
 
+    private static final UserId USER = UserId.random();
+
     private static final LocalDate DATE = LocalDate.of(2026, 11, 19);
     private static final Food RICE = Food.custom("Arroz", grams("100"),
             new Nutrients(new BigDecimal("128"), new BigDecimal("2"), new BigDecimal("28"), new BigDecimal("0.2"), null, null));
@@ -37,10 +39,10 @@ class GetDiaryDayServiceTest {
     @Test
     void returnsTheEntriesOfThatDateOnly() {
         DiaryEntry today = DiaryEntry.log(RICE, DATE, "Almoço", grams("100"));
-        repository.save(today);
-        repository.save(DiaryEntry.log(RICE, DATE.minusDays(1), "Almoço", grams("100")));
+        repository.save(USER, today);
+        repository.save(USER, DiaryEntry.log(RICE, DATE.minusDays(1), "Almoço", grams("100")));
 
-        DiaryDay day = service(Optional.empty()).getDay(UserId.random(), DATE);
+        DiaryDay day = service(Optional.empty()).getDay(USER, DATE);
 
         assertThat(day.date()).isEqualTo(DATE);
         assertThat(day.entries()).containsExactly(today);
@@ -48,7 +50,7 @@ class GetDiaryDayServiceTest {
 
     @Test
     void returnsAnEmptyDayWhenNothingWasEaten() {
-        DiaryDay day = service(Optional.empty()).getDay(UserId.random(), DATE);
+        DiaryDay day = service(Optional.empty()).getDay(USER, DATE);
 
         assertThat(day.entries()).isEmpty();
         assertThat(day.total()).isEqualTo(Macros.ZERO);
@@ -56,9 +58,9 @@ class GetDiaryDayServiceTest {
 
     @Test
     void takesTheTargetsFromThePlanThatIsActiveNow() {
-        repository.save(DiaryEntry.log(RICE, DATE, "Almoço", grams("100")));
+        repository.save(USER, DiaryEntry.log(RICE, DATE, "Almoço", grams("100")));
 
-        DiaryDay day = service(Optional.of(ACTIVE_PLAN)).getDay(UserId.random(), DATE);
+        DiaryDay day = service(Optional.of(ACTIVE_PLAN)).getDay(USER, DATE);
 
         Macros targets = day.targets().orElseThrow();
         assertThat(targets.kcal()).isEqualByComparingTo("2000");
@@ -70,7 +72,7 @@ class GetDiaryDayServiceTest {
 
     @Test
     void hasNoTargetsWhenNoPlanIsActive() {
-        DiaryDay day = service(Optional.empty()).getDay(UserId.random(), DATE);
+        DiaryDay day = service(Optional.empty()).getDay(USER, DATE);
 
         assertThat(day.targets()).isEmpty();
         assertThat(day.differenceFromTargets()).isEmpty();
@@ -78,9 +80,9 @@ class GetDiaryDayServiceTest {
 
     @Test
     void doesNotFillTheDayItReads() {
-        service(Optional.of(ACTIVE_PLAN)).getDay(UserId.random(), DATE);
+        service(Optional.of(ACTIVE_PLAN)).getDay(USER, DATE);
 
-        assertThat(repository.findByDate(DATE)).isEmpty();
+        assertThat(repository.findByDate(USER, DATE)).isEmpty();
     }
 
     private GetDiaryDayService service(Optional<DietPlan> activePlan) {

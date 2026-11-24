@@ -24,11 +24,11 @@ class ReplacePlanService implements ReplacePlanUseCase {
     @Override
     @Transactional
     public DietPlan replace(UserId userId, UUID id, String name, DailyTargets targets, List<PlannedMeal> meals) {
-        planRepository.lockPlanChanges();
-        DietPlan plan = planRepository.findById(id).orElseThrow(() -> new PlanNotFoundException(id));
+        planRepository.lockPlanChanges(userId);
+        DietPlan plan = planRepository.findById(userId, id).orElseThrow(() -> new PlanNotFoundException(id));
         DietPlan changed = plan.withContent(name, targets, meals);
         foodChecker.check(userId, changed);
-        planRepository.save(changed);
+        planRepository.save(userId, changed);
         return changed;
     }
 }

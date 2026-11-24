@@ -14,15 +14,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class GetAndListPlansServiceTest {
 
+    private static final UserId USER = UserId.random();
+
     private final InMemoryPlanRepository repository = new InMemoryPlanRepository();
 
     @Test
     void getReturnsThePlanWithThatId() {
         DietPlan plan = DietPlan.create("Cutting", targets(), lunchAndDinner());
-        repository.save(plan);
-        repository.save(DietPlan.create("Bulking", targets(), lunchAndDinner()));
+        repository.save(USER, plan);
+        repository.save(USER, DietPlan.create("Bulking", targets(), lunchAndDinner()));
 
-        assertThat(new GetPlanService(repository).getPlan(UserId.random(), plan.getId())).isEqualTo(plan);
+        assertThat(new GetPlanService(repository).getPlan(USER, plan.getId())).isEqualTo(plan);
     }
 
     @Test
@@ -30,7 +32,7 @@ class GetAndListPlansServiceTest {
         UUID unknown = UUID.randomUUID();
         GetPlanService service = new GetPlanService(repository);
 
-        assertThatThrownBy(() -> service.getPlan(UserId.random(), unknown))
+        assertThatThrownBy(() -> service.getPlan(USER, unknown))
                 .isInstanceOf(PlanNotFoundException.class)
                 .hasMessage("Plan not found: " + unknown);
     }
@@ -39,14 +41,14 @@ class GetAndListPlansServiceTest {
     void listReturnsThePlansInTheOrderTheyWereSaved() {
         DietPlan first = DietPlan.create("Cutting", targets(), lunchAndDinner());
         DietPlan second = DietPlan.create("Bulking", targets(), lunchAndDinner());
-        repository.save(first);
-        repository.save(second);
+        repository.save(USER, first);
+        repository.save(USER, second);
 
-        assertThat(new ListPlansService(repository).listPlans(UserId.random())).containsExactly(first, second);
+        assertThat(new ListPlansService(repository).listPlans(USER)).containsExactly(first, second);
     }
 
     @Test
     void listReturnsNothingWhenThereAreNoPlans() {
-        assertThat(new ListPlansService(repository).listPlans(UserId.random())).isEmpty();
+        assertThat(new ListPlansService(repository).listPlans(USER)).isEmpty();
     }
 }

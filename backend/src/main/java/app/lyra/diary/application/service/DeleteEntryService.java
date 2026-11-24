@@ -19,10 +19,10 @@ class DeleteEntryService implements DeleteEntryUseCase {
 
     @Override
     public void delete(UserId userId, UUID entryId) {
-        DiaryEntry entry = diaryEntryRepository.findById(entryId).orElseThrow(() -> new DiaryEntryNotFoundException(entryId));
+        DiaryEntry entry = diaryEntryRepository.findById(userId, entryId).orElseThrow(() -> new DiaryEntryNotFoundException(entryId));
         if (entry.getPlanned().isPresent()) {
             throw new InvalidInputException("An entry of the plan cannot be deleted: change its quantity to zero to skip it");
         }
-        diaryEntryRepository.deleteById(entryId);
+        diaryEntryRepository.deleteById(userId, entryId);
     }
 }

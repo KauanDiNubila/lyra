@@ -3,9 +3,11 @@ package app.lyra.plan;
 import app.lyra.Concurrently;
 import app.lyra.TestSessions;
 import app.lyra.TestcontainersConfiguration;
+import app.lyra.TestUsers;
 import app.lyra.shared.domain.UserId;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,21 +35,26 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import(TestcontainersConfiguration.class)
 class PlanApiTest {
 
-    private static final UserId USER = UserId.random();
+    private UserId user;
 
     @Autowired
     private MockMvc mvc;
 
     private ResultActions perform(MockHttpServletRequestBuilder request) throws Exception {
-        return mvc.perform(request.with(TestSessions.of(USER)));
+        return mvc.perform(request.with(TestSessions.of(user)));
     }
 
     @Autowired
     private JdbcClient jdbc;
 
+    @BeforeEach
+    void signInAUser() {
+        user = TestUsers.insert(jdbc);
+    }
+
     @AfterEach
     void removeThePlansTheTestCreated() {
-        jdbc.sql("delete from diet_plan").update();
+        TestUsers.deleteEverything(jdbc);
     }
 
     @Test

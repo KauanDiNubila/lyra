@@ -16,6 +16,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class CustomFoodServiceTest {
 
+    private static final UserId USER = UserId.random();
+
     private static final Quantity ONE_PORTION = new Quantity(BigDecimal.ONE, MeasurementUnit.PORTION);
     private static final Nutrients MILKSHAKE = new Nutrients(
             new BigDecimal("590"), new BigDecimal("13"), new BigDecimal("98"), new BigDecimal("16"), null, null);
@@ -25,7 +27,7 @@ class CustomFoodServiceTest {
 
     @Test
     void createsAndStoresACustomFood() {
-        Food food = service.create(UserId.random(), "Milkshake McDonald's", ONE_PORTION, MILKSHAKE);
+        Food food = service.create(USER, "Milkshake McDonald's", ONE_PORTION, MILKSHAKE);
 
         assertThat(food.getSource()).isEqualTo(FoodSource.CUSTOM);
         assertThat(repository.all()).containsExactly(food);
@@ -33,7 +35,7 @@ class CustomFoodServiceTest {
 
     @Test
     void storesNothingWhenTheFoodIsInvalid() {
-        assertThatThrownBy(() -> service.create(UserId.random(), "", ONE_PORTION, MILKSHAKE)).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> service.create(USER, "", ONE_PORTION, MILKSHAKE)).isInstanceOf(InvalidInputException.class);
 
         assertThat(repository.all()).isEmpty();
     }

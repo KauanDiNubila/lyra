@@ -22,20 +22,22 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ReplacePlanServiceTest {
 
+    private static final UserId USER = UserId.random();
+
     private final InMemoryPlanRepository repository = new InMemoryPlanRepository();
     private final ReplacePlanService service = new ReplacePlanService(repository, new PlanFoodChecker((userId, ids) -> Map.of(RICE.getId(), RICE)));
 
     @Test
     void replacesTheContentKeepingTheIdAndTheActiveState() {
         DietPlan active = DietPlan.create("Cutting", targets(), lunchAndDinner()).activated();
-        repository.save(active);
+        repository.save(USER, active);
 
-        DietPlan changed = service.replace(UserId.random(), active.getId(), "Bulking", targets(), List.of(meal("Lanche", riceInGrams("50"))));
+        DietPlan changed = service.replace(USER, active.getId(), "Bulking", targets(), List.of(meal("Lanche", riceInGrams("50"))));
 
         assertThat(changed.getId()).isEqualTo(active.getId());
         assertThat(changed.isActive()).isTrue();
         assertThat(changed.getName()).isEqualTo("Bulking");
-        assertThat(repository.findById(active.getId()).orElseThrow().getMeals()).extracting(PlannedMeal::name)
+        assertThat(repository.findById(USER, active.getId()).orElseThrow().getMeals()).extracting(PlannedMeal::name)
                 .containsExactly("Lanche");
     }
 
@@ -44,7 +46,7 @@ class ReplacePlanServiceTest {
         UUID unknown = UUID.randomUUID();
         List<PlannedMeal> meals = lunchAndDinner();
 
-        assertThatThrownBy(() -> service.replace(UserId.random(), unknown, "Cutting", targets(), meals))
+        assertThatThrownBy(() -> service.replace(USER, unknown, "Cutting", targets(), meals))
                 .isInstanceOf(PlanNotFoundException.class)
                 .hasMessage("Plan not found: " + unknown);
     }
@@ -52,12 +54,12 @@ class ReplacePlanServiceTest {
     @Test
     void keepsThePlanAsItWasWhenTheNewContentIsInvalid() {
         DietPlan plan = DietPlan.create("Cutting", targets(), lunchAndDinner());
-        repository.save(plan);
+        repository.save(USER, plan);
         UUID id = plan.getId();
         List<PlannedMeal> wrongUnit = List.of(meal("Almoço", riceInPortions("1")));
 
-        assertThatThrownBy(() -> service.replace(UserId.random(), id, "Bulking", targets(), wrongUnit)).isInstanceOf(InvalidInputException.class);
-        assertThat(repository.findById(id).orElseThrow().getName()).isEqualTo("Cutting");
-        assertThat(repository.findById(id).orElseThrow().getMeals()).hasSize(2);
+        assertThatThrownBy(() -> service.replace(USER, id, "Bulking", targets(), wrongUnit)).isInstanceOf(InvalidInputException.class);
+        assertThat(repository.findById(USER, id).orElseThrow().getName()).isEqualTo("Cutting");
+        assertThat(repository.findById(USER, id).orElseThrow().getMeals()).hasSize(2);
     }
 }

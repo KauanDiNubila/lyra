@@ -108,7 +108,6 @@ Fixed accepted decisions:
 | Snapshot of food name and nutrients duplicated in each diary entry | ADR-003 | |
 | Zero required approvals in the rulesets | ADR-007 | |
 | TACO rules: `Tr` and `NA` stored as 0, foods with unknown macros skipped, negative carbohydrate stored as 0 | ADR-008 | |
-| Custom foods visible to every user | ADR-008 | Until the identity module exists |
 | Generated `taco-foods.tsv` and `docs/api/openapi.json` committed | ADR-008 | |
 | Contract without `required` fields; errors raised by Spring keep the default `Bad Request` title | ADR-008 | Until a second API client exists |
 | TACO converter tests not wired to the CI | ADR-008 | Until the converter is run more than once |

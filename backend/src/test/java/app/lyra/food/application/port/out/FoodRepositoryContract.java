@@ -6,6 +6,7 @@ import app.lyra.food.domain.FoodSource;
 import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
+import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -14,10 +15,17 @@ import java.util.UUID;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public interface FoodRepositoryContract {
 
     FoodRepository repository();
+
+    UserId owner();
+
+    UserId otherOwner();
+
+    void seedTaco(Food food);
 
     @Test
     default void findsFoodsMatchingEveryTermIgnoringAccentsAndCase() {
@@ -37,13 +45,13 @@ public interface FoodRepositoryContract {
     default void returnsAtMostTheRequestedNumberOfFoods() {
         IntStream.range(0, 5).forEach(i -> saveCustom("Quimera bolo " + i));
 
-        assertThat(repository().search(FoodSearchQuery.of("quimera bolo"), 3)).hasSize(3);
+        assertThat(repository().search(owner(), FoodSearchQuery.of("quimera bolo"), 3)).hasSize(3);
     }
 
     @Test
     default void listsCustomFoodsBeforeTacoFoods() {
-        repository().save(food("Quimera curto", FoodSource.TACO));
-        repository().save(food("Quimera personalizado com nome bem mais longo", FoodSource.CUSTOM));
+        seedTaco(food("Quimera curto", FoodSource.TACO));
+        repository().save(owner(), food("Quimera personalizado com nome bem mais longo", FoodSource.CUSTOM));
 
         assertThat(names(search("quimera"))).containsExactly("Quimera personalizado com nome bem mais longo", "Quimera curto");
     }
@@ -65,7 +73,7 @@ public interface FoodRepositoryContract {
                 new BigDecimal("16"), null, new BigDecimal("0.123456"));
         Food saved = Food.custom("Quimera milkshake de morango", onePortion, nutrients);
 
-        repository().save(saved);
+        repository().save(owner(), saved);
         Food found = search("quimera milkshake").getFirst();
 
         assertThat(found).isEqualTo(saved);
@@ -78,9 +86,9 @@ public interface FoodRepositoryContract {
     @Test
     default void findsASavedFoodById() {
         Food saved = food("Quimera por id", FoodSource.CUSTOM);
-        repository().save(saved);
+        repository().save(owner(), saved);
 
-        Food found = repository().findById(saved.getId()).orElseThrow();
+        Food found = repository().findById(owner(), saved.getId()).orElseThrow();
 
         assertThat(found).isEqualTo(saved);
         assertThat(found.getName()).isEqualTo("Quimera por id");
@@ -90,7 +98,7 @@ public interface FoodRepositoryContract {
 
     @Test
     default void findsNothingForAnUnknownId() {
-        assertThat(repository().findById(UUID.randomUUID())).isEmpty();
+        assertThat(repository().findById(owner(), UUID.randomUUID())).isEmpty();
     }
 
     @Test
@@ -98,11 +106,11 @@ public interface FoodRepositoryContract {
         Food first = food("Quimera lote um", FoodSource.CUSTOM);
         Food second = food("Quimera lote dois", FoodSource.CUSTOM);
         Food notRequested = food("Quimera lote tres", FoodSource.CUSTOM);
-        repository().save(first);
-        repository().save(second);
-        repository().save(notRequested);
+        repository().save(owner(), first);
+        repository().save(owner(), second);
+        repository().save(owner(), notRequested);
 
-        List<Food> found = repository().findAllById(List.of(first.getId(), second.getId(), UUID.randomUUID()));
+        List<Food> found = repository().findAllById(owner(), List.of(first.getId(), second.getId(), UUID.randomUUID()));
 
         assertThat(found).containsExactlyInAnyOrder(first, second);
         assertThat(names(found)).containsExactlyInAnyOrder("Quimera lote um", "Quimera lote dois");
@@ -110,16 +118,16 @@ public interface FoodRepositoryContract {
 
     @Test
     default void findsNothingWhenNoIdIsRequested() {
-        repository().save(food("Quimera sem pedido", FoodSource.CUSTOM));
+        repository().save(owner(), food("Quimera sem pedido", FoodSource.CUSTOM));
 
-        assertThat(repository().findAllById(List.of())).isEmpty();
+        assertThat(repository().findAllById(owner(), List.of())).isEmpty();
     }
 
     @Test
     default void percentSignInATermIsTakenLiterally() {
         saveCustom("Quimera 100% natural", "Quimera 100 de laranja");
 
-        List<Food> found = repository().search(new FoodSearchQuery(List.of("quimera", "100%")), 20);
+        List<Food> found = repository().search(owner(), new FoodSearchQuery(List.of("quimera", "100%")), 20);
 
         assertThat(names(found)).containsExactly("Quimera 100% natural");
     }
@@ -128,7 +136,7 @@ public interface FoodRepositoryContract {
     default void underscoreInATermIsTakenLiterally() {
         saveCustom("Quimera_integral", "Quimera integral");
 
-        List<Food> found = repository().search(new FoodSearchQuery(List.of("quimera_integral")), 20);
+        List<Food> found = repository().search(owner(), new FoodSearchQuery(List.of("quimera_integral")), 20);
 
         assertThat(names(found)).containsExactly("Quimera_integral");
     }
@@ -137,18 +145,47 @@ public interface FoodRepositoryContract {
     default void backslashInATermIsTakenLiterally() {
         saveCustom("Quimera a\\b", "Quimera ab");
 
-        List<Food> found = repository().search(new FoodSearchQuery(List.of("quimera", "a\\b")), 20);
+        List<Food> found = repository().search(owner(), new FoodSearchQuery(List.of("quimera", "a\\b")), 20);
 
         assertThat(names(found)).containsExactly("Quimera a\\b");
     }
 
+    @Test
+    default void anotherUsersCustomFoodIsInvisible() {
+        Food mine = food("Quimera privado", FoodSource.CUSTOM);
+        repository().save(owner(), mine);
+
+        assertThat(repository().findById(otherOwner(), mine.getId())).isEmpty();
+        assertThat(repository().findAllById(otherOwner(), List.of(mine.getId()))).isEmpty();
+        assertThat(repository().search(otherOwner(), FoodSearchQuery.of("quimera privado"), 20)).isEmpty();
+        assertThat(repository().findById(owner(), mine.getId())).isPresent();
+    }
+
+
+    @Test
+    default void refusesToSaveAFoodThatIsNotCustom() {
+        Food taco = food("Quimera taco", FoodSource.TACO);
+
+        assertThatThrownBy(() -> repository().save(owner(), taco)).isInstanceOf(IllegalArgumentException.class);
+    }
+    @Test
+    default void tacoFoodsAreVisibleToEveryUser() {
+        Food taco = food("Quimera publico", FoodSource.TACO);
+        seedTaco(taco);
+
+        assertThat(repository().findById(otherOwner(), taco.getId())).isPresent();
+        assertThat(repository().findAllById(otherOwner(), List.of(taco.getId()))).containsExactly(taco);
+        assertThat(names(repository().search(otherOwner(), FoodSearchQuery.of("quimera publico"), 20)))
+                .containsExactly("Quimera publico");
+    }
+
     private List<Food> search(String query) {
-        return repository().search(FoodSearchQuery.of(query), 20);
+        return repository().search(owner(), FoodSearchQuery.of(query), 20);
     }
 
     private void saveCustom(String... names) {
         for (String name : names) {
-            repository().save(food(name, FoodSource.CUSTOM));
+            repository().save(owner(), food(name, FoodSource.CUSTOM));
         }
     }
 

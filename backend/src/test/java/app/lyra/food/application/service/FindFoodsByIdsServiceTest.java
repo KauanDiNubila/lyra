@@ -17,6 +17,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class FindFoodsByIdsServiceTest {
 
+    private static final UserId USER = UserId.random();
+
     private static final Quantity HUNDRED_GRAMS = new Quantity(new BigDecimal("100"), MeasurementUnit.GRAM);
     private static final Nutrients ANY = new Nutrients(BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, null, null);
 
@@ -27,11 +29,11 @@ class FindFoodsByIdsServiceTest {
     void returnsTheRequestedFoodsByTheirIds() {
         Food rice = Food.custom("Arroz", HUNDRED_GRAMS, ANY);
         Food beans = Food.custom("Feijão", HUNDRED_GRAMS, ANY);
-        repository.save(rice);
-        repository.save(beans);
-        repository.save(Food.custom("Frango", HUNDRED_GRAMS, ANY));
+        repository.save(USER, rice);
+        repository.save(USER, beans);
+        repository.save(USER, Food.custom("Frango", HUNDRED_GRAMS, ANY));
 
-        assertThat(service.findByIds(UserId.random(), List.of(rice.getId(), beans.getId())))
+        assertThat(service.findByIds(USER, List.of(rice.getId(), beans.getId())))
                 .containsOnlyKeys(rice.getId(), beans.getId())
                 .containsEntry(rice.getId(), rice)
                 .containsEntry(beans.getId(), beans);
@@ -40,26 +42,26 @@ class FindFoodsByIdsServiceTest {
     @Test
     void aRepeatedIdIsReturnedOnce() {
         Food rice = Food.custom("Arroz", HUNDRED_GRAMS, ANY);
-        repository.save(rice);
+        repository.save(USER, rice);
 
-        assertThat(service.findByIds(UserId.random(), List.of(rice.getId(), rice.getId(), rice.getId()))).containsOnlyKeys(rice.getId());
+        assertThat(service.findByIds(USER, List.of(rice.getId(), rice.getId(), rice.getId()))).containsOnlyKeys(rice.getId());
     }
 
     @Test
     void returnsNothingWhenNoIdIsRequested() {
-        repository.save(Food.custom("Arroz", HUNDRED_GRAMS, ANY));
+        repository.save(USER, Food.custom("Arroz", HUNDRED_GRAMS, ANY));
 
-        assertThat(service.findByIds(UserId.random(), List.of())).isEmpty();
+        assertThat(service.findByIds(USER, List.of())).isEmpty();
     }
 
     @Test
     void failsNamingTheFirstFoodThatDoesNotExist() {
         Food rice = Food.custom("Arroz", HUNDRED_GRAMS, ANY);
-        repository.save(rice);
+        repository.save(USER, rice);
         UUID unknown = UUID.randomUUID();
         List<UUID> ids = List.of(rice.getId(), unknown);
 
-        assertThatThrownBy(() -> service.findByIds(UserId.random(), ids))
+        assertThatThrownBy(() -> service.findByIds(USER, ids))
                 .isInstanceOf(FoodNotFoundException.class)
                 .hasMessage("Food not found: " + unknown);
     }

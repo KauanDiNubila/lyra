@@ -20,7 +20,7 @@ class LogEntryService implements LogEntryUseCase {
     public DiaryEntry log(UserId userId, LogEntryCommand command) {
         Food food = findFood.findById(userId, command.foodId());
         DiaryEntry entry = DiaryEntry.log(food, command.date(), command.mealName(), command.quantity());
-        diaryEntryRepository.save(entry);
+        diaryEntryRepository.save(userId, entry);
         return entry;
     }
 }

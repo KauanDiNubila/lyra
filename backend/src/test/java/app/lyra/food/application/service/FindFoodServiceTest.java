@@ -16,6 +16,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class FindFoodServiceTest {
 
+    private static final UserId USER = UserId.random();
+
     private static final Quantity HUNDRED_GRAMS = new Quantity(new BigDecimal("100"), MeasurementUnit.GRAM);
     private static final Nutrients ANY = new Nutrients(BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, null, null);
 
@@ -25,17 +27,17 @@ class FindFoodServiceTest {
     @Test
     void returnsTheFoodWithThatId() {
         Food rice = Food.custom("Arroz", HUNDRED_GRAMS, ANY);
-        repository.save(rice);
-        repository.save(Food.custom("Feijão", HUNDRED_GRAMS, ANY));
+        repository.save(USER, rice);
+        repository.save(USER, Food.custom("Feijão", HUNDRED_GRAMS, ANY));
 
-        assertThat(service.findById(UserId.random(), rice.getId())).isEqualTo(rice);
+        assertThat(service.findById(USER, rice.getId())).isEqualTo(rice);
     }
 
     @Test
     void failsWhenThereIsNoFoodWithThatId() {
         UUID unknown = UUID.randomUUID();
 
-        assertThatThrownBy(() -> service.findById(UserId.random(), unknown))
+        assertThatThrownBy(() -> service.findById(USER, unknown))
                 .isInstanceOf(FoodNotFoundException.class)
                 .hasMessage("Food not found: " + unknown);
     }

@@ -58,7 +58,7 @@ class FillDayFromPlanServiceTest {
                 .containsExactly(new BigDecimal("150"), new BigDecimal("100"), new BigDecimal("100"));
         assertThat(day.entries()).extracting(entry -> entry.getPlanned().orElseThrow().slot()).containsExactly(0, 1, 2);
         assertThat(day.entries()).extracting(DiaryEntry::origin).containsOnly(Origin.PLANNED);
-        assertThat(repository.findByDate(DATE)).isEqualTo(day.entries());
+        assertThat(repository.findByDate(USER, DATE)).isEqualTo(day.entries());
     }
 
     @Test
@@ -84,12 +84,12 @@ class FillDayFromPlanServiceTest {
     @Test
     void leavesADayThatAlreadyHasEntriesAsItIs() {
         DiaryEntry extra = DiaryEntry.log(CHICKEN, DATE, "Lanche", grams("50"));
-        repository.save(extra);
+        repository.save(USER, extra);
 
         DiaryDay day = service(Optional.of(PLAN)).fillDay(USER, DATE);
 
         assertThat(day.entries()).containsExactly(extra);
-        assertThat(repository.findByDate(DATE)).containsExactly(extra);
+        assertThat(repository.findByDate(USER, DATE)).containsExactly(extra);
     }
 
     @Test
@@ -100,15 +100,15 @@ class FillDayFromPlanServiceTest {
         DiaryDay second = service.fillDay(USER, DATE);
 
         assertThat(second.entries()).isEqualTo(first.entries());
-        assertThat(repository.findByDate(DATE)).hasSize(3);
+        assertThat(repository.findByDate(USER, DATE)).hasSize(3);
     }
 
     @Test
     void fillsOnlyTheDateThatWasAsked() {
         service(Optional.of(PLAN)).fillDay(USER, DATE);
 
-        assertThat(repository.findByDate(DATE.plusDays(1))).isEmpty();
-        assertThat(repository.findByDate(DATE.minusDays(1))).isEmpty();
+        assertThat(repository.findByDate(USER, DATE.plusDays(1))).isEmpty();
+        assertThat(repository.findByDate(USER, DATE.minusDays(1))).isEmpty();
     }
 
     @Test
@@ -118,12 +118,12 @@ class FillDayFromPlanServiceTest {
         assertThatThrownBy(() -> service.fillDay(USER, DATE))
                 .isInstanceOf(NoActivePlanException.class)
                 .hasMessage("There is no active plan to fill the day");
-        assertThat(repository.findByDate(DATE)).isEmpty();
+        assertThat(repository.findByDate(USER, DATE)).isEmpty();
     }
 
     @Test
     void failsWithoutAnActivePlanEvenWhenTheDayIsAlreadyFilled() {
-        repository.save(DiaryEntry.log(CHICKEN, DATE, "Lanche", grams("50")));
+        repository.save(USER, DiaryEntry.log(CHICKEN, DATE, "Lanche", grams("50")));
         FillDayFromPlanService service = service(Optional.empty());
 
         assertThatThrownBy(() -> service.fillDay(USER, DATE)).isInstanceOf(NoActivePlanException.class);
@@ -139,7 +139,7 @@ class FillDayFromPlanServiceTest {
                 new GetDiaryDayService(activePlan, repository), repository);
 
         assertThatThrownBy(() -> service.fillDay(USER, DATE)).isInstanceOf(FoodNotFoundException.class);
-        assertThat(repository.findByDate(DATE)).isEmpty();
+        assertThat(repository.findByDate(USER, DATE)).isEmpty();
     }
 
     private FillDayFromPlanService service(Optional<DietPlan> activePlan) {

@@ -6,6 +6,7 @@ import app.lyra.plan.domain.DailyTargets;
 import app.lyra.plan.domain.DietPlan;
 import app.lyra.plan.domain.PlannedItem;
 import app.lyra.plan.domain.PlannedMeal;
+import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public interface PlanRepositoryContract {
 
@@ -21,13 +23,17 @@ public interface PlanRepositoryContract {
 
     UUID savedFoodId();
 
+    UserId owner();
+
+    UserId otherOwner();
+
     @Test
     default void savesAPlanAndFindsItByIdWithAllItsContent() {
         DietPlan plan = plan("Cutting");
 
-        repository().save(plan);
+        repository().save(owner(), plan);
 
-        DietPlan found = repository().findById(plan.getId()).orElseThrow();
+        DietPlan found = repository().findById(owner(), plan.getId()).orElseThrow();
         assertThat(found.getId()).isEqualTo(plan.getId());
         assertThat(found.getName()).isEqualTo("Cutting");
         assertThat(found.isActive()).isFalse();
@@ -50,7 +56,7 @@ public interface PlanRepositoryContract {
 
     @Test
     default void findsNothingForAnUnknownId() {
-        assertThat(repository().findById(UUID.randomUUID())).isEmpty();
+        assertThat(repository().findById(owner(), UUID.randomUUID())).isEmpty();
     }
 
     @Test
@@ -58,49 +64,79 @@ public interface PlanRepositoryContract {
         DietPlan first = plan("Primeiro");
         DietPlan second = plan("Segundo");
         DietPlan third = plan("Terceiro");
-        repository().save(first);
-        repository().save(second);
-        repository().save(third);
+        repository().save(owner(), first);
+        repository().save(owner(), second);
+        repository().save(owner(), third);
 
-        assertThat(repository().findAll()).containsExactly(first, second, third);
+        assertThat(repository().findAll(owner())).containsExactly(first, second, third);
     }
 
     @Test
     default void listsNothingWhenThereAreNoPlans() {
-        assertThat(repository().findAll()).isEmpty();
+        assertThat(repository().findAll(owner())).isEmpty();
     }
 
     @Test
     default void findsTheActivePlanOnlyWhileOnePlanIsActive() {
         DietPlan plan = plan("Cutting");
-        repository().save(plan);
-        assertThat(repository().findActive()).isEmpty();
+        repository().save(owner(), plan);
+        assertThat(repository().findActive(owner())).isEmpty();
 
-        repository().save(plan.activated());
-        assertThat(repository().findActive()).contains(plan);
-        assertThat(repository().findActive().orElseThrow().isActive()).isTrue();
+        repository().save(owner(), plan.activated());
+        assertThat(repository().findActive(owner())).contains(plan);
+        assertThat(repository().findActive(owner()).orElseThrow().isActive()).isTrue();
 
-        repository().save(plan.deactivated());
-        assertThat(repository().findActive()).isEmpty();
+        repository().save(owner(), plan.deactivated());
+        assertThat(repository().findActive(owner())).isEmpty();
     }
 
     @Test
     default void savingAgainWithTheSameIdReplacesTheContentAndKeepsThePlace() {
         DietPlan first = plan("Primeiro");
         DietPlan second = plan("Segundo");
-        repository().save(first);
-        repository().save(second);
+        repository().save(owner(), first);
+        repository().save(owner(), second);
         PlannedMeal onlyMeal = new PlannedMeal("Café da manhã", null, List.of(item("50")));
 
-        repository().save(first.withContent("Novo nome", targets("1800"), List.of(onlyMeal)));
+        repository().save(owner(), first.withContent("Novo nome", targets("1800"), List.of(onlyMeal)));
 
-        assertThat(repository().findAll()).containsExactly(first, second);
-        DietPlan found = repository().findById(first.getId()).orElseThrow();
+        assertThat(repository().findAll(owner())).containsExactly(first, second);
+        DietPlan found = repository().findById(owner(), first.getId()).orElseThrow();
         assertThat(found.getName()).isEqualTo("Novo nome");
         assertThat(found.getTargets().kcal()).isEqualByComparingTo("1800");
         assertThat(found.getMeals()).extracting(PlannedMeal::name).containsExactly("Café da manhã");
         assertThat(found.getMeals().get(0).items()).hasSize(1);
         assertThat(found.getMeals().get(0).items().get(0).quantity().amount()).isEqualByComparingTo("50");
+    }
+
+    @Test
+    default void anotherUsersPlanIsNeitherFoundNorListed() {
+        DietPlan plan = plan("Cutting");
+        repository().save(owner(), plan);
+
+        assertThat(repository().findById(otherOwner(), plan.getId())).isEmpty();
+        assertThat(repository().findAll(otherOwner())).isEmpty();
+    }
+
+
+    @Test
+    default void refusesToSaveOverAPlanOfAnotherUser() {
+        DietPlan plan = plan("Cutting");
+        repository().save(owner(), plan);
+
+        assertThatThrownBy(() -> repository().save(otherOwner(), plan.withContent("Roubado", plan.getTargets(), plan.getMeals())))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(repository().findById(owner(), plan.getId()).orElseThrow().getName()).isEqualTo("Cutting");
+    }
+    @Test
+    default void eachUserHasTheirOwnActivePlan() {
+        DietPlan mine = plan("Minha");
+        DietPlan theirs = plan("Dele");
+        repository().save(owner(), mine.activated());
+        repository().save(otherOwner(), theirs.activated());
+
+        assertThat(repository().findActive(owner()).orElseThrow().getName()).isEqualTo("Minha");
+        assertThat(repository().findActive(otherOwner()).orElseThrow().getName()).isEqualTo("Dele");
     }
 
     default DietPlan plan(String name) {

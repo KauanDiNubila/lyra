@@ -7,6 +7,7 @@ import app.lyra.diary.domain.Planned;
 import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
+import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -15,6 +16,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public interface DiaryEntryRepositoryContract {
 
@@ -24,13 +26,17 @@ public interface DiaryEntryRepositoryContract {
 
     UUID savedFoodId();
 
+    UserId owner();
+
+    UserId otherOwner();
+
     @Test
     default void savesAnEntryAndFindsItById() {
         DiaryEntry entry = entry(DATE, "Almoço", "150", nutrients("1.561", "1.2007"));
 
-        repository().save(entry);
+        repository().save(owner(), entry);
 
-        DiaryEntry found = repository().findById(entry.getId()).orElseThrow();
+        DiaryEntry found = repository().findById(owner(), entry.getId()).orElseThrow();
         assertThat(found.getId()).isEqualTo(entry.getId());
         assertThat(found.getDate()).isEqualTo(DATE);
         assertThat(found.getMealName()).isEqualTo("Almoço");
@@ -52,16 +58,16 @@ public interface DiaryEntryRepositoryContract {
     default void keepsMissingFiberAndSodiumAsNull() {
         DiaryEntry entry = entry(DATE, "Almoço", "150", nutrients(null, null));
 
-        repository().save(entry);
+        repository().save(owner(), entry);
 
-        DiaryEntry found = repository().findById(entry.getId()).orElseThrow();
+        DiaryEntry found = repository().findById(owner(), entry.getId()).orElseThrow();
         assertThat(found.getNutrients().fiber()).isNull();
         assertThat(found.getNutrients().sodium()).isNull();
     }
 
     @Test
     default void findsNothingForAnUnknownId() {
-        assertThat(repository().findById(UUID.randomUUID())).isEmpty();
+        assertThat(repository().findById(owner(), UUID.randomUUID())).isEmpty();
     }
 
     @Test
@@ -70,63 +76,63 @@ public interface DiaryEntryRepositoryContract {
         DiaryEntry otherDay = entry(DATE.plusDays(1), "Almoço", "100", nutrients(null, null));
         DiaryEntry second = entry(DATE, "Jantar", "100", nutrients(null, null));
         DiaryEntry third = entry(DATE, "Almoço", "50", nutrients(null, null));
-        repository().save(first);
-        repository().save(otherDay);
-        repository().save(second);
-        repository().save(third);
+        repository().save(owner(), first);
+        repository().save(owner(), otherDay);
+        repository().save(owner(), second);
+        repository().save(owner(), third);
 
-        assertThat(repository().findByDate(DATE)).containsExactly(first, second, third);
+        assertThat(repository().findByDate(owner(), DATE)).containsExactly(first, second, third);
     }
 
     @Test
     default void listsNothingForADateWithoutEntries() {
-        assertThat(repository().findByDate(DATE)).isEmpty();
+        assertThat(repository().findByDate(owner(), DATE)).isEmpty();
     }
 
     @Test
     default void savingAgainWithTheSameIdReplacesTheEntryAndKeepsItsPlace() {
         DiaryEntry first = entry(DATE, "Almoço", "100", nutrients(null, null));
         DiaryEntry second = entry(DATE, "Jantar", "100", nutrients(null, null));
-        repository().save(first);
-        repository().save(second);
+        repository().save(owner(), first);
+        repository().save(owner(), second);
         DiaryEntry changed = new DiaryEntry(first.getId(), first.getDate(), first.getMealName(), first.getFoodId(),
                 first.getFoodName(), first.getFoodReference(), first.getNutrients(), grams("200"));
 
-        repository().save(changed);
+        repository().save(owner(), changed);
 
-        assertThat(repository().findByDate(DATE)).containsExactly(first, second);
-        assertThat(repository().findById(first.getId()).orElseThrow().getQuantity().amount()).isEqualByComparingTo("200");
+        assertThat(repository().findByDate(owner(), DATE)).containsExactly(first, second);
+        assertThat(repository().findById(owner(), first.getId()).orElseThrow().getQuantity().amount()).isEqualByComparingTo("200");
     }
 
     @Test
     default void deletesAnEntry() {
         DiaryEntry entry = entry(DATE, "Almoço", "100", nutrients(null, null));
-        repository().save(entry);
+        repository().save(owner(), entry);
 
-        repository().deleteById(entry.getId());
+        repository().deleteById(owner(), entry.getId());
 
-        assertThat(repository().findById(entry.getId())).isEmpty();
+        assertThat(repository().findById(owner(), entry.getId())).isEmpty();
     }
 
     @Test
     default void deletingAnUnknownIdDoesNothing() {
-        assertThatCode(() -> repository().deleteById(UUID.randomUUID())).doesNotThrowAnyException();
+        assertThatCode(() -> repository().deleteById(owner(), UUID.randomUUID())).doesNotThrowAnyException();
     }
 
     @Test
     default void aDayCanBeLockedMoreThanOnceInARow() {
         assertThatCode(() -> {
-            repository().lockDay(DATE);
-            repository().lockDay(DATE);
+            repository().lockDay(owner(), DATE);
+            repository().lockDay(owner(), DATE);
         }).doesNotThrowAnyException();
     }
 
     @Test
     default void anEntryLoggedByHandComesBackWithoutPlan() {
         DiaryEntry entry = entry(DATE, "Almoço", "150", nutrients(null, null));
-        repository().save(entry);
+        repository().save(owner(), entry);
 
-        DiaryEntry found = repository().findById(entry.getId()).orElseThrow();
+        DiaryEntry found = repository().findById(owner(), entry.getId()).orElseThrow();
 
         assertThat(found.getPlanned()).isEmpty();
         assertThat(found.origin()).isEqualTo(Origin.EXTRA);
@@ -136,9 +142,9 @@ public interface DiaryEntryRepositoryContract {
     default void savesAnEntryFromThePlanWithWhatWasPlanned() {
         UUID foodId = savedFoodId();
         DiaryEntry entry = planEntry(DATE, "Almoço", foodId, foodId, 2, "150");
-        repository().save(entry);
+        repository().save(owner(), entry);
 
-        DiaryEntry found = repository().findById(entry.getId()).orElseThrow();
+        DiaryEntry found = repository().findById(owner(), entry.getId()).orElseThrow();
 
         Planned planned = found.getPlanned().orElseThrow();
         assertThat(planned.foodId()).isEqualTo(foodId);
@@ -157,9 +163,9 @@ public interface DiaryEntryRepositoryContract {
     default void keepsASkippedEntryWithAQuantityOfZero() {
         UUID foodId = savedFoodId();
         DiaryEntry skipped = planEntry(DATE, "Almoço", foodId, foodId, 0, "0");
-        repository().save(skipped);
+        repository().save(owner(), skipped);
 
-        DiaryEntry found = repository().findById(skipped.getId()).orElseThrow();
+        DiaryEntry found = repository().findById(owner(), skipped.getId()).orElseThrow();
 
         assertThat(found.getQuantity().amount()).isEqualByComparingTo("0");
         assertThat(found.origin()).isEqualTo(Origin.SKIPPED);
@@ -171,9 +177,9 @@ public interface DiaryEntryRepositoryContract {
         UUID planned = savedFoodId();
         UUID eaten = savedFoodId();
         DiaryEntry swapped = planEntry(DATE, "Almoço", eaten, planned, 0, "120");
-        repository().save(swapped);
+        repository().save(owner(), swapped);
 
-        DiaryEntry found = repository().findById(swapped.getId()).orElseThrow();
+        DiaryEntry found = repository().findById(owner(), swapped.getId()).orElseThrow();
 
         assertThat(found.getFoodId()).isEqualTo(eaten);
         assertThat(found.getPlanned().orElseThrow().foodId()).isEqualTo(planned);
@@ -185,14 +191,43 @@ public interface DiaryEntryRepositoryContract {
     default void changingAnEntryOfThePlanKeepsWhatWasPlanned() {
         UUID foodId = savedFoodId();
         DiaryEntry entry = planEntry(DATE, "Almoço", foodId, foodId, 1, "150");
-        repository().save(entry);
+        repository().save(owner(), entry);
 
-        repository().save(entry.withQuantity(grams("200")));
+        repository().save(owner(), entry.withQuantity(grams("200")));
 
-        DiaryEntry found = repository().findById(entry.getId()).orElseThrow();
+        DiaryEntry found = repository().findById(owner(), entry.getId()).orElseThrow();
         assertThat(found.getQuantity().amount()).isEqualByComparingTo("200");
         assertThat(found.getPlanned()).isEqualTo(entry.getPlanned());
         assertThat(found.origin()).isEqualTo(Origin.ADJUSTED);
+    }
+
+    @Test
+    default void anotherUsersEntriesAreNeitherFoundNorListed() {
+        DiaryEntry entry = entry(DATE, "Almoço", "100", nutrients(null, null));
+        repository().save(owner(), entry);
+
+        assertThat(repository().findById(otherOwner(), entry.getId())).isEmpty();
+        assertThat(repository().findByDate(otherOwner(), DATE)).isEmpty();
+    }
+
+
+    @Test
+    default void refusesToSaveOverAnEntryOfAnotherUser() {
+        DiaryEntry entry = entry(DATE, "Almoço", "100", nutrients(null, null));
+        repository().save(owner(), entry);
+
+        assertThatThrownBy(() -> repository().save(otherOwner(), entry.withQuantity(grams("200"))))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(repository().findById(owner(), entry.getId()).orElseThrow().getQuantity().amount()).isEqualByComparingTo("100");
+    }
+    @Test
+    default void anotherUserCannotDeleteAnEntry() {
+        DiaryEntry entry = entry(DATE, "Almoço", "100", nutrients(null, null));
+        repository().save(owner(), entry);
+
+        repository().deleteById(otherOwner(), entry.getId());
+
+        assertThat(repository().findById(owner(), entry.getId())).isPresent();
     }
 
     default DiaryEntry planEntry(LocalDate date, String mealName, UUID foodId, UUID plannedFoodId, int slot, String grams) {

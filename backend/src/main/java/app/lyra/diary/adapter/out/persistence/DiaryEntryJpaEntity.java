@@ -25,6 +25,7 @@ class DiaryEntryJpaEntity {
 
     @Id
     private UUID id;
+    private UUID userId;
     @Column(insertable = false, updatable = false)
     private Long entryOrder;
     private LocalDate entryDate;

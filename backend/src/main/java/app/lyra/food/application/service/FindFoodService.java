@@ -18,6 +18,6 @@ class FindFoodService implements FindFoodUseCase {
 
     @Override
     public Food findById(UserId userId, UUID id) {
-        return foodRepository.findById(id).orElseThrow(() -> new FoodNotFoundException(id));
+        return foodRepository.findById(userId, id).orElseThrow(() -> new FoodNotFoundException(id));
     }
 }

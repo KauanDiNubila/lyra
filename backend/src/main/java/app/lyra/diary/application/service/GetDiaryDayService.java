@@ -23,7 +23,7 @@ class GetDiaryDayService implements GetDiaryDayUseCase {
     @Override
     public DiaryDay getDay(UserId userId, LocalDate date) {
         Optional<Macros> targets = getActivePlan.getActivePlan(userId).map(plan -> toMacros(plan.getTargets()));
-        return new DiaryDay(date, diaryEntryRepository.findByDate(date), targets);
+        return new DiaryDay(date, diaryEntryRepository.findByDate(userId, date), targets);
     }
 
     private static Macros toMacros(DailyTargets targets) {

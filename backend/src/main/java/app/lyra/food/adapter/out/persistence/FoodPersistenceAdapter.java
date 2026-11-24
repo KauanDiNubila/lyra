@@ -7,6 +7,7 @@ import app.lyra.food.domain.FoodSource;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
 import app.lyra.food.domain.SearchText;
+import app.lyra.shared.domain.UserId;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -20,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
@@ -31,25 +33,30 @@ class FoodPersistenceAdapter implements FoodRepository {
 
     @Override
     @Transactional
-    public void save(Food food) {
-        entityManager.persist(toEntity(food));
+    public void save(UserId owner, Food food) {
+        if (food.getSource() != FoodSource.CUSTOM) {
+            throw new IllegalArgumentException("Only custom foods are saved by a user");
+        }
+        entityManager.persist(toEntity(owner, food));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Food> findById(UUID id) {
-        return Optional.ofNullable(entityManager.find(FoodJpaEntity.class, id)).map(FoodPersistenceAdapter::toDomain);
+    public Optional<Food> findById(UserId user, UUID id) {
+        return findAllById(user, List.of(id)).stream().findFirst();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Food> findAllById(Collection<UUID> ids) {
+    public List<Food> findAllById(UserId user, Collection<UUID> ids) {
         if (ids.isEmpty()) {
             return List.of();
         }
         return entityManager
-                .createQuery("select f from FoodJpaEntity f where f.id in :ids", FoodJpaEntity.class)
+                .createQuery("select f from FoodJpaEntity f where f.id in :ids and (f.userId is null or f.userId = :user)",
+                        FoodJpaEntity.class)
                 .setParameter("ids", ids)
+                .setParameter("user", user.value())
                 .getResultList().stream()
                 .map(FoodPersistenceAdapter::toDomain)
                 .toList();
@@ -57,16 +64,18 @@ class FoodPersistenceAdapter implements FoodRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Food> search(FoodSearchQuery query, int limit) {
+    public List<Food> search(UserId user, FoodSearchQuery query, int limit) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<FoodJpaEntity> criteria = cb.createQuery(FoodJpaEntity.class);
         Root<FoodJpaEntity> food = criteria.from(FoodJpaEntity.class);
 
-        Predicate[] everyTerm = query.terms().stream()
-                .map(term -> cb.like(food.get("searchName"), containsPattern(term), LIKE_ESCAPE))
+        Predicate visibleToTheUser = cb.or(cb.isNull(food.get("userId")), cb.equal(food.get("userId"), user.value()));
+        Predicate[] visibleAndMatching = Stream.concat(
+                        Stream.of(visibleToTheUser),
+                        query.terms().stream().map(term -> cb.like(food.get("searchName"), containsPattern(term), LIKE_ESCAPE)))
                 .toArray(Predicate[]::new);
 
-        criteria.where(everyTerm).orderBy(
+        criteria.where(visibleAndMatching).orderBy(
                 cb.asc(cb.selectCase().when(cb.equal(food.get("source"), FoodSource.CUSTOM), 0).otherwise(1)),
                 cb.asc(cb.length(food.get("name"))));
 
@@ -80,11 +89,12 @@ class FoodPersistenceAdapter implements FoodRepository {
         return "%" + literal + "%";
     }
 
-    private static FoodJpaEntity toEntity(Food food) {
+    private static FoodJpaEntity toEntity(UserId owner, Food food) {
         FoodJpaEntity entity = new FoodJpaEntity();
         entity.setId(food.getId());
         entity.setName(food.getName());
         entity.setSearchName(SearchText.normalize(food.getName()));
+        entity.setUserId(owner.value());
         entity.setSource(food.getSource());
         entity.setReferenceAmount(food.getReferenceAmount().amount());
         entity.setReferenceUnit(food.getReferenceAmount().unit());

@@ -6,6 +6,7 @@ import app.lyra.plan.domain.DailyTargets;
 import app.lyra.plan.domain.DietPlan;
 import app.lyra.plan.domain.PlannedItem;
 import app.lyra.plan.domain.PlannedMeal;
+import app.lyra.shared.domain.UserId;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -21,37 +22,48 @@ import java.util.stream.IntStream;
 @RequiredArgsConstructor
 class PlanPersistenceAdapter implements PlanRepository {
 
-    private static final long PLAN_CHANGES_LOCK_KEY = 7_401_001L;
+    private static final int PLAN_CHANGES_LOCK_NAMESPACE = 7_401;
 
     private final EntityManager entityManager;
 
     @Override
     @Transactional
-    public void lockPlanChanges() {
-        entityManager.createNativeQuery("select count(*) from (select pg_advisory_xact_lock(:key)) as locked")
-                .setParameter("key", PLAN_CHANGES_LOCK_KEY)
+    public void lockPlanChanges(UserId user) {
+        entityManager.createNativeQuery("select count(*) from (select pg_advisory_xact_lock(:user, :namespace)) as locked")
+                .setParameter("user", user.value().hashCode())
+                .setParameter("namespace", PLAN_CHANGES_LOCK_NAMESPACE)
                 .getSingleResult();
     }
 
     @Override
     @Transactional
-    public void save(DietPlan plan) {
-        entityManager.merge(toEntity(plan));
+    public void save(UserId owner, DietPlan plan) {
+        DietPlanJpaEntity existing = entityManager.find(DietPlanJpaEntity.class, plan.getId());
+        if (existing != null && !existing.getUserId().equals(owner.value())) {
+            throw new IllegalStateException("The plan belongs to another user");
+        }
+        entityManager.merge(toEntity(owner, plan));
         entityManager.flush();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<DietPlan> findById(UUID id) {
-        return Optional.ofNullable(entityManager.find(DietPlanJpaEntity.class, id))
+    public Optional<DietPlan> findById(UserId user, UUID id) {
+        return entityManager
+                .createQuery("select p from DietPlanJpaEntity p where p.id = :id and p.userId = :user", DietPlanJpaEntity.class)
+                .setParameter("id", id)
+                .setParameter("user", user.value())
+                .getResultStream()
+                .findFirst()
                 .map(PlanPersistenceAdapter::toDomain);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<DietPlan> findAll() {
+    public List<DietPlan> findAll(UserId user) {
         return entityManager
-                .createQuery("select p from DietPlanJpaEntity p order by p.planOrder", DietPlanJpaEntity.class)
+                .createQuery("select p from DietPlanJpaEntity p where p.userId = :user order by p.planOrder", DietPlanJpaEntity.class)
+                .setParameter("user", user.value())
                 .getResultList().stream()
                 .map(PlanPersistenceAdapter::toDomain)
                 .toList();
@@ -59,17 +71,19 @@ class PlanPersistenceAdapter implements PlanRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<DietPlan> findActive() {
+    public Optional<DietPlan> findActive(UserId user) {
         return entityManager
-                .createQuery("select p from DietPlanJpaEntity p where p.active = true", DietPlanJpaEntity.class)
+                .createQuery("select p from DietPlanJpaEntity p where p.userId = :user and p.active = true", DietPlanJpaEntity.class)
+                .setParameter("user", user.value())
                 .getResultStream()
                 .findFirst()
                 .map(PlanPersistenceAdapter::toDomain);
     }
 
-    private static DietPlanJpaEntity toEntity(DietPlan plan) {
+    private static DietPlanJpaEntity toEntity(UserId owner, DietPlan plan) {
         DietPlanJpaEntity entity = new DietPlanJpaEntity();
         entity.setId(plan.getId());
+        entity.setUserId(owner.value());
         entity.setName(plan.getName());
         entity.setActive(plan.isActive());
         entity.setTargetKcal(plan.getTargets().kcal());

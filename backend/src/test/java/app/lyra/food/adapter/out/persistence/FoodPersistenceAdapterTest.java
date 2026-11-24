@@ -1,13 +1,17 @@
 package app.lyra.food.adapter.out.persistence;
 
 import app.lyra.TestcontainersConfiguration;
+import app.lyra.TestUsers;
 import app.lyra.food.application.port.out.FoodRepository;
 import app.lyra.food.application.port.out.FoodRepositoryContract;
 import app.lyra.food.domain.Food;
 import app.lyra.food.domain.FoodSearchQuery;
 import app.lyra.food.domain.FoodSource;
 import app.lyra.food.domain.MeasurementUnit;
+import app.lyra.food.domain.SearchText;
+import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -28,6 +32,39 @@ class FoodPersistenceAdapterTest implements FoodRepositoryContract {
     @Autowired
     private JdbcClient jdbc;
 
+    private UserId owner;
+    private UserId otherOwner;
+
+    @BeforeEach
+    void createTheUsers() {
+        owner = TestUsers.insert(jdbc);
+        otherOwner = TestUsers.insert(jdbc);
+    }
+
+    @Override
+    public void seedTaco(Food food) {
+        jdbc.sql("""
+                        insert into food (id, name, search_name, source, source_reference, reference_amount, reference_unit,
+                            kcal, protein, carbohydrate, fat)
+                        values (:id, :name, :searchName, 'TACO', :reference, 100, 'GRAM', 1, 1, 1, 1)
+                        """)
+                .param("id", food.getId())
+                .param("name", food.getName())
+                .param("searchName", SearchText.normalize(food.getName()))
+                .param("reference", "TEST-" + food.getId())
+                .update();
+    }
+
+    @Override
+    public UserId owner() {
+        return owner;
+    }
+
+    @Override
+    public UserId otherOwner() {
+        return otherOwner;
+    }
+
     @Override
     public FoodRepository repository() {
         return adapter;
@@ -35,7 +72,7 @@ class FoodPersistenceAdapterTest implements FoodRepositoryContract {
 
     @AfterEach
     void removeFoodsCreatedByTheTest() {
-        jdbc.sql("delete from food where source_reference is null").update();
+        TestUsers.deleteEverything(jdbc);
     }
 
     @Test
@@ -47,7 +84,7 @@ class FoodPersistenceAdapterTest implements FoodRepositoryContract {
 
     @Test
     void tacoFoodsKeepTheirPublishedValues() {
-        Food rice = adapter.search(FoodSearchQuery.of("arroz tipo 1 cozido"), 1).getFirst();
+        Food rice = adapter.search(owner, FoodSearchQuery.of("arroz tipo 1 cozido"), 1).getFirst();
 
         assertThat(rice.getName()).isEqualTo("Arroz, tipo 1, cozido");
         assertThat(rice.getSource()).isEqualTo(FoodSource.TACO);
