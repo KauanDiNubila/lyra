@@ -11,6 +11,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ class PlannedMealJpaEntity {
     private String name;
     private LocalTime mealTime;
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 50)
     @JoinColumn(name = "meal_id", nullable = false)
     @OrderBy("itemOrder")
     private List<PlannedItemJpaEntity> items = new ArrayList<>();

@@ -8,6 +8,8 @@ import java.util.UUID;
 
 public interface PlanRepository {
 
+    void lockPlanChanges();
+
     void save(DietPlan plan);
 
     Optional<DietPlan> findById(UUID id);

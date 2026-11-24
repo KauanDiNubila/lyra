@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,7 +21,17 @@ import java.util.stream.IntStream;
 @RequiredArgsConstructor
 class PlanPersistenceAdapter implements PlanRepository {
 
+    private static final long PLAN_CHANGES_LOCK_KEY = 7_401_001L;
+
     private final EntityManager entityManager;
+
+    @Override
+    @Transactional
+    public void lockPlanChanges() {
+        entityManager.createNativeQuery("select count(*) from (select pg_advisory_xact_lock(:key)) as locked")
+                .setParameter("key", PLAN_CHANGES_LOCK_KEY)
+                .getSingleResult();
+    }
 
     @Override
     @Transactional
@@ -66,29 +77,35 @@ class PlanPersistenceAdapter implements PlanRepository {
         entity.setTargetCarbohydrate(plan.getTargets().carbohydrate());
         entity.setTargetFat(plan.getTargets().fat());
         List<PlannedMeal> meals = plan.getMeals();
-        entity.setMeals(IntStream.range(0, meals.size()).mapToObj(index -> toEntity(meals.get(index), index)).toList());
+        entity.setMeals(IntStream.range(0, meals.size())
+                .mapToObj(index -> toEntity(plan.getId(), meals.get(index), index)).toList());
         return entity;
     }
 
-    private static PlannedMealJpaEntity toEntity(PlannedMeal meal, int order) {
+    private static PlannedMealJpaEntity toEntity(UUID planId, PlannedMeal meal, int order) {
         PlannedMealJpaEntity entity = new PlannedMealJpaEntity();
-        entity.setId(UUID.randomUUID());
+        entity.setId(childId(planId, order));
         entity.setMealOrder(order);
         entity.setName(meal.name());
         entity.setMealTime(meal.time());
         List<PlannedItem> items = meal.items();
-        entity.setItems(IntStream.range(0, items.size()).mapToObj(index -> toEntity(items.get(index), index)).toList());
+        entity.setItems(IntStream.range(0, items.size())
+                .mapToObj(index -> toEntity(entity.getId(), items.get(index), index)).toList());
         return entity;
     }
 
-    private static PlannedItemJpaEntity toEntity(PlannedItem item, int order) {
+    private static PlannedItemJpaEntity toEntity(UUID mealId, PlannedItem item, int order) {
         PlannedItemJpaEntity entity = new PlannedItemJpaEntity();
-        entity.setId(UUID.randomUUID());
+        entity.setId(childId(mealId, order));
         entity.setItemOrder(order);
         entity.setFoodId(item.foodId());
         entity.setQuantityAmount(item.quantity().amount());
         entity.setQuantityUnit(item.quantity().unit());
         return entity;
+    }
+
+    private static UUID childId(UUID parentId, int order) {
+        return UUID.nameUUIDFromBytes((parentId + ":" + order).getBytes(StandardCharsets.UTF_8));
     }
 
     private static DietPlan toDomain(DietPlanJpaEntity entity) {

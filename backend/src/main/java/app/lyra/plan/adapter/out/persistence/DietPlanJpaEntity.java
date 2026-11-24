@@ -12,6 +12,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -36,6 +37,7 @@ class DietPlanJpaEntity {
     private BigDecimal targetCarbohydrate;
     private BigDecimal targetFat;
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 50)
     @JoinColumn(name = "plan_id", nullable = false)
     @OrderBy("mealOrder")
     private List<PlannedMealJpaEntity> meals = new ArrayList<>();

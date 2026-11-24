@@ -8,6 +8,7 @@ import app.lyra.plan.domain.PlanNotFoundException;
 import app.lyra.plan.domain.PlannedMeal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,7 +21,9 @@ class ReplacePlanService implements ReplacePlanUseCase {
     private final PlanFoodChecker foodChecker;
 
     @Override
+    @Transactional
     public DietPlan replace(UUID id, String name, DailyTargets targets, List<PlannedMeal> meals) {
+        planRepository.lockPlanChanges();
         DietPlan plan = planRepository.findById(id).orElseThrow(() -> new PlanNotFoundException(id));
         DietPlan changed = plan.withContent(name, targets, meals);
         foodChecker.check(changed);

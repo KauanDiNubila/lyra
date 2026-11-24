@@ -15,6 +15,10 @@ class InMemoryPlanRepository implements PlanRepository {
     private final Map<UUID, DietPlan> plans = new LinkedHashMap<>();
 
     @Override
+    public void lockPlanChanges() {
+    }
+
+    @Override
     public void save(DietPlan plan) {
         boolean anotherIsActive = plans.values().stream().anyMatch(other -> other.isActive() && !other.equals(plan));
         if (plan.isActive() && anotherIsActive) {

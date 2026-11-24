@@ -8,6 +8,9 @@ import app.lyra.plan.application.port.out.PlanRepositoryContract;
 import app.lyra.plan.domain.DietPlan;
 import app.lyra.plan.domain.PlannedItem;
 import app.lyra.plan.domain.PlannedMeal;
+import jakarta.persistence.EntityManagerFactory;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,13 +28,16 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DataJpaTest
+@DataJpaTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({TestcontainersConfiguration.class, PlanPersistenceAdapter.class})
 class PlanPersistenceAdapterTest implements PlanRepositoryContract {
 
     @Autowired
     private PlanPersistenceAdapter adapter;
+
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
 
     @Autowired
     private JdbcClient jdbc;
@@ -90,6 +96,37 @@ class PlanPersistenceAdapterTest implements PlanRepositoryContract {
 
         assertThat(count("planned_meal")).isEqualTo(1);
         assertThat(count("planned_item")).isEqualTo(1);
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void activatingAPlanKeepsTheIdsOfItsMealsAndItems() {
+        DietPlan plan = plan("Cutting");
+        adapter.save(plan);
+        List<UUID> before = childIds();
+
+        adapter.save(plan.activated());
+
+        assertThat(before).hasSize(5);
+        assertThat(childIds()).containsExactlyInAnyOrderElementsOf(before);
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void listingPlansLoadsTheirMealsAndItemsInBatches() {
+        for (int index = 0; index < 5; index++) {
+            adapter.save(plan("Plano " + index));
+        }
+        Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+        statistics.clear();
+
+        assertThat(adapter.findAll()).hasSize(5);
+
+        assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(3);
+    }
+
+    private List<UUID> childIds() {
+        return jdbc.sql("select id from planned_meal union all select id from planned_item").query(UUID.class).list();
     }
 
     private int count(String table) {
