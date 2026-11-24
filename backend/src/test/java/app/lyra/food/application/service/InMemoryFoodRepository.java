@@ -7,6 +7,7 @@ import app.lyra.food.domain.FoodSource;
 import app.lyra.food.domain.SearchText;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +25,11 @@ class InMemoryFoodRepository implements FoodRepository {
     @Override
     public Optional<Food> findById(UUID id) {
         return foods.stream().filter(food -> food.getId().equals(id)).findFirst();
+    }
+
+    @Override
+    public List<Food> findAllById(Collection<UUID> ids) {
+        return foods.stream().filter(food -> ids.contains(food.getId())).toList();
     }
 
     @Override

@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -38,6 +39,20 @@ class FoodPersistenceAdapter implements FoodRepository {
     @Transactional(readOnly = true)
     public Optional<Food> findById(UUID id) {
         return Optional.ofNullable(entityManager.find(FoodJpaEntity.class, id)).map(FoodPersistenceAdapter::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Food> findAllById(Collection<UUID> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        return entityManager
+                .createQuery("select f from FoodJpaEntity f where f.id in :ids", FoodJpaEntity.class)
+                .setParameter("ids", ids)
+                .getResultList().stream()
+                .map(FoodPersistenceAdapter::toDomain)
+                .toList();
     }
 
     @Override

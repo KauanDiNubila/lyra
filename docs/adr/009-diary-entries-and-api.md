@@ -1,7 +1,7 @@
 # ADR-009: Diário: entradas, cálculo e contrato da API
 
 - **Data**: 2026-11-19
-- **Status**: Proposta
+- **Status**: Proposta, alterada em dois pontos pela [ADR-011](011-diet-plan-and-diary-from-plan.md) (quantidade zero para itens do plano e troca de alimento e de refeição)
 - **Decisores**: Kauan Di Nubila
 - **Tags**: diário, domínio, dados, api
 

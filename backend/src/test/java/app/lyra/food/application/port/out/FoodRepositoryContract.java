@@ -94,6 +94,28 @@ public interface FoodRepositoryContract {
     }
 
     @Test
+    default void findsOnlyTheRequestedFoodsAndIgnoresUnknownIds() {
+        Food first = food("Quimera lote um", FoodSource.CUSTOM);
+        Food second = food("Quimera lote dois", FoodSource.CUSTOM);
+        Food notRequested = food("Quimera lote tres", FoodSource.CUSTOM);
+        repository().save(first);
+        repository().save(second);
+        repository().save(notRequested);
+
+        List<Food> found = repository().findAllById(List.of(first.getId(), second.getId(), UUID.randomUUID()));
+
+        assertThat(found).containsExactlyInAnyOrder(first, second);
+        assertThat(names(found)).containsExactlyInAnyOrder("Quimera lote um", "Quimera lote dois");
+    }
+
+    @Test
+    default void findsNothingWhenNoIdIsRequested() {
+        repository().save(food("Quimera sem pedido", FoodSource.CUSTOM));
+
+        assertThat(repository().findAllById(List.of())).isEmpty();
+    }
+
+    @Test
     default void percentSignInATermIsTakenLiterally() {
         saveCustom("Quimera 100% natural", "Quimera 100 de laranja");
 
