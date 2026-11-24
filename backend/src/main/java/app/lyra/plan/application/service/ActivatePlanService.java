@@ -4,6 +4,7 @@ import app.lyra.plan.application.port.in.ActivatePlanUseCase;
 import app.lyra.plan.application.port.out.PlanRepository;
 import app.lyra.plan.domain.DietPlan;
 import app.lyra.plan.domain.PlanNotFoundException;
+import app.lyra.shared.domain.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +19,7 @@ class ActivatePlanService implements ActivatePlanUseCase {
 
     @Override
     @Transactional
-    public DietPlan activate(UUID id) {
+    public DietPlan activate(UserId userId, UUID id) {
         planRepository.lockPlanChanges();
         DietPlan plan = planRepository.findById(id).orElseThrow(() -> new PlanNotFoundException(id));
         if (plan.isActive()) {

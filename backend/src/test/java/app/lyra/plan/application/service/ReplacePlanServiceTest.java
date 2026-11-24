@@ -4,6 +4,7 @@ import app.lyra.plan.domain.DietPlan;
 import app.lyra.plan.domain.PlanNotFoundException;
 import app.lyra.plan.domain.PlannedMeal;
 import app.lyra.shared.domain.InvalidInputException;
+import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -29,7 +30,7 @@ class ReplacePlanServiceTest {
         DietPlan active = DietPlan.create("Cutting", targets(), lunchAndDinner()).activated();
         repository.save(active);
 
-        DietPlan changed = service.replace(active.getId(), "Bulking", targets(), List.of(meal("Lanche", riceInGrams("50"))));
+        DietPlan changed = service.replace(UserId.random(), active.getId(), "Bulking", targets(), List.of(meal("Lanche", riceInGrams("50"))));
 
         assertThat(changed.getId()).isEqualTo(active.getId());
         assertThat(changed.isActive()).isTrue();
@@ -43,7 +44,7 @@ class ReplacePlanServiceTest {
         UUID unknown = UUID.randomUUID();
         List<PlannedMeal> meals = lunchAndDinner();
 
-        assertThatThrownBy(() -> service.replace(unknown, "Cutting", targets(), meals))
+        assertThatThrownBy(() -> service.replace(UserId.random(), unknown, "Cutting", targets(), meals))
                 .isInstanceOf(PlanNotFoundException.class)
                 .hasMessage("Plan not found: " + unknown);
     }
@@ -55,7 +56,7 @@ class ReplacePlanServiceTest {
         UUID id = plan.getId();
         List<PlannedMeal> wrongUnit = List.of(meal("Almoço", riceInPortions("1")));
 
-        assertThatThrownBy(() -> service.replace(id, "Bulking", targets(), wrongUnit)).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> service.replace(UserId.random(), id, "Bulking", targets(), wrongUnit)).isInstanceOf(InvalidInputException.class);
         assertThat(repository.findById(id).orElseThrow().getName()).isEqualTo("Cutting");
         assertThat(repository.findById(id).orElseThrow().getMeals()).hasSize(2);
     }

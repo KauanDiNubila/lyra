@@ -1,6 +1,8 @@
 package app.lyra.identity;
 
+import app.lyra.TestSessions;
 import app.lyra.TestcontainersConfiguration;
+import app.lyra.shared.domain.UserId;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,8 +46,8 @@ class IdentitySecurityTest {
     }
 
     @Test
-    void theOtherRoutesStayOpenUntilTheOwnerStep() throws Exception {
-        mvc.perform(get("/api/plans")).andExpect(status().isOk());
+    void aRouteThatKnowsTheUserAnswersUnauthorizedWithoutASession() throws Exception {
+        mvc.perform(get("/api/plans")).andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -77,7 +79,7 @@ class IdentitySecurityTest {
 
     @Test
     void writesToTheOtherRoutesNeedNoCsrfTokenYet() throws Exception {
-        mvc.perform(post("/api/plans").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        mvc.perform(post("/api/plans").with(TestSessions.of(UserId.random())).contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest());
     }
 }

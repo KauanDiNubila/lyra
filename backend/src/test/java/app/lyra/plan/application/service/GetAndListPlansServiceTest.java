@@ -2,6 +2,7 @@ package app.lyra.plan.application.service;
 
 import app.lyra.plan.domain.DietPlan;
 import app.lyra.plan.domain.PlanNotFoundException;
+import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
@@ -21,7 +22,7 @@ class GetAndListPlansServiceTest {
         repository.save(plan);
         repository.save(DietPlan.create("Bulking", targets(), lunchAndDinner()));
 
-        assertThat(new GetPlanService(repository).getPlan(plan.getId())).isEqualTo(plan);
+        assertThat(new GetPlanService(repository).getPlan(UserId.random(), plan.getId())).isEqualTo(plan);
     }
 
     @Test
@@ -29,7 +30,7 @@ class GetAndListPlansServiceTest {
         UUID unknown = UUID.randomUUID();
         GetPlanService service = new GetPlanService(repository);
 
-        assertThatThrownBy(() -> service.getPlan(unknown))
+        assertThatThrownBy(() -> service.getPlan(UserId.random(), unknown))
                 .isInstanceOf(PlanNotFoundException.class)
                 .hasMessage("Plan not found: " + unknown);
     }
@@ -41,11 +42,11 @@ class GetAndListPlansServiceTest {
         repository.save(first);
         repository.save(second);
 
-        assertThat(new ListPlansService(repository).listPlans()).containsExactly(first, second);
+        assertThat(new ListPlansService(repository).listPlans(UserId.random())).containsExactly(first, second);
     }
 
     @Test
     void listReturnsNothingWhenThereAreNoPlans() {
-        assertThat(new ListPlansService(repository).listPlans()).isEmpty();
+        assertThat(new ListPlansService(repository).listPlans(UserId.random())).isEmpty();
     }
 }

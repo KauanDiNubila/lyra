@@ -2,6 +2,7 @@ package app.lyra.plan.application.service;
 
 import app.lyra.plan.domain.DietPlan;
 import app.lyra.plan.domain.PlanNotFoundException;
+import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
@@ -21,7 +22,7 @@ class ActivatePlanServiceTest {
         DietPlan plan = DietPlan.create("Cutting", targets(), lunchAndDinner());
         repository.save(plan);
 
-        DietPlan activated = service.activate(plan.getId());
+        DietPlan activated = service.activate(UserId.random(), plan.getId());
 
         assertThat(activated.isActive()).isTrue();
         assertThat(repository.findActive()).contains(plan);
@@ -34,7 +35,7 @@ class ActivatePlanServiceTest {
         repository.save(current);
         repository.save(other);
 
-        service.activate(other.getId());
+        service.activate(UserId.random(), other.getId());
 
         assertThat(repository.findById(current.getId()).orElseThrow().isActive()).isFalse();
         assertThat(repository.findById(other.getId()).orElseThrow().isActive()).isTrue();
@@ -46,7 +47,7 @@ class ActivatePlanServiceTest {
         DietPlan active = DietPlan.create("Cutting", targets(), lunchAndDinner()).activated();
         repository.save(active);
 
-        DietPlan result = service.activate(active.getId());
+        DietPlan result = service.activate(UserId.random(), active.getId());
 
         assertThat(result.isActive()).isTrue();
         assertThat(repository.findAll()).hasSize(1);
@@ -57,7 +58,7 @@ class ActivatePlanServiceTest {
     void failsWhenThereIsNoPlanWithThatId() {
         UUID unknown = UUID.randomUUID();
 
-        assertThatThrownBy(() -> service.activate(unknown))
+        assertThatThrownBy(() -> service.activate(UserId.random(), unknown))
                 .isInstanceOf(PlanNotFoundException.class)
                 .hasMessage("Plan not found: " + unknown);
     }

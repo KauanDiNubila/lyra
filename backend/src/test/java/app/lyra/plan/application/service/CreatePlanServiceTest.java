@@ -5,6 +5,7 @@ import app.lyra.food.domain.FoodNotFoundException;
 import app.lyra.plan.domain.DietPlan;
 import app.lyra.plan.domain.PlannedMeal;
 import app.lyra.shared.domain.InvalidInputException;
+import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -32,7 +33,7 @@ class CreatePlanServiceTest {
 
     @Test
     void savesAnInactivePlanAndReturnsIt() {
-        DietPlan plan = serviceFinding(ids -> Map.of(RICE.getId(), RICE)).create("  Cutting ", targets(), lunchAndDinner());
+        DietPlan plan = serviceFinding(ids -> Map.of(RICE.getId(), RICE)).create(UserId.random(), "  Cutting ", targets(), lunchAndDinner());
 
         assertThat(plan.getName()).isEqualTo("Cutting");
         assertThat(plan.isActive()).isFalse();
@@ -47,7 +48,7 @@ class CreatePlanServiceTest {
         CreatePlanService service = serviceFinding(unknownFood);
         List<PlannedMeal> meals = lunchAndDinner();
 
-        assertThatThrownBy(() -> service.create("Cutting", targets(), meals)).isInstanceOf(FoodNotFoundException.class);
+        assertThatThrownBy(() -> service.create(UserId.random(), "Cutting", targets(), meals)).isInstanceOf(FoodNotFoundException.class);
         assertThat(repository.findAll()).isEmpty();
     }
 
@@ -56,7 +57,7 @@ class CreatePlanServiceTest {
         CreatePlanService service = serviceFinding(ids -> Map.of(RICE.getId(), RICE));
         List<PlannedMeal> meals = List.of(meal("Almoço", riceInPortions("1")));
 
-        assertThatThrownBy(() -> service.create("Cutting", targets(), meals))
+        assertThatThrownBy(() -> service.create(UserId.random(), "Cutting", targets(), meals))
                 .isInstanceOf(InvalidInputException.class)
                 .hasMessage("Quantity of Arroz must be in GRAM");
         assertThat(repository.findAll()).isEmpty();
@@ -70,7 +71,7 @@ class CreatePlanServiceTest {
             return Map.of(RICE.getId(), RICE);
         });
 
-        assertThatThrownBy(() -> service.create("Cutting", targets(), List.of())).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> service.create(UserId.random(), "Cutting", targets(), List.of())).isInstanceOf(InvalidInputException.class);
         assertThat(requests).isEmpty();
     }
 
@@ -82,7 +83,7 @@ class CreatePlanServiceTest {
             return Map.of(RICE.getId(), RICE);
         });
 
-        service.create("Cutting", targets(), List.of(
+        service.create(UserId.random(), "Cutting", targets(), List.of(
                 meal("Almoço", riceInGrams("150"), riceInGrams("50")),
                 meal("Jantar", riceInGrams("100"))));
 
