@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../App.tsx'
+import { emptyDay, jsonResponse } from '../diary/testSupport.ts'
 
 const fetchMock = vi.fn<typeof fetch>()
 const USER = { id: 'user-1', email: 'ana@example.com', name: 'Ana Souza' }
@@ -8,45 +9,24 @@ const USER = { id: 'user-1', email: 'ana@example.com', name: 'Ana Souza' }
 type Server = {
   me?: () => Promise<Response>
   logout?: () => Promise<Response>
-  others?: () => Promise<Response>
-}
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': status >= 400 ? 'application/problem+json' : 'application/json' },
-  })
 }
 
 function unauthorized(): Response {
-  return json({ status: 401, title: 'Unauthorized', detail: 'Sign in to use the API' }, 401)
+  return jsonResponse({ status: 401, title: 'Unauthorized', detail: 'Sign in to use the API' }, 401)
 }
 
-function serve({ me, logout, others }: Server = {}) {
+function serve({ me, logout }: Server = {}) {
   fetchMock.mockImplementation(async (url, init) => {
     const path = String(url)
-    if (path === '/api/me') return me ? me() : json(USER)
+    if (path === '/api/me') return me ? me() : jsonResponse(USER)
     if (path === '/api/logout') return logout ? logout() : new Response(null, { status: 204 })
-    if (others) return others()
     if (path.startsWith('/api/diary')) {
-      return init?.method === 'POST' ? json({ detail: 'There is no active plan' }, 404) : json(emptyDay(path.split('/')[3]))
+      return init?.method === 'POST'
+        ? jsonResponse({ detail: 'There is no active plan' }, 404)
+        : jsonResponse(emptyDay(path.split('/')[3]))
     }
-    if (path === '/api/plans') return json([])
-    return json([])
+    return jsonResponse([])
   })
-}
-
-function emptyDay(date: string) {
-  const zero = { kcal: 0, protein: 0, carbohydrate: 0, fat: 0 }
-  return {
-    date,
-    meals: [],
-    total: zero,
-    plannedTotal: zero,
-    differenceFromPlan: zero,
-    targets: null,
-    differenceFromTargets: null,
-  }
 }
 
 function calls(path: string) {
@@ -149,7 +129,7 @@ describe('signing out', () => {
     expect(await screen.findByRole('link', { name: 'Entrar com Google' })).toBeInTheDocument()
     expect(calls('/api/logout')).toHaveLength(1)
     expect(calls('/api/logout')[0][1]?.method).toBe('POST')
-    expect(calls('/api/logout')[0][1]?.headers).toEqual({ 'X-XSRF-TOKEN': 'token-123' })
+    expect(new Headers(calls('/api/logout')[0][1]?.headers).get('X-XSRF-TOKEN')).toBe('token-123')
     expect(screen.queryByRole('tab')).not.toBeInTheDocument()
     expect(screen.queryByText('Ana Souza')).not.toBeInTheDocument()
   })
@@ -171,7 +151,7 @@ describe('signing out', () => {
   })
 
   it('stays in the app and says why when the server cannot sign the user out', async () => {
-    serve({ logout: () => Promise.resolve(json({ detail: 'Invalid CSRF token' }, 403)) })
+    serve({ logout: () => Promise.resolve(jsonResponse({ detail: 'Invalid CSRF token' }, 403)) })
     render(<App />)
     await screen.findByText('Ana Souza')
 
@@ -188,10 +168,10 @@ describe('a session that ends while the user is in the app', () => {
     let signedIn = true
     fetchMock.mockImplementation(async (url) => {
       const path = String(url)
-      if (path === '/api/me') return json(USER)
+      if (path === '/api/me') return jsonResponse(USER)
       if (!signedIn) return unauthorized()
-      if (path.startsWith('/api/diary')) return json(emptyDay(path.split('/')[3]))
-      return json([])
+      if (path.startsWith('/api/diary')) return jsonResponse(emptyDay(path.split('/')[3]))
+      return jsonResponse([])
     })
     render(<App />)
     await screen.findByText('Ana Souza')

@@ -2,7 +2,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vitest/config'
 
-const backend = { target: 'http://localhost:8080', changeOrigin: false }
+const backendKeepingTheHost = { target: 'http://localhost:8080', changeOrigin: false }
 
 export default defineConfig({
   plugins: [
@@ -27,9 +27,9 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      '/api': backend,
-      '/oauth2': backend,
-      '/login': backend,
+      '/api': backendKeepingTheHost,
+      '/oauth2': backendKeepingTheHost,
+      '/login': backendKeepingTheHost,
     },
   },
   test: {

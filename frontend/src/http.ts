@@ -25,7 +25,10 @@ function csrfToken(): string | null {
 function withCsrfToken(init: RequestInit): RequestInit {
   const method = (init.method ?? 'GET').toUpperCase()
   const token = SAFE_METHODS.includes(method) ? null : csrfToken()
-  return token ? { ...init, headers: { ...init.headers, 'X-XSRF-TOKEN': token } } : init
+  if (!token) return init
+  const headers = new Headers(init.headers)
+  headers.set('X-XSRF-TOKEN', token)
+  return { ...init, headers }
 }
 
 export async function send(url: string, init: RequestInit = {}): Promise<Response> {

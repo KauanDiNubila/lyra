@@ -8,7 +8,7 @@ function clearCookie() {
 }
 
 function sentHeaders(): Record<string, string> {
-  return (fetchMock.mock.calls[0][1]?.headers ?? {}) as Record<string, string>
+  return Object.fromEntries(new Headers(fetchMock.mock.calls[0][1]?.headers).entries())
 }
 
 beforeEach(() => {
@@ -29,7 +29,7 @@ describe('the CSRF token', () => {
 
     await send('/api/diary/entries/1', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}' })
 
-    expect(sentHeaders()).toEqual({ 'Content-Type': 'application/json', 'X-XSRF-TOKEN': 'token-123' })
+    expect(sentHeaders()).toEqual({ 'content-type': 'application/json', 'x-xsrf-token': 'token-123' })
   })
 
   it('is decoded when the cookie holds a percent-encoded value', async () => {
@@ -37,7 +37,7 @@ describe('the CSRF token', () => {
 
     await send('/api/logout', { method: 'POST' })
 
-    expect(sentHeaders()['X-XSRF-TOKEN']).toBe('a=b/c')
+    expect(sentHeaders()['x-xsrf-token']).toBe('a=b/c')
   })
 
   it.each(['POST', 'PUT', 'PATCH', 'DELETE', 'post'])('is sent with %s', async (method) => {
@@ -45,7 +45,7 @@ describe('the CSRF token', () => {
 
     await send('/api/anything', { method })
 
-    expect(sentHeaders()['X-XSRF-TOKEN']).toBe('token-123')
+    expect(sentHeaders()['x-xsrf-token']).toBe('token-123')
   })
 
   it.each([undefined, 'GET', 'HEAD', 'OPTIONS'])('is not sent with %s', async (method) => {
@@ -54,6 +54,22 @@ describe('the CSRF token', () => {
     await send('/api/anything', { method })
 
     expect(fetchMock.mock.calls[0][1]?.headers).toBeUndefined()
+  })
+
+  it('keeps the headers that came in a Headers object', async () => {
+    document.cookie = 'XSRF-TOKEN=token-123; path=/'
+
+    await send('/api/anything', { method: 'POST', headers: new Headers({ 'Content-Type': 'application/json' }) })
+
+    expect(sentHeaders()).toEqual({ 'content-type': 'application/json', 'x-xsrf-token': 'token-123' })
+  })
+
+  it('keeps the headers that came as a list of pairs', async () => {
+    document.cookie = 'XSRF-TOKEN=token-123; path=/'
+
+    await send('/api/anything', { method: 'POST', headers: [['Content-Type', 'application/json']] })
+
+    expect(sentHeaders()).toEqual({ 'content-type': 'application/json', 'x-xsrf-token': 'token-123' })
   })
 
   it('is not invented when there is no cookie', async () => {

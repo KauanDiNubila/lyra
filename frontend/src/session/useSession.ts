@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { onUnauthorized } from '../http.ts'
-import { useAsyncResource } from '../useAsyncResource.ts'
+import { useAsyncResource, type Resource } from '../useAsyncResource.ts'
 import { fetchMe, logout, type User } from './sessionApi.ts'
 
 export type Session =
@@ -28,7 +28,7 @@ export function useSession(): { session: Session; retry: () => void; signOut: ()
   return { session: toSession(resource, isEnded), retry, signOut }
 }
 
-function toSession(resource: ReturnType<typeof useAsyncResource<User | null>>['resource'], isEnded: boolean): Session {
+function toSession(resource: Resource<User | null>, isEnded: boolean): Session {
   if (isEnded) return { status: 'signed-out' }
   if (resource.status === 'error') return { status: 'error', message: resource.message }
   if (resource.status === 'success') {
