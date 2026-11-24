@@ -6,6 +6,7 @@ import app.lyra.identity.application.port.in.SignInUseCase.SignInCommand;
 import app.lyra.identity.domain.AuthProvider;
 import app.lyra.identity.domain.User;
 import app.lyra.shared.domain.UserId;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,6 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import java.time.Instant;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -82,7 +82,9 @@ class MeApiTest {
     void signsOutWithTheCsrfToken() throws Exception {
         User user = signIn.signIn(new SignInCommand(AuthProvider.GOOGLE, "sub-1", "ana@example.com", "Ana"));
 
-        mvc.perform(post("/api/logout").with(sessionOf(user.getId())).with(csrf()))
+        Cookie token = mvc.perform(get("/api/me").with(sessionOf(user.getId()))).andReturn().getResponse().getCookie("XSRF-TOKEN");
+
+        mvc.perform(post("/api/logout").with(sessionOf(user.getId())).cookie(token).header("X-XSRF-TOKEN", token.getValue()))
                 .andExpect(status().isNoContent());
         mvc.perform(post("/api/logout").with(sessionOf(user.getId())))
                 .andExpect(status().isForbidden());

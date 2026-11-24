@@ -1,6 +1,7 @@
 package app.lyra.identity;
 
 import app.lyra.TestcontainersConfiguration;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -11,7 +12,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.startsWith;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -60,7 +60,19 @@ class IdentitySecurityTest {
     @Test
     void logoutNeedsTheCsrfToken() throws Exception {
         mvc.perform(post("/api/logout")).andExpect(status().isForbidden());
-        mvc.perform(post("/api/logout").with(csrf())).andExpect(status().isNoContent());
+
+        Cookie token = mvc.perform(get("/api/me")).andReturn().getResponse().getCookie("XSRF-TOKEN");
+
+        mvc.perform(post("/api/logout").cookie(token).header("X-XSRF-TOKEN", token.getValue()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void refusesALogoutWithATokenThatIsNotTheOneOfTheCookie() throws Exception {
+        Cookie token = mvc.perform(get("/api/me")).andReturn().getResponse().getCookie("XSRF-TOKEN");
+
+        mvc.perform(post("/api/logout").cookie(token).header("X-XSRF-TOKEN", "another-token"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
