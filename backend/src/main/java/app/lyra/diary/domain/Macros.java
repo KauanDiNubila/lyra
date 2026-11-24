@@ -13,4 +13,12 @@ public record Macros(BigDecimal kcal, BigDecimal protein, BigDecimal carbohydrat
                 carbohydrate.add(other.carbohydrate),
                 fat.add(other.fat));
     }
+
+    public Macros minus(Macros other) {
+        return new Macros(
+                kcal.subtract(other.kcal),
+                protein.subtract(other.protein),
+                carbohydrate.subtract(other.carbohydrate),
+                fat.subtract(other.fat));
+    }
 }

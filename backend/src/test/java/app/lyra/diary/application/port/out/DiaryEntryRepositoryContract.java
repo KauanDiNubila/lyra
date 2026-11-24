@@ -1,6 +1,9 @@
 package app.lyra.diary.application.port.out;
 
 import app.lyra.diary.domain.DiaryEntry;
+import app.lyra.diary.domain.Macros;
+import app.lyra.diary.domain.Origin;
+import app.lyra.diary.domain.Planned;
 import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
@@ -108,6 +111,96 @@ public interface DiaryEntryRepositoryContract {
     @Test
     default void deletingAnUnknownIdDoesNothing() {
         assertThatCode(() -> repository().deleteById(UUID.randomUUID())).doesNotThrowAnyException();
+    }
+
+    @Test
+    default void aDayCanBeLockedMoreThanOnceInARow() {
+        assertThatCode(() -> {
+            repository().lockDay(DATE);
+            repository().lockDay(DATE);
+        }).doesNotThrowAnyException();
+    }
+
+    @Test
+    default void anEntryLoggedByHandComesBackWithoutPlan() {
+        DiaryEntry entry = entry(DATE, "Almoço", "150", nutrients(null, null));
+        repository().save(entry);
+
+        DiaryEntry found = repository().findById(entry.getId()).orElseThrow();
+
+        assertThat(found.getPlanned()).isEmpty();
+        assertThat(found.origin()).isEqualTo(Origin.EXTRA);
+    }
+
+    @Test
+    default void savesAnEntryFromThePlanWithWhatWasPlanned() {
+        UUID foodId = savedFoodId();
+        DiaryEntry entry = planEntry(DATE, "Almoço", foodId, foodId, 2, "150");
+        repository().save(entry);
+
+        DiaryEntry found = repository().findById(entry.getId()).orElseThrow();
+
+        Planned planned = found.getPlanned().orElseThrow();
+        assertThat(planned.foodId()).isEqualTo(foodId);
+        assertThat(planned.foodName()).isEqualTo("Arroz planejado");
+        assertThat(planned.quantity().amount()).isEqualByComparingTo("150");
+        assertThat(planned.quantity().unit()).isEqualTo(MeasurementUnit.GRAM);
+        assertThat(planned.macros().kcal()).isEqualByComparingTo("192.38775");
+        assertThat(planned.macros().protein()).isEqualByComparingTo("3.7812");
+        assertThat(planned.macros().carbohydrate()).isEqualByComparingTo("42.0897");
+        assertThat(planned.macros().fat()).isEqualByComparingTo("0.3405");
+        assertThat(planned.slot()).isEqualTo(2);
+        assertThat(found.origin()).isEqualTo(Origin.PLANNED);
+    }
+
+    @Test
+    default void keepsASkippedEntryWithAQuantityOfZero() {
+        UUID foodId = savedFoodId();
+        DiaryEntry skipped = planEntry(DATE, "Almoço", foodId, foodId, 0, "0");
+        repository().save(skipped);
+
+        DiaryEntry found = repository().findById(skipped.getId()).orElseThrow();
+
+        assertThat(found.getQuantity().amount()).isEqualByComparingTo("0");
+        assertThat(found.origin()).isEqualTo(Origin.SKIPPED);
+        assertThat(found.getPlanned().orElseThrow().quantity().amount()).isEqualByComparingTo("150");
+    }
+
+    @Test
+    default void keepsTheFoodThatWasPlannedWhenAnotherWasEaten() {
+        UUID planned = savedFoodId();
+        UUID eaten = savedFoodId();
+        DiaryEntry swapped = planEntry(DATE, "Almoço", eaten, planned, 0, "120");
+        repository().save(swapped);
+
+        DiaryEntry found = repository().findById(swapped.getId()).orElseThrow();
+
+        assertThat(found.getFoodId()).isEqualTo(eaten);
+        assertThat(found.getPlanned().orElseThrow().foodId()).isEqualTo(planned);
+        assertThat(found.getPlanned().orElseThrow().foodName()).isEqualTo("Arroz planejado");
+        assertThat(found.origin()).isEqualTo(Origin.SWAPPED);
+    }
+
+    @Test
+    default void changingAnEntryOfThePlanKeepsWhatWasPlanned() {
+        UUID foodId = savedFoodId();
+        DiaryEntry entry = planEntry(DATE, "Almoço", foodId, foodId, 1, "150");
+        repository().save(entry);
+
+        repository().save(entry.withQuantity(grams("200")));
+
+        DiaryEntry found = repository().findById(entry.getId()).orElseThrow();
+        assertThat(found.getQuantity().amount()).isEqualByComparingTo("200");
+        assertThat(found.getPlanned()).isEqualTo(entry.getPlanned());
+        assertThat(found.origin()).isEqualTo(Origin.ADJUSTED);
+    }
+
+    default DiaryEntry planEntry(LocalDate date, String mealName, UUID foodId, UUID plannedFoodId, int slot, String grams) {
+        Macros plannedMacros = new Macros(new BigDecimal("192.38775"), new BigDecimal("3.7812"),
+                new BigDecimal("42.0897"), new BigDecimal("0.3405"));
+        Planned planned = new Planned(plannedFoodId, "Arroz planejado", grams("150"), plannedMacros, slot);
+        return new DiaryEntry(UUID.randomUUID(), date, mealName, foodId, "Arroz", grams("100"),
+                nutrients(null, null), grams(grams), planned);
     }
 
     default DiaryEntry entry(LocalDate date, String mealName, String grams, Nutrients nutrients) {

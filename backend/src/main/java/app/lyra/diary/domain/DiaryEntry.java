@@ -4,6 +4,7 @@ import app.lyra.food.domain.Food;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
 import app.lyra.shared.domain.InvalidInputException;
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
@@ -11,6 +12,7 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Getter
@@ -28,9 +30,16 @@ public class DiaryEntry {
     private final Quantity foodReference;
     private final Nutrients nutrients;
     private final Quantity quantity;
+    @Getter(AccessLevel.NONE)
+    private final Planned planned;
 
     public DiaryEntry(UUID id, LocalDate date, String mealName, UUID foodId, String foodName,
                       Quantity foodReference, Nutrients nutrients, Quantity quantity) {
+        this(id, date, mealName, foodId, foodName, foodReference, nutrients, quantity, null);
+    }
+
+    public DiaryEntry(UUID id, LocalDate date, String mealName, UUID foodId, String foodName,
+                      Quantity foodReference, Nutrients nutrients, Quantity quantity, Planned planned) {
         if (id == null || date == null || foodId == null || foodName == null || foodName.isBlank()
                 || foodReference == null || nutrients == null || quantity == null) {
             throw new InvalidInputException("id, date, food and quantity are required");
@@ -38,7 +47,7 @@ public class DiaryEntry {
         if (foodReference.amount().signum() == 0) {
             throw new InvalidInputException("Food reference amount must be positive");
         }
-        if (quantity.amount().signum() == 0) {
+        if (quantity.amount().signum() == 0 && planned == null) {
             throw new InvalidInputException("Quantity must be positive");
         }
         if (quantity.unit() != foodReference.unit()) {
@@ -52,6 +61,7 @@ public class DiaryEntry {
         this.foodReference = foodReference;
         this.nutrients = nutrients;
         this.quantity = quantity;
+        this.planned = planned;
     }
 
     public static DiaryEntry log(Food food, LocalDate date, String mealName, Quantity quantity) {
@@ -59,24 +69,71 @@ public class DiaryEntry {
                 food.getReferenceAmount(), food.getNutrients(), quantity);
     }
 
+    public static DiaryEntry fromPlan(Food food, LocalDate date, String mealName, Quantity quantity, int slot) {
+        Macros macros = macrosOf(food.getNutrients(), food.getReferenceAmount(), quantity);
+        return new DiaryEntry(UUID.randomUUID(), date, mealName, food.getId(), food.getName(),
+                food.getReferenceAmount(), food.getNutrients(), quantity,
+                new Planned(food.getId(), food.getName(), quantity, macros, slot));
+    }
+
     public DiaryEntry withQuantity(Quantity newQuantity) {
-        return new DiaryEntry(id, date, mealName, foodId, foodName, foodReference, nutrients, newQuantity);
+        return new DiaryEntry(id, date, mealName, foodId, foodName, foodReference, nutrients, newQuantity, planned);
+    }
+
+    public DiaryEntry withFood(Food food, Quantity newQuantity) {
+        return new DiaryEntry(id, date, mealName, food.getId(), food.getName(), food.getReferenceAmount(),
+                food.getNutrients(), newQuantity, planned);
+    }
+
+    public DiaryEntry withMealName(String newMealName) {
+        return new DiaryEntry(id, date, newMealName, foodId, foodName, foodReference, nutrients, quantity, planned);
+    }
+
+    public Optional<Planned> getPlanned() {
+        return Optional.ofNullable(planned);
+    }
+
+    public Origin origin() {
+        if (planned == null) {
+            return Origin.EXTRA;
+        }
+        if (quantity.amount().signum() == 0) {
+            return Origin.SKIPPED;
+        }
+        if (!foodId.equals(planned.foodId())) {
+            return Origin.SWAPPED;
+        }
+        if (quantity.amount().compareTo(planned.quantity().amount()) != 0) {
+            return Origin.ADJUSTED;
+        }
+        return Origin.PLANNED;
     }
 
     public Macros macros() {
-        return new Macros(
-                scaled(nutrients.kcal()),
-                scaled(nutrients.protein()),
-                scaled(nutrients.carbohydrate()),
-                scaled(nutrients.fat()));
+        return macrosOf(nutrients, foodReference, quantity);
     }
 
     static Macros totalOf(List<DiaryEntry> entries) {
         return entries.stream().map(DiaryEntry::macros).reduce(Macros.ZERO, Macros::plus);
     }
 
-    private BigDecimal scaled(BigDecimal perReference) {
-        return perReference.multiply(quantity.amount()).divide(foodReference.amount(), MathContext.DECIMAL128);
+    static Macros plannedTotalOf(List<DiaryEntry> entries) {
+        return entries.stream()
+                .flatMap(entry -> entry.getPlanned().stream())
+                .map(Planned::macros)
+                .reduce(Macros.ZERO, Macros::plus);
+    }
+
+    private static Macros macrosOf(Nutrients nutrients, Quantity reference, Quantity quantity) {
+        return new Macros(
+                scaled(nutrients.kcal(), reference, quantity),
+                scaled(nutrients.protein(), reference, quantity),
+                scaled(nutrients.carbohydrate(), reference, quantity),
+                scaled(nutrients.fat(), reference, quantity));
+    }
+
+    private static BigDecimal scaled(BigDecimal perReference, Quantity reference, Quantity quantity) {
+        return perReference.multiply(quantity.amount()).divide(reference.amount(), MathContext.DECIMAL128);
     }
 
     private static String validMealName(String mealName) {

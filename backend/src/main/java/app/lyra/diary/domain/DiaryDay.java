@@ -7,17 +7,22 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-public record DiaryDay(LocalDate date, List<DiaryEntry> entries) {
+public record DiaryDay(LocalDate date, List<DiaryEntry> entries, Optional<Macros> targets) {
 
     public DiaryDay {
-        if (date == null || entries == null) {
+        if (date == null || entries == null || targets == null) {
             throw new InvalidInputException("date and entries are required");
         }
         if (entries.stream().anyMatch(entry -> !entry.getDate().equals(date))) {
             throw new InvalidInputException("Every entry must be from " + date);
         }
         entries = List.copyOf(entries);
+    }
+
+    public DiaryDay(LocalDate date, List<DiaryEntry> entries) {
+        this(date, entries, Optional.empty());
     }
 
     public List<Meal> meals() {
@@ -32,6 +37,18 @@ public record DiaryDay(LocalDate date, List<DiaryEntry> entries) {
         return DiaryEntry.totalOf(entries);
     }
 
+    public Macros plannedTotal() {
+        return DiaryEntry.plannedTotalOf(entries);
+    }
+
+    public Macros differenceFromPlan() {
+        return total().minus(plannedTotal());
+    }
+
+    public Optional<Macros> differenceFromTargets() {
+        return targets.map(goal -> total().minus(goal));
+    }
+
     public record Meal(String name, List<DiaryEntry> entries) {
 
         public Meal {
@@ -40,6 +57,14 @@ public record DiaryDay(LocalDate date, List<DiaryEntry> entries) {
 
         public Macros total() {
             return DiaryEntry.totalOf(entries);
+        }
+
+        public Macros plannedTotal() {
+            return DiaryEntry.plannedTotalOf(entries);
+        }
+
+        public Macros differenceFromPlan() {
+            return total().minus(plannedTotal());
         }
     }
 }

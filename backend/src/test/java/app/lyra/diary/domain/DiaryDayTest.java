@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -95,6 +96,76 @@ class DiaryDayTest {
         List<DiaryEntry> lunchEntries = new DiaryDay(DATE, List.of(lunch)).meals().getFirst().entries();
 
         assertThatThrownBy(() -> lunchEntries.add(lunch)).isInstanceOf(UnsupportedOperationException.class);
+    }
+
+    @Test
+    void sumsWhatWasPlannedIncludingTheSkippedAndLeavingOutTheExtras() {
+        DiaryDay day = dayWithAdjustedSkippedAndExtra(Optional.empty());
+
+        Macros planned = day.plannedTotal();
+
+        assertThat(planned.kcal()).isEqualByComparingTo("268");
+        assertThat(planned.protein()).isEqualByComparingTo("8");
+    }
+
+    @Test
+    void theDifferenceFromThePlanIsWhatWasEatenMinusWhatWasPlanned() {
+        DiaryDay day = dayWithAdjustedSkippedAndExtra(Optional.empty());
+
+        Macros difference = day.differenceFromPlan();
+
+        assertThat(day.total().kcal()).isEqualByComparingTo("358");
+        assertThat(difference.kcal()).isEqualByComparingTo("90");
+        assertThat(difference.protein()).isEqualByComparingTo("-0.5");
+    }
+
+    @Test
+    void eachMealHasItsOwnPlannedTotalAndDifference() {
+        List<Meal> meals = dayWithAdjustedSkippedAndExtra(Optional.empty()).meals();
+
+        assertThat(meals).extracting(Meal::name).containsExactly("Almoço", "Jantar", "Lanche");
+        assertThat(meals.get(0).plannedTotal().kcal()).isEqualByComparingTo("192");
+        assertThat(meals.get(0).differenceFromPlan().kcal()).isEqualByComparingTo("128");
+        assertThat(meals.get(1).plannedTotal().kcal()).isEqualByComparingTo("76");
+        assertThat(meals.get(1).differenceFromPlan().kcal()).isEqualByComparingTo("-76");
+        assertThat(meals.get(2).plannedTotal()).isEqualTo(Macros.ZERO);
+        assertThat(meals.get(2).differenceFromPlan().kcal()).isEqualByComparingTo("38");
+    }
+
+    @Test
+    void theDifferenceFromTheTargetsIsWhatWasEatenMinusTheTargets() {
+        Macros targets = new Macros(new BigDecimal("2000"), new BigDecimal("140"), new BigDecimal("200"), new BigDecimal("60"));
+
+        DiaryDay day = dayWithAdjustedSkippedAndExtra(Optional.of(targets));
+
+        assertThat(day.targets()).contains(targets);
+        assertThat(day.differenceFromTargets().orElseThrow().kcal()).isEqualByComparingTo("-1642");
+        assertThat(day.differenceFromTargets().orElseThrow().protein()).isEqualByComparingTo("-132.5");
+    }
+
+    @Test
+    void hasNoDifferenceFromTargetsWhenThereAreNoTargets() {
+        assertThat(dayWithAdjustedSkippedAndExtra(Optional.empty()).differenceFromTargets()).isEmpty();
+    }
+
+    @Test
+    void anEmptyDayHasNothingPlannedAndNoDifference() {
+        DiaryDay day = new DiaryDay(DATE, List.of());
+
+        assertThat(day.plannedTotal()).isEqualTo(Macros.ZERO);
+        assertThat(day.differenceFromPlan().kcal()).isEqualByComparingTo("0");
+    }
+
+    @Test
+    void requiresTheOptionalTargets() {
+        assertThatThrownBy(() -> new DiaryDay(DATE, List.of(), null)).isInstanceOf(InvalidInputException.class);
+    }
+
+    private static DiaryDay dayWithAdjustedSkippedAndExtra(Optional<Macros> targets) {
+        DiaryEntry adjusted = DiaryEntry.fromPlan(RICE, DATE, "Almoço", grams("150"), 0).withQuantity(grams("250"));
+        DiaryEntry skipped = DiaryEntry.fromPlan(BEANS, DATE, "Jantar", grams("100"), 1).withQuantity(grams("0"));
+        DiaryEntry extra = DiaryEntry.log(BEANS, DATE, "Lanche", grams("50"));
+        return new DiaryDay(DATE, List.of(adjusted, skipped, extra), targets);
     }
 
     private static Food food(String name, String kcal, String protein, String carbohydrate, String fat) {

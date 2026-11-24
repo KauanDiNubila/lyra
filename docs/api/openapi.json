@@ -340,6 +340,53 @@
         }
       }
     },
+    "/api/diary/{date}/plan" : {
+      "post" : {
+        "tags" : [ "diary-controller" ],
+        "operationId" : "fillDayFromPlan",
+        "parameters" : [ {
+          "name" : "date",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DiaryDayResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/diary/{date}/entries" : {
       "post" : {
         "tags" : [ "diary-controller" ],
@@ -438,7 +485,7 @@
       },
       "patch" : {
         "tags" : [ "diary-controller" ],
-        "operationId" : "changeQuantity",
+        "operationId" : "changeEntry",
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -452,7 +499,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/ChangeQuantityRequest"
+                "$ref" : "#/components/schemas/ChangeEntryRequest"
               }
             }
           },
@@ -761,18 +808,33 @@
           }
         }
       },
-      "LogEntryRequest" : {
+      "DiaryDayResponse" : {
         "type" : "object",
         "properties" : {
-          "foodId" : {
+          "date" : {
             "type" : "string",
-            "format" : "uuid"
+            "format" : "date"
           },
-          "mealName" : {
-            "type" : "string"
+          "meals" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MealResponse"
+            }
           },
-          "quantity" : {
-            "$ref" : "#/components/schemas/QuantityJson"
+          "total" : {
+            "$ref" : "#/components/schemas/MacrosJson"
+          },
+          "plannedTotal" : {
+            "$ref" : "#/components/schemas/MacrosJson"
+          },
+          "differenceFromPlan" : {
+            "$ref" : "#/components/schemas/MacrosJson"
+          },
+          "targets" : {
+            "$ref" : "#/components/schemas/MacrosJson"
+          },
+          "differenceFromTargets" : {
+            "$ref" : "#/components/schemas/MacrosJson"
           }
         }
       },
@@ -802,6 +864,13 @@
           },
           "macros" : {
             "$ref" : "#/components/schemas/MacrosJson"
+          },
+          "origin" : {
+            "type" : "string",
+            "enum" : [ "EXTRA", "PLANNED", "ADJUSTED", "SKIPPED", "SWAPPED" ]
+          },
+          "planned" : {
+            "$ref" : "#/components/schemas/PlannedResponse"
           }
         }
       },
@@ -822,11 +891,74 @@
           }
         }
       },
-      "ChangeQuantityRequest" : {
+      "MealResponse" : {
         "type" : "object",
         "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "entries" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/EntryResponse"
+            }
+          },
+          "total" : {
+            "$ref" : "#/components/schemas/MacrosJson"
+          },
+          "plannedTotal" : {
+            "$ref" : "#/components/schemas/MacrosJson"
+          },
+          "differenceFromPlan" : {
+            "$ref" : "#/components/schemas/MacrosJson"
+          }
+        }
+      },
+      "PlannedResponse" : {
+        "type" : "object",
+        "properties" : {
+          "foodId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "foodName" : {
+            "type" : "string"
+          },
           "quantity" : {
             "$ref" : "#/components/schemas/QuantityJson"
+          },
+          "macros" : {
+            "$ref" : "#/components/schemas/MacrosJson"
+          }
+        }
+      },
+      "LogEntryRequest" : {
+        "type" : "object",
+        "properties" : {
+          "foodId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "mealName" : {
+            "type" : "string"
+          },
+          "quantity" : {
+            "$ref" : "#/components/schemas/QuantityJson"
+          }
+        }
+      },
+      "ChangeEntryRequest" : {
+        "type" : "object",
+        "properties" : {
+          "foodId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "quantity" : {
+            "$ref" : "#/components/schemas/QuantityJson"
+          },
+          "mealName" : {
+            "type" : "string"
           }
         }
       },
@@ -842,41 +974,6 @@
           },
           "active" : {
             "type" : "boolean"
-          }
-        }
-      },
-      "DiaryDayResponse" : {
-        "type" : "object",
-        "properties" : {
-          "date" : {
-            "type" : "string",
-            "format" : "date"
-          },
-          "meals" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/MealResponse"
-            }
-          },
-          "total" : {
-            "$ref" : "#/components/schemas/MacrosJson"
-          }
-        }
-      },
-      "MealResponse" : {
-        "type" : "object",
-        "properties" : {
-          "name" : {
-            "type" : "string"
-          },
-          "entries" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/EntryResponse"
-            }
-          },
-          "total" : {
-            "$ref" : "#/components/schemas/MacrosJson"
           }
         }
       }

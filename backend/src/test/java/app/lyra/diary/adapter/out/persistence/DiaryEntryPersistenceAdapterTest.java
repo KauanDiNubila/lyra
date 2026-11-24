@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest
@@ -61,5 +62,74 @@ class DiaryEntryPersistenceAdapterTest implements DiaryEntryRepositoryContract {
                 entry.getFoodReference(), entry.getNutrients(), entry.getQuantity());
 
         assertThatThrownBy(() -> adapter.save(orphan)).isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void rejectsTwoEntriesOfTheSameDateForTheSameSlot() {
+        UUID foodId = savedFoodId();
+        adapter.save(planEntry(DATE, "Almoço", foodId, foodId, 0, "150"));
+        DiaryEntry again = planEntry(DATE, "Jantar", foodId, foodId, 0, "100");
+
+        assertThatThrownBy(() -> adapter.save(again))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("diary_entry_entry_date_planned_slot_idx");
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void acceptsTheSameSlotOnAnotherDate() {
+        UUID foodId = savedFoodId();
+        adapter.save(planEntry(DATE, "Almoço", foodId, foodId, 0, "150"));
+
+        assertThatCode(() -> adapter.save(planEntry(DATE.plusDays(1), "Almoço", foodId, foodId, 0, "150")))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void rejectsAPlannedFoodThatDoesNotExist() {
+        UUID foodId = savedFoodId();
+        DiaryEntry entry = planEntry(DATE, "Almoço", foodId, UUID.randomUUID(), 0, "150");
+
+        assertThatThrownBy(() -> adapter.save(entry))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("diary_entry_planned_food_id_fkey");
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void refusesAQuantityOfZeroOutsideThePlan() {
+        UUID foodId = savedFoodId();
+
+        assertThatThrownBy(() -> insertRow(foodId, "0", ""))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("diary_entry_quantity_amount_check");
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void refusesHalfOfThePlannedColumns() {
+        UUID foodId = savedFoodId();
+
+        assertThatThrownBy(() -> insertRow(foodId, "1", ", planned_slot", ", 0"))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("diary_entry_planned_all_or_none_check");
+    }
+
+    private void insertRow(UUID foodId, String quantity, String extraColumns) {
+        insertRow(foodId, quantity, extraColumns, "");
+    }
+
+    private void insertRow(UUID foodId, String quantity, String extraColumns, String extraValues) {
+        jdbc.sql("""
+                        insert into diary_entry (id, entry_date, meal_name, food_id, food_name, reference_amount,
+                            reference_unit, kcal, protein, carbohydrate, fat, quantity_amount, quantity_unit%s)
+                        values (:id, :date, 'Almoço', :food, 'Arroz', 100, 'GRAM', 1, 1, 1, 1, %s, 'GRAM'%s)
+                        """.formatted(extraColumns, quantity, extraValues))
+                .param("id", UUID.randomUUID())
+                .param("date", DATE)
+                .param("food", foodId)
+                .update();
     }
 }

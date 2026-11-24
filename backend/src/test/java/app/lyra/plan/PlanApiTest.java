@@ -1,5 +1,6 @@
 package app.lyra.plan;
 
+import app.lyra.Concurrently;
 import app.lyra.TestcontainersConfiguration;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.AfterEach;
@@ -12,14 +13,8 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -123,7 +118,7 @@ class PlanApiTest {
         String second = createPlan(plan("Segundo", meal("Almoço", null, item(food, "100"))));
 
         for (int round = 0; round < 10; round++) {
-            List<Integer> statuses = runTogether(List.of(() -> activate(first), () -> activate(second)));
+            List<Integer> statuses = Concurrently.run(List.of(() -> activate(first), () -> activate(second)));
 
             assertThat(statuses).containsOnly(200);
             assertThat(activePlanIds()).hasSize(1);
@@ -139,7 +134,7 @@ class PlanApiTest {
         for (int round = 0; round < 10; round++) {
             assertThat(activate(first)).isEqualTo(200);
 
-            List<Integer> statuses = runTogether(List.of(
+            List<Integer> statuses = Concurrently.run(List.of(
                     () -> activate(second),
                     () -> replace(first, plan("Primeiro", meal("Almoço", null, item(food, "50"))))));
 
@@ -239,27 +234,6 @@ class PlanApiTest {
     private int replace(String id, String json) throws Exception {
         return mvc.perform(put("/api/plans/" + id).contentType(MediaType.APPLICATION_JSON).content(json))
                 .andReturn().getResponse().getStatus();
-    }
-
-    private static List<Integer> runTogether(List<Callable<Integer>> tasks) throws Exception {
-        ExecutorService executor = Executors.newFixedThreadPool(tasks.size());
-        CyclicBarrier start = new CyclicBarrier(tasks.size());
-        try {
-            List<Future<Integer>> results = new ArrayList<>();
-            for (Callable<Integer> task : tasks) {
-                results.add(executor.submit(() -> {
-                    start.await();
-                    return task.call();
-                }));
-            }
-            List<Integer> statuses = new ArrayList<>();
-            for (Future<Integer> result : results) {
-                statuses.add(result.get());
-            }
-            return statuses;
-        } finally {
-            executor.shutdown();
-        }
     }
 
     private List<String> activePlanIds() throws Exception {
