@@ -2,11 +2,16 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vitest/config'
 
+const backendKeepingTheHost = { target: 'http://localhost:8080', changeOrigin: false }
+
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        navigateFallbackDenylist: [/^\/api/, /^\/oauth2/, /^\/login/],
+      },
       manifest: {
         name: 'Lyra',
         short_name: 'Lyra',
@@ -22,7 +27,9 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      '/api': 'http://localhost:8080',
+      '/api': backendKeepingTheHost,
+      '/oauth2': backendKeepingTheHost,
+      '/login': backendKeepingTheHost,
     },
   },
   test: {

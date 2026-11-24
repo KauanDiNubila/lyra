@@ -6,13 +6,19 @@ const fetchMock = vi.fn<typeof fetch>()
 
 beforeEach(() => {
   fetchMock.mockReset()
-  fetchMock.mockImplementation(async (url) =>
-    String(url).endsWith('/plan')
-      ? new Response(JSON.stringify({ detail: 'There is no active plan to fill the day' }), { status: 404 })
-      : new Response(JSON.stringify({ date: '2026-11-19', meals: [], total: { kcal: 0, protein: 0, carbohydrate: 0, fat: 0 } }), {
-          headers: { 'Content-Type': 'application/json' },
-        }),
-  )
+  fetchMock.mockImplementation(async (url) => {
+    if (String(url) === '/api/me') {
+      return new Response(JSON.stringify({ id: 'user-1', email: 'ana@example.com', name: 'Ana Souza' }), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+    if (String(url).endsWith('/plan')) {
+      return new Response(JSON.stringify({ detail: 'There is no active plan to fill the day' }), { status: 404 })
+    }
+    return new Response(JSON.stringify({ date: '2026-11-19', meals: [], total: { kcal: 0, protein: 0, carbohydrate: 0, fat: 0 } }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  })
   vi.stubGlobal('fetch', fetchMock)
 })
 

@@ -7,13 +7,40 @@ export class ApiError extends Error {
   }
 }
 
+const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS']
+const unauthorizedListeners = new Set<() => void>()
+
+export function onUnauthorized(listener: () => void): () => void {
+  unauthorizedListeners.add(listener)
+  return () => {
+    unauthorizedListeners.delete(listener)
+  }
+}
+
+function csrfToken(): string | null {
+  const cookie = document.cookie.split('; ').find((entry) => entry.startsWith('XSRF-TOKEN='))
+  return cookie ? decodeURIComponent(cookie.slice('XSRF-TOKEN='.length)) : null
+}
+
+function withCsrfToken(init: RequestInit): RequestInit {
+  const method = (init.method ?? 'GET').toUpperCase()
+  const token = SAFE_METHODS.includes(method) ? null : csrfToken()
+  if (!token) return init
+  const headers = new Headers(init.headers)
+  headers.set('X-XSRF-TOKEN', token)
+  return { ...init, headers }
+}
+
 export async function send(url: string, init: RequestInit = {}): Promise<Response> {
+  let response: Response
   try {
-    return await fetch(url, init)
+    response = await fetch(url, withCsrfToken(init))
   } catch (cause) {
     if (init.signal?.aborted) throw cause
     throw new Error('Sem conexão com o servidor. Verifique a internet e tente de novo.')
   }
+  if (response.status === 401) unauthorizedListeners.forEach((listener) => listener())
+  return response
 }
 
 export async function ensureOk(response: Response): Promise<void> {
