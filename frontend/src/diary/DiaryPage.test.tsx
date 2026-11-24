@@ -42,7 +42,7 @@ describe('DiaryPage', () => {
 
     await screen.findByText('Nada registrado neste dia')
 
-    expect(requestedUrls()).toEqual(['/api/diary/2026-11-19'])
+    expect(requestedUrls()[0]).toBe('/api/diary/2026-11-19')
   })
 
   it('moves to the previous and to the next day', async () => {

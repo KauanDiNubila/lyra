@@ -7,9 +7,8 @@ import { NumberInput } from '@astryxdesign/core/NumberInput'
 import { TextInput } from '@astryxdesign/core/TextInput'
 import { VStack } from '@astryxdesign/core/VStack'
 import type { Food } from '../foods/foodApi.ts'
-import { FoodSearchPanel } from '../foods/FoodSearchPanel.tsx'
+import { FoodPicker } from '../foods/FoodPicker.tsx'
 import { quantityLabel } from '../foods/formatNutrients.ts'
-import { useFoodSearch } from '../foods/useFoodSearch.ts'
 import { useSubmit } from '../useSubmit.ts'
 import { addEntry, type NewEntry } from './diaryApi.ts'
 import { suggestMeals } from './meals.ts'
@@ -23,16 +22,13 @@ type Props = {
 export function AddEntryForm({ date, mealNames, onAdded }: Props) {
   const [query, setQuery] = useState('')
   const [food, setFood] = useState<Food | null>(null)
-  const { search, reload } = useFoodSearch(query)
 
   if (food === null) {
     return (
       <VStack gap={4}>
-        <FoodSearchPanel
+        <FoodPicker
           query={query}
           onQueryChange={setQuery}
-          search={search}
-          onRetry={reload}
           onSelect={setFood}
           emptyDescription="Cadastre o alimento na aba Alimentos e volte aqui para registrá-lo."
         />

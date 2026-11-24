@@ -6,10 +6,12 @@ const fetchMock = vi.fn<typeof fetch>()
 
 beforeEach(() => {
   fetchMock.mockReset()
-  fetchMock.mockImplementation(async () =>
-    new Response(JSON.stringify({ date: '2026-11-19', meals: [], total: { kcal: 0, protein: 0, carbohydrate: 0, fat: 0 } }), {
-      headers: { 'Content-Type': 'application/json' },
-    }),
+  fetchMock.mockImplementation(async (url) =>
+    String(url).endsWith('/plan')
+      ? new Response(JSON.stringify({ detail: 'There is no active plan to fill the day' }), { status: 404 })
+      : new Response(JSON.stringify({ date: '2026-11-19', meals: [], total: { kcal: 0, protein: 0, carbohydrate: 0, fat: 0 } }), {
+          headers: { 'Content-Type': 'application/json' },
+        }),
   )
   vi.stubGlobal('fetch', fetchMock)
 })
@@ -52,5 +54,5 @@ it('switches to the plans', async () => {
 })
 
 function diaryRequests() {
-  return fetchMock.mock.calls.filter(([url]) => String(url).startsWith('/api/diary'))
+  return fetchMock.mock.calls.filter(([url, init]) => String(url).startsWith('/api/diary') && !init?.method)
 }
