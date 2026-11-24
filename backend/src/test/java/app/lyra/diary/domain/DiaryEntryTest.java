@@ -167,6 +167,155 @@ class DiaryEntryTest {
                 .hasMessage("Quantity must be in GRAM");
     }
 
+    @Test
+    void anEntryLoggedByHandHasNoPlanAndIsAnExtra() {
+        DiaryEntry entry = riceEntry("150");
+
+        assertThat(entry.getPlanned()).isEmpty();
+        assertThat(entry.origin()).isEqualTo(Origin.EXTRA);
+    }
+
+    @Test
+    void anEntryFromThePlanRemembersWhatWasPlanned() {
+        Food rice = Food.custom("Arroz", HUNDRED_GRAMS, RICE);
+
+        DiaryEntry entry = DiaryEntry.fromPlan(rice, DATE, " Almoço ", grams("150"), 3);
+
+        Planned planned = entry.getPlanned().orElseThrow();
+        assertThat(planned.foodId()).isEqualTo(rice.getId());
+        assertThat(planned.quantity()).isEqualTo(grams("150"));
+        assertThat(planned.macros()).isEqualTo(entry.macros());
+        assertThat(planned.slot()).isEqualTo(3);
+        assertThat(entry.getMealName()).isEqualTo("Almoço");
+        assertThat(entry.getFoodId()).isEqualTo(rice.getId());
+        assertThat(entry.getQuantity()).isEqualTo(grams("150"));
+        assertThat(entry.origin()).isEqualTo(Origin.PLANNED);
+    }
+
+    @Test
+    void eatingADifferentAmountIsAnAdjustmentAndKeepsThePlannedMacros() {
+        DiaryEntry entry = planEntry("150");
+
+        DiaryEntry adjusted = entry.withQuantity(grams("250"));
+
+        assertThat(adjusted.origin()).isEqualTo(Origin.ADJUSTED);
+        assertThat(adjusted.getPlanned()).isEqualTo(entry.getPlanned());
+        assertThat(adjusted.macros().kcal()).isEqualByComparingTo("320.64625");
+        assertThat(adjusted.getPlanned().orElseThrow().macros().kcal()).isEqualByComparingTo("192.38775");
+    }
+
+    @Test
+    void theSameAmountWrittenWithAnotherScaleIsStillThePlan() {
+        assertThat(planEntry("150").withQuantity(grams("150.0")).origin()).isEqualTo(Origin.PLANNED);
+    }
+
+    @Test
+    void aQuantityOfZeroSkipsAnEntryOfThePlan() {
+        DiaryEntry entry = planEntry("150");
+
+        DiaryEntry skipped = entry.withQuantity(grams("0"));
+
+        assertThat(skipped.origin()).isEqualTo(Origin.SKIPPED);
+        assertThat(skipped.macros().kcal()).isEqualByComparingTo("0");
+        assertThat(skipped.getPlanned()).isEqualTo(entry.getPlanned());
+    }
+
+    @Test
+    void anotherFoodInThePlaceOfThePlannedOneIsASwap() {
+        DiaryEntry entry = planEntry("150");
+
+        DiaryEntry swapped = entry.withFood(chicken(), grams("120"));
+
+        assertThat(swapped.origin()).isEqualTo(Origin.SWAPPED);
+        assertThat(swapped.getFoodName()).isEqualTo("Frango");
+        assertThat(swapped.getPlanned()).isEqualTo(entry.getPlanned());
+    }
+
+    @Test
+    void goingBackToThePlannedFoodIsThePlanAgain() {
+        Food rice = Food.custom("Arroz", HUNDRED_GRAMS, RICE);
+        DiaryEntry entry = DiaryEntry.fromPlan(rice, DATE, "Almoço", grams("150"), 0);
+
+        DiaryEntry back = entry.withFood(chicken(), grams("120")).withFood(rice, grams("150"));
+
+        assertThat(back.origin()).isEqualTo(Origin.PLANNED);
+    }
+
+    @Test
+    void skippingASwappedEntryCountsAsSkipped() {
+        DiaryEntry skipped = planEntry("150").withFood(chicken(), grams("0"));
+
+        assertThat(skipped.origin()).isEqualTo(Origin.SKIPPED);
+    }
+
+    @Test
+    void withFoodTakesANewSnapshotAndKeepsTheRest() {
+        DiaryEntry entry = planEntry("150");
+        Food chicken = chicken();
+
+        DiaryEntry swapped = entry.withFood(chicken, grams("120"));
+
+        assertThat(swapped.getFoodId()).isEqualTo(chicken.getId());
+        assertThat(swapped.getFoodName()).isEqualTo("Frango");
+        assertThat(swapped.getFoodReference()).isEqualTo(HUNDRED_GRAMS);
+        assertThat(swapped.getNutrients()).isEqualTo(ONES);
+        assertThat(swapped.getQuantity()).isEqualTo(grams("120"));
+        assertThat(swapped.macros().kcal()).isEqualByComparingTo("1.2");
+        assertThat(swapped.getId()).isEqualTo(entry.getId());
+        assertThat(swapped.getDate()).isEqualTo(entry.getDate());
+        assertThat(swapped.getMealName()).isEqualTo(entry.getMealName());
+        assertThat(entry.getFoodName()).isEqualTo("Arroz");
+    }
+
+    @Test
+    void withFoodRejectsAQuantityInAnotherUnit() {
+        DiaryEntry entry = planEntry("150");
+        Food milkshake = Food.custom("Milkshake", new Quantity(BigDecimal.ONE, MeasurementUnit.PORTION), ONES);
+
+        assertThatThrownBy(() -> entry.withFood(milkshake, grams("1")))
+                .isInstanceOf(InvalidInputException.class)
+                .hasMessage("Quantity must be in PORTION");
+    }
+
+    @Test
+    void anExtraEntryStillRejectsZeroWhenItsFoodChanges() {
+        DiaryEntry entry = riceEntry("150");
+
+        assertThatThrownBy(() -> entry.withFood(chicken(), grams("0")))
+                .isInstanceOf(InvalidInputException.class)
+                .hasMessage("Quantity must be positive");
+    }
+
+    @Test
+    void withMealNameChangesOnlyTheNameAndTrimsIt() {
+        DiaryEntry entry = planEntry("150");
+
+        DiaryEntry renamed = entry.withMealName("  Pós-treino ");
+
+        assertThat(renamed.getMealName()).isEqualTo("Pós-treino");
+        assertThat(renamed.getId()).isEqualTo(entry.getId());
+        assertThat(renamed.getQuantity()).isEqualTo(entry.getQuantity());
+        assertThat(renamed.getPlanned()).isEqualTo(entry.getPlanned());
+        assertThat(entry.getMealName()).isEqualTo("Almoço");
+    }
+
+    @Test
+    void withMealNameKeepsTheValidationRule() {
+        DiaryEntry entry = riceEntry("150");
+
+        assertThatThrownBy(() -> entry.withMealName("  "))
+                .isInstanceOf(InvalidInputException.class)
+                .hasMessage("Meal name must have between 1 and 50 characters");
+    }
+
+    private static DiaryEntry planEntry(String grams) {
+        return DiaryEntry.fromPlan(Food.custom("Arroz", HUNDRED_GRAMS, RICE), DATE, "Almoço", grams(grams), 0);
+    }
+
+    private static Food chicken() {
+        return Food.custom("Frango", HUNDRED_GRAMS, ONES);
+    }
+
     private static DiaryEntry riceEntry(String grams) {
         return DiaryEntry.log(Food.custom("Arroz", HUNDRED_GRAMS, RICE), DATE, "Almoço", grams(grams));
     }
