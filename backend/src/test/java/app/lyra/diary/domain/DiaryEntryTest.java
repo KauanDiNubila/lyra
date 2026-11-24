@@ -183,6 +183,7 @@ class DiaryEntryTest {
 
         Planned planned = entry.getPlanned().orElseThrow();
         assertThat(planned.foodId()).isEqualTo(rice.getId());
+        assertThat(planned.foodName()).isEqualTo("Arroz");
         assertThat(planned.quantity()).isEqualTo(grams("150"));
         assertThat(planned.macros()).isEqualTo(entry.macros());
         assertThat(planned.slot()).isEqualTo(3);
@@ -229,6 +230,7 @@ class DiaryEntryTest {
         assertThat(swapped.origin()).isEqualTo(Origin.SWAPPED);
         assertThat(swapped.getFoodName()).isEqualTo("Frango");
         assertThat(swapped.getPlanned()).isEqualTo(entry.getPlanned());
+        assertThat(swapped.getPlanned().orElseThrow().foodName()).isEqualTo("Arroz");
     }
 
     @Test

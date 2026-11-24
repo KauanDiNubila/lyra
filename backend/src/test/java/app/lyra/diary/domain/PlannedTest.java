@@ -20,9 +20,10 @@ class PlannedTest {
     void keepsWhatWasPlanned() {
         UUID foodId = UUID.randomUUID();
 
-        Planned planned = new Planned(foodId, GRAMS, MACROS, 4);
+        Planned planned = new Planned(foodId, "Arroz", GRAMS, MACROS, 4);
 
         assertThat(planned.foodId()).isEqualTo(foodId);
+        assertThat(planned.foodName()).isEqualTo("Arroz");
         assertThat(planned.quantity()).isEqualTo(GRAMS);
         assertThat(planned.macros()).isEqualTo(MACROS);
         assertThat(planned.slot()).isEqualTo(4);
@@ -30,16 +31,26 @@ class PlannedTest {
 
     @Test
     void acceptsTheFirstSlot() {
-        assertThat(new Planned(UUID.randomUUID(), GRAMS, MACROS, 0).slot()).isZero();
+        assertThat(new Planned(UUID.randomUUID(), "Arroz", GRAMS, MACROS, 0).slot()).isZero();
     }
 
     @Test
     void needsAFoodAQuantityAndTheirMacros() {
         UUID foodId = UUID.randomUUID();
 
-        assertThatThrownBy(() -> new Planned(null, GRAMS, MACROS, 0)).isInstanceOf(InvalidInputException.class);
-        assertThatThrownBy(() -> new Planned(foodId, null, MACROS, 0)).isInstanceOf(InvalidInputException.class);
-        assertThatThrownBy(() -> new Planned(foodId, GRAMS, null, 0))
+        assertThatThrownBy(() -> new Planned(null, "Arroz", GRAMS, MACROS, 0)).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> new Planned(foodId, "Arroz", null, MACROS, 0)).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> new Planned(foodId, "Arroz", GRAMS, null, 0))
+                .isInstanceOf(InvalidInputException.class)
+                .hasMessage("A planned item needs a food, a quantity and its macros");
+    }
+
+    @Test
+    void needsAFoodName() {
+        UUID foodId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> new Planned(foodId, null, GRAMS, MACROS, 0)).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> new Planned(foodId, "  ", GRAMS, MACROS, 0))
                 .isInstanceOf(InvalidInputException.class)
                 .hasMessage("A planned item needs a food, a quantity and its macros");
     }
@@ -48,14 +59,14 @@ class PlannedTest {
     void rejectsAPlannedQuantityOfZero() {
         Quantity zero = new Quantity(BigDecimal.ZERO, MeasurementUnit.GRAM);
 
-        assertThatThrownBy(() -> new Planned(UUID.randomUUID(), zero, MACROS, 0))
+        assertThatThrownBy(() -> new Planned(UUID.randomUUID(), "Arroz", zero, MACROS, 0))
                 .isInstanceOf(InvalidInputException.class)
                 .hasMessage("The planned quantity must be positive");
     }
 
     @Test
     void rejectsANegativeSlot() {
-        assertThatThrownBy(() -> new Planned(UUID.randomUUID(), GRAMS, MACROS, -1))
+        assertThatThrownBy(() -> new Planned(UUID.randomUUID(), "Arroz", GRAMS, MACROS, -1))
                 .isInstanceOf(InvalidInputException.class)
                 .hasMessage("The planned slot must be zero or positive");
     }

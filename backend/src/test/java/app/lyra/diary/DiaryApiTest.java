@@ -185,6 +185,7 @@ class DiaryApiTest {
                 .andExpect(jsonPath("$.origin").value("SWAPPED"))
                 .andExpect(jsonPath("$.foodName").value("Frango de teste"))
                 .andExpect(jsonPath("$.planned.foodId").value(rice))
+                .andExpect(jsonPath("$.planned.foodName").value("Arroz de teste"))
                 .andExpect(jsonPath("$.macros.kcal").value(200));
         patchEntry(dinnerChicken, "{\"quantity\": {\"amount\": 0, \"unit\": \"GRAM\"}}")
                 .andExpect(jsonPath("$.origin").value("SKIPPED"))

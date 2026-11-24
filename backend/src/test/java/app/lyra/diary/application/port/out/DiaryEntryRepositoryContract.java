@@ -142,6 +142,7 @@ public interface DiaryEntryRepositoryContract {
 
         Planned planned = found.getPlanned().orElseThrow();
         assertThat(planned.foodId()).isEqualTo(foodId);
+        assertThat(planned.foodName()).isEqualTo("Arroz planejado");
         assertThat(planned.quantity().amount()).isEqualByComparingTo("150");
         assertThat(planned.quantity().unit()).isEqualTo(MeasurementUnit.GRAM);
         assertThat(planned.macros().kcal()).isEqualByComparingTo("192.38775");
@@ -176,6 +177,7 @@ public interface DiaryEntryRepositoryContract {
 
         assertThat(found.getFoodId()).isEqualTo(eaten);
         assertThat(found.getPlanned().orElseThrow().foodId()).isEqualTo(planned);
+        assertThat(found.getPlanned().orElseThrow().foodName()).isEqualTo("Arroz planejado");
         assertThat(found.origin()).isEqualTo(Origin.SWAPPED);
     }
 
@@ -196,7 +198,7 @@ public interface DiaryEntryRepositoryContract {
     default DiaryEntry planEntry(LocalDate date, String mealName, UUID foodId, UUID plannedFoodId, int slot, String grams) {
         Macros plannedMacros = new Macros(new BigDecimal("192.38775"), new BigDecimal("3.7812"),
                 new BigDecimal("42.0897"), new BigDecimal("0.3405"));
-        Planned planned = new Planned(plannedFoodId, grams("150"), plannedMacros, slot);
+        Planned planned = new Planned(plannedFoodId, "Arroz planejado", grams("150"), plannedMacros, slot);
         return new DiaryEntry(UUID.randomUUID(), date, mealName, foodId, "Arroz", grams("100"),
                 nutrients(null, null), grams(grams), planned);
     }

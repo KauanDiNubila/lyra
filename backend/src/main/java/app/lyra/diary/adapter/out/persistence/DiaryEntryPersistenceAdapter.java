@@ -90,6 +90,7 @@ class DiaryEntryPersistenceAdapter implements DiaryEntryRepository {
 
     private static void setPlanned(DiaryEntryJpaEntity entity, Planned planned) {
         entity.setPlannedFoodId(planned.foodId());
+        entity.setPlannedFoodName(planned.foodName());
         entity.setPlannedQuantityAmount(planned.quantity().amount());
         entity.setPlannedQuantityUnit(planned.quantity().unit());
         entity.setPlannedKcal(planned.macros().kcal());
@@ -119,6 +120,7 @@ class DiaryEntryPersistenceAdapter implements DiaryEntryRepository {
         }
         return new Planned(
                 entity.getPlannedFoodId(),
+                entity.getPlannedFoodName(),
                 new Quantity(entity.getPlannedQuantityAmount(), entity.getPlannedQuantityUnit()),
                 new Macros(entity.getPlannedKcal(), entity.getPlannedProtein(), entity.getPlannedCarbohydrate(),
                         entity.getPlannedFat()),

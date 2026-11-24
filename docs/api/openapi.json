@@ -921,6 +921,9 @@
             "type" : "string",
             "format" : "uuid"
           },
+          "foodName" : {
+            "type" : "string"
+          },
           "quantity" : {
             "$ref" : "#/components/schemas/QuantityJson"
           },

@@ -43,7 +43,7 @@ Um `DietPlan` tem nome, metas diárias (kcal, proteína, carboidrato e gordura),
 
 ### Origem e quantidade planejada
 
-Toda entrada preenchida pelo plano guarda o **alimento planejado**, a **quantidade planejada** (valor e unidade) e os **macros planejados** (kcal, proteína, carboidrato e gordura), calculados e copiados na hora do preenchimento. O alimento planejado é necessário porque a entrada pode trocar de alimento, e só comparando com ele se sabe que houve troca. A origem **não é guardada**, é calculada, nesta ordem de precedência:
+Toda entrada preenchida pelo plano guarda o **alimento planejado** (id e nome, o nome como snapshot, pelo mesmo motivo da [ADR-003](003-nutrient-snapshot-on-log.md)), a **quantidade planejada** (valor e unidade) e os **macros planejados** (kcal, proteína, carboidrato e gordura), calculados e copiados na hora do preenchimento. O alimento planejado é necessário porque a entrada pode trocar de alimento, e só comparando com ele se sabe que houve troca. A origem **não é guardada**, é calculada, nesta ordem de precedência:
 
 | Situação | Origem |
 |---|---|
@@ -110,7 +110,7 @@ Os erros seguem o Problem Details das ADRs 008 e 010: o módulo `plan` lança as
 - Bom: a diferença para o plano continua calculável depois de ajustar, trocar ou pular, porque o planejado fica na própria entrada.
 - Bom: a origem é calculada, então não existe estado de origem para ficar inconsistente.
 - Bom: mudar o plano não reescreve a história.
-- Ruim: cada entrada ganha 8 colunas novas (alimento planejado, quantidade e unidade planejadas, 4 macros planejados e a posição de origem); as entradas antigas ficam sem planejado e passam a ser extras.
+- Ruim: cada entrada ganha 9 colunas novas (id e nome do alimento planejado, quantidade e unidade planejadas, 4 macros planejados e a posição de origem); as entradas antigas ficam sem planejado e passam a ser extras.
 - Ruim: não se pode apagar uma entrada do plano; quem preencheu o dia por engano precisa pular item por item.
 - Ruim: as metas dos dias antigos acompanham o plano ativo de hoje.
 - Ruim: um plano só, global, vale até existir autenticação.

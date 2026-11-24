@@ -308,6 +308,7 @@ class DiaryControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.meals[0].entries[0].origin").value("ADJUSTED"))
                 .andExpect(jsonPath("$.meals[0].entries[0].planned.foodId").value("00000000-0000-0000-0000-000000000001"))
+                .andExpect(jsonPath("$.meals[0].entries[0].planned.foodName").value("Arroz"))
                 .andExpect(jsonPath("$.meals[0].entries[0].planned.quantity.amount").value(150))
                 .andExpect(jsonPath("$.meals[0].entries[0].planned.quantity.unit").value("GRAM"))
                 .andExpect(jsonPath("$.meals[0].entries[0].planned.macros.kcal").value(192))

@@ -44,6 +44,7 @@ class DiaryEntryJpaEntity {
     @Enumerated(EnumType.STRING)
     private MeasurementUnit quantityUnit;
     private UUID plannedFoodId;
+    private String plannedFoodName;
     private BigDecimal plannedQuantityAmount;
     @Enumerated(EnumType.STRING)
     private MeasurementUnit plannedQuantityUnit;

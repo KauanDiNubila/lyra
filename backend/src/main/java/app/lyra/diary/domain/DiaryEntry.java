@@ -73,7 +73,7 @@ public class DiaryEntry {
         Macros macros = macrosOf(food.getNutrients(), food.getReferenceAmount(), quantity);
         return new DiaryEntry(UUID.randomUUID(), date, mealName, food.getId(), food.getName(),
                 food.getReferenceAmount(), food.getNutrients(), quantity,
-                new Planned(food.getId(), quantity, macros, slot));
+                new Planned(food.getId(), food.getName(), quantity, macros, slot));
     }
 
     public DiaryEntry withQuantity(Quantity newQuantity) {
