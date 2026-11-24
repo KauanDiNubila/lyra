@@ -59,6 +59,15 @@ class FillDayFromPlanServiceTest {
     }
 
     @Test
+    void returnsTheDayWithTheTargetsOfThePlanAndNoDifferenceFromIt() {
+        DiaryDay day = service(Optional.of(PLAN)).fillDay(DATE);
+
+        assertThat(day.targets().orElseThrow().kcal()).isEqualByComparingTo("2000");
+        assertThat(day.differenceFromPlan().kcal()).isEqualByComparingTo("0");
+        assertThat(day.plannedTotal()).isEqualTo(day.total());
+    }
+
+    @Test
     void copiesTheFoodAndTheMacrosThatWerePlanned() {
         DiaryEntry rice = service(Optional.of(PLAN)).fillDay(DATE).entries().get(0);
 
@@ -122,7 +131,9 @@ class FillDayFromPlanServiceTest {
         FindFoodsByIdsUseCase missingFood = ids -> {
             throw new FoodNotFoundException(CHICKEN.getId());
         };
-        FillDayFromPlanService service = new FillDayFromPlanService(() -> Optional.of(PLAN), missingFood, repository);
+        GetActivePlanUseCase activePlan = () -> Optional.of(PLAN);
+        FillDayFromPlanService service = new FillDayFromPlanService(activePlan, missingFood,
+                new GetDiaryDayService(activePlan, repository), repository);
 
         assertThatThrownBy(() -> service.fillDay(DATE)).isInstanceOf(FoodNotFoundException.class);
         assertThat(repository.findByDate(DATE)).isEmpty();
@@ -131,7 +142,7 @@ class FillDayFromPlanServiceTest {
     private FillDayFromPlanService service(Optional<DietPlan> activePlan) {
         GetActivePlanUseCase getActivePlan = () -> activePlan;
         FindFoodsByIdsUseCase findFoods = ids -> Map.of(RICE.getId(), RICE, CHICKEN.getId(), CHICKEN);
-        return new FillDayFromPlanService(getActivePlan, findFoods, repository);
+        return new FillDayFromPlanService(getActivePlan, findFoods, new GetDiaryDayService(getActivePlan, repository), repository);
     }
 
     private static PlannedItem item(Food food, String grams) {

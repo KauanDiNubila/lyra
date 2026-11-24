@@ -117,6 +117,13 @@ public class DiaryEntry {
         return entries.stream().map(DiaryEntry::macros).reduce(Macros.ZERO, Macros::plus);
     }
 
+    static Macros plannedTotalOf(List<DiaryEntry> entries) {
+        return entries.stream()
+                .flatMap(entry -> entry.getPlanned().stream())
+                .map(Planned::macros)
+                .reduce(Macros.ZERO, Macros::plus);
+    }
+
     private static Macros macrosOf(Nutrients nutrients, Quantity reference, Quantity quantity) {
         return new Macros(
                 scaled(nutrients.kcal(), reference, quantity),

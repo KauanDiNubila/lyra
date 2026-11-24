@@ -1,6 +1,7 @@
 package app.lyra.diary.application.service;
 
 import app.lyra.diary.application.port.in.FillDayFromPlanUseCase;
+import app.lyra.diary.application.port.in.GetDiaryDayUseCase;
 import app.lyra.diary.application.port.out.DiaryEntryRepository;
 import app.lyra.diary.domain.DiaryDay;
 import app.lyra.diary.domain.DiaryEntry;
@@ -16,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -26,6 +26,7 @@ class FillDayFromPlanService implements FillDayFromPlanUseCase {
 
     private final GetActivePlanUseCase getActivePlan;
     private final FindFoodsByIdsUseCase findFoods;
+    private final GetDiaryDayUseCase getDiaryDay;
     private final DiaryEntryRepository diaryEntryRepository;
 
     @Override
@@ -33,9 +34,8 @@ class FillDayFromPlanService implements FillDayFromPlanUseCase {
     public DiaryDay fillDay(LocalDate date) {
         DietPlan plan = getActivePlan.getActivePlan().orElseThrow(NoActivePlanException::new);
         diaryEntryRepository.lockDay(date);
-        List<DiaryEntry> existing = diaryEntryRepository.findByDate(date);
-        if (!existing.isEmpty()) {
-            return new DiaryDay(date, existing);
+        if (!diaryEntryRepository.findByDate(date).isEmpty()) {
+            return getDiaryDay.getDay(date);
         }
         Map<UUID, Food> foods = findFoods.findByIds(plan.foodIds());
         int slot = 0;
@@ -46,6 +46,6 @@ class FillDayFromPlanService implements FillDayFromPlanUseCase {
                 slot++;
             }
         }
-        return new DiaryDay(date, diaryEntryRepository.findByDate(date));
+        return getDiaryDay.getDay(date);
     }
 }
