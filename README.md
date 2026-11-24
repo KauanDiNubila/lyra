@@ -1,56 +1,56 @@
 # Lyra
 
-A diet tracker built around the plan your nutritionist gave you.
+Um rastreador de dieta feito em torno do plano que o seu nutricionista passou.
 
-Most trackers start from an empty day and make you type everything again. If you follow a prescribed plan, you eat about the same thing every day, so that effort is wasted. Lyra turns it around: **the plan is the default, and the diary only records what changed.**
+A maioria dos rastreadores começa de um dia vazio e faz você digitar tudo de novo. Quem segue um plano prescrito come mais ou menos a mesma coisa todo dia, então esse esforço é desperdiçado. O Lyra inverte o fluxo: **o plano é o padrão, e o diário só registra o que mudou.**
 
-## How it works
+## Como funciona
 
-1. **Register your plan once.** Meals, foods, quantities and daily targets (calories, protein, carbohydrate and fat).
-2. **Open any day already filled.** Lyra copies the active plan into that day's diary.
-3. **Record only the differences.** More rice, a swapped food, a skipped item, something extra. Totals per meal and per day are recalculated, and you see how the day compares to the plan and to your targets.
+1. **Cadastre o plano uma vez.** Refeições, alimentos, quantidades e metas diárias (calorias, proteína, carboidrato e gordura).
+2. **Abra qualquer dia já preenchido.** O Lyra copia o plano ativo para o diário daquele dia.
+3. **Registre só as diferenças.** Mais arroz, um alimento trocado, um item pulado, algo extra. Os totais por refeição e por dia são recalculados, e você vê como o dia ficou em relação ao plano e às metas.
 
-Foods come from the Brazilian TACO table, and you can add your own. Your plans, diary and custom foods are yours alone: every account is isolated from the others.
+Os alimentos vêm da tabela brasileira TACO, e você pode cadastrar os seus. Seus planos, seu diário e seus alimentos personalizados são só seus: cada conta é isolada das outras.
 
-## Status
+## Estado do projeto
 
-Lyra is under development and not available to the public yet.
+O Lyra está em desenvolvimento e ainda não está disponível ao público.
 
-- Done: foods (TACO search and custom foods), diary, diet plan, filling the diary from the plan, Google sign in and per user data.
-- Next: exporting and deleting your account.
-- Planned: quick add for restaurant food, barcode lookup with Open Food Facts, body weight, and an installable app that reads today's diary offline.
+- Pronto: alimentos (busca na TACO e alimentos personalizados), diário, plano alimentar, preenchimento do diário a partir do plano, login com Google e dados separados por usuário.
+- Próximo: exportar e apagar a conta.
+- Planejado: quick add para comida de restaurante, código de barras com o Open Food Facts, peso corporal e um app instalável que lê o diário de hoje offline.
 
-The full scope and the reasoning are in [RFC-001](docs/rfc/001-lyra-mvp.md).
+O escopo completo e o raciocínio estão no [RFC-001](docs/rfc/001-lyra-mvp.md).
 
-## Built with
+## Feito com
 
-Java 25 and Spring Boot on the backend (hexagonal architecture, PostgreSQL) and a React PWA with the Astryx design system on the frontend. The architectural decisions are recorded in [docs/adr](docs/adr/), in Brazilian Portuguese.
+Java 25 e Spring Boot no backend (arquitetura hexagonal, PostgreSQL) e um PWA em React com o design system Astryx no frontend. As decisões de arquitetura estão registradas em [docs/adr](docs/adr/).
 
-## Running it locally
+## Rodando localmente
 
-You need JDK 25, Node.js and Docker.
+Você precisa de JDK 25, Node.js e Docker.
 
 ```bash
 cd backend && ./mvnw spring-boot:test-run
 cd frontend && npm install && npm run dev
 ```
 
-Then open `http://localhost:5173`. The backend starts with fake Google values, so the sign in only works with real ones: create an OAuth client in the Google console (type "Web application", origin `http://localhost:5173`, redirect URI `http://localhost:5173/login/oauth2/code/google`) and export `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` before starting the backend. Never put them in the repository.
+Depois abra `http://localhost:5173`. O backend sobe com valores falsos do Google, então o login só funciona com valores reais: crie um cliente OAuth no console do Google (tipo "Web application", origem `http://localhost:5173`, URI de redirecionamento `http://localhost:5173/login/oauth2/code/google`) e exporte `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` antes de subir o backend. Nunca coloque esses valores no repositório.
 
-The machine's `JAVA_HOME` must point to JDK 25. To run the checks:
+O `JAVA_HOME` da máquina precisa apontar para o JDK 25. Para rodar as verificações:
 
 ```bash
 cd backend && ./mvnw verify
 cd frontend && npm run lint && npm test && npm run build
 ```
 
-The backend tests use Testcontainers, so Docker must be running. The commands, the architecture rules and the workflow are in [CLAUDE.md](CLAUDE.md).
+Os testes do backend usam Testcontainers, então o Docker precisa estar rodando. Os comandos, as regras de arquitetura e o fluxo de trabalho estão no [CLAUDE.md](CLAUDE.md).
 
-## Data sources and credits
+## Fontes de dados e créditos
 
-- **TACO**, the Brazilian Food Composition Table, from the University of Campinas.
-- **Open Food Facts** for barcodes, once that slice is built.
+- **TACO**, a Tabela Brasileira de Composição de Alimentos, da Universidade Estadual de Campinas.
+- **Open Food Facts** para códigos de barras, quando essa slice for construída.
 
-## License
+## Licença
 
-Not decided yet.
+Ainda não decidida.
