@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.time.temporal.ChronoUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 public interface UserRepositoryContract {
 
@@ -25,8 +26,7 @@ public interface UserRepositoryContract {
         assertThat(found.getProviderSubject()).isEqualTo("sub-1");
         assertThat(found.getEmail()).isEqualTo("ana@example.com");
         assertThat(found.getName()).isEqualTo("Ana");
-        assertThat(found.getCreatedAt().truncatedTo(ChronoUnit.MICROS))
-                .isEqualTo(user.getCreatedAt().truncatedTo(ChronoUnit.MICROS));
+        assertThat(found.getCreatedAt()).isCloseTo(user.getCreatedAt(), within(1, ChronoUnit.MICROS));
     }
 
     @Test
