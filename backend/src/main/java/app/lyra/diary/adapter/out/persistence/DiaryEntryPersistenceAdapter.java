@@ -2,6 +2,8 @@ package app.lyra.diary.adapter.out.persistence;
 
 import app.lyra.diary.application.port.out.DiaryEntryRepository;
 import app.lyra.diary.domain.DiaryEntry;
+import app.lyra.diary.domain.Macros;
+import app.lyra.diary.domain.Planned;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
 import jakarta.persistence.EntityManager;
@@ -71,7 +73,19 @@ class DiaryEntryPersistenceAdapter implements DiaryEntryRepository {
         entity.setSodium(nutrients.sodium());
         entity.setQuantityAmount(entry.getQuantity().amount());
         entity.setQuantityUnit(entry.getQuantity().unit());
+        entry.getPlanned().ifPresent(planned -> setPlanned(entity, planned));
         return entity;
+    }
+
+    private static void setPlanned(DiaryEntryJpaEntity entity, Planned planned) {
+        entity.setPlannedFoodId(planned.foodId());
+        entity.setPlannedQuantityAmount(planned.quantity().amount());
+        entity.setPlannedQuantityUnit(planned.quantity().unit());
+        entity.setPlannedKcal(planned.macros().kcal());
+        entity.setPlannedProtein(planned.macros().protein());
+        entity.setPlannedCarbohydrate(planned.macros().carbohydrate());
+        entity.setPlannedFat(planned.macros().fat());
+        entity.setPlannedSlot(planned.slot());
     }
 
     private static DiaryEntry toDomain(DiaryEntryJpaEntity entity) {
@@ -84,6 +98,19 @@ class DiaryEntryPersistenceAdapter implements DiaryEntryRepository {
                 new Quantity(entity.getReferenceAmount(), entity.getReferenceUnit()),
                 new Nutrients(entity.getKcal(), entity.getProtein(), entity.getCarbohydrate(), entity.getFat(),
                         entity.getFiber(), entity.getSodium()),
-                new Quantity(entity.getQuantityAmount(), entity.getQuantityUnit()));
+                new Quantity(entity.getQuantityAmount(), entity.getQuantityUnit()),
+                toPlanned(entity));
+    }
+
+    private static Planned toPlanned(DiaryEntryJpaEntity entity) {
+        if (entity.getPlannedSlot() == null) {
+            return null;
+        }
+        return new Planned(
+                entity.getPlannedFoodId(),
+                new Quantity(entity.getPlannedQuantityAmount(), entity.getPlannedQuantityUnit()),
+                new Macros(entity.getPlannedKcal(), entity.getPlannedProtein(), entity.getPlannedCarbohydrate(),
+                        entity.getPlannedFat()),
+                entity.getPlannedSlot());
     }
 }

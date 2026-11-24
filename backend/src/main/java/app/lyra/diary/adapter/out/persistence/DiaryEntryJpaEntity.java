@@ -43,4 +43,13 @@ class DiaryEntryJpaEntity {
     private BigDecimal quantityAmount;
     @Enumerated(EnumType.STRING)
     private MeasurementUnit quantityUnit;
+    private UUID plannedFoodId;
+    private BigDecimal plannedQuantityAmount;
+    @Enumerated(EnumType.STRING)
+    private MeasurementUnit plannedQuantityUnit;
+    private BigDecimal plannedKcal;
+    private BigDecimal plannedProtein;
+    private BigDecimal plannedCarbohydrate;
+    private BigDecimal plannedFat;
+    private Integer plannedSlot;
 }
