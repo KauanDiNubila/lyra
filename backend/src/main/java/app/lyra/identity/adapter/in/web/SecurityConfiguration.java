@@ -16,6 +16,7 @@ class SecurityConfiguration {
 
     private final GoogleOidcUserService googleOidcUserService;
     private final ProblemDetailsAuthenticationEntryPoint authenticationEntryPoint;
+    private final SessionAwareAccessDeniedHandler accessDeniedHandler;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) {
@@ -31,7 +32,9 @@ class SecurityConfiguration {
                         .logoutUrl("/api/logout")
                         .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
                 .csrf(csrf -> csrf.spa())
-                .exceptionHandling(handling -> handling.authenticationEntryPoint(authenticationEntryPoint));
+                .exceptionHandling(handling -> handling
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler));
         return http.build();
     }
 }

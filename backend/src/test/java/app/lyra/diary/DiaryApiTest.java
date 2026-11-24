@@ -15,6 +15,8 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.ResultActions;
 
 import java.util.List;
 import java.util.UUID;
@@ -39,6 +41,10 @@ class DiaryApiTest {
     @Autowired
     private MockMvc mvc;
 
+    private ResultActions perform(MockHttpServletRequestBuilder request) throws Exception {
+        return mvc.perform(request.with(TestSessions.of(USER)));
+    }
+
     @Autowired
     private JdbcClient jdbc;
 
@@ -55,7 +61,7 @@ class DiaryApiTest {
         String lunchId = logEntry(foodId, "Almoço", "200");
         String dinnerId = logEntry(foodId, "Jantar", "50");
 
-        mvc.perform(get(DAY).with(TestSessions.of(USER)))
+        perform(get(DAY))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.meals[0].name").value("Almoço"))
                 .andExpect(jsonPath("$.meals[0].total.kcal").value(200))
@@ -64,30 +70,30 @@ class DiaryApiTest {
                 .andExpect(jsonPath("$.total.kcal").value(250))
                 .andExpect(jsonPath("$.total.protein").value(25));
 
-        mvc.perform(patch("/api/diary/entries/" + lunchId).with(TestSessions.of(USER)).contentType(MediaType.APPLICATION_JSON)
+        perform(patch("/api/diary/entries/" + lunchId).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"quantity\": {\"amount\": 100, \"unit\": \"GRAM\"}}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.macros.kcal").value(100));
 
-        mvc.perform(get(DAY).with(TestSessions.of(USER)))
+        perform(get(DAY))
                 .andExpect(jsonPath("$.meals[0].total.kcal").value(100))
                 .andExpect(jsonPath("$.total.kcal").value(150));
 
-        mvc.perform(delete("/api/diary/entries/" + dinnerId).with(TestSessions.of(USER))).andExpect(status().isNoContent());
+        perform(delete("/api/diary/entries/" + dinnerId)).andExpect(status().isNoContent());
 
-        mvc.perform(get(DAY).with(TestSessions.of(USER)))
+        perform(get(DAY))
                 .andExpect(jsonPath("$.meals.length()").value(1))
                 .andExpect(jsonPath("$.total.kcal").value(100));
     }
 
     @Test
     void aTacoFoodGivesItsPublishedValuesForTheQuantityEaten() throws Exception {
-        String search = mvc.perform(get("/api/foods").with(TestSessions.of(USER)).param("query", "arroz tipo 1 cozido"))
+        String search = perform(get("/api/foods").param("query", "arroz tipo 1 cozido"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         String riceId = JsonPath.read(search, "$[0].id");
 
-        mvc.perform(post(DAY + "/entries").with(TestSessions.of(USER)).contentType(MediaType.APPLICATION_JSON).content(entryJson(riceId, "Almoço", "150")))
+        perform(post(DAY + "/entries").contentType(MediaType.APPLICATION_JSON).content(entryJson(riceId, "Almoço", "150")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.foodName").value("Arroz, tipo 1, cozido"))
                 .andExpect(jsonPath("$.macros.kcal").value(192.38775))
@@ -103,7 +109,7 @@ class DiaryApiTest {
 
         jdbc.sql("update food set kcal = 999 where id = :id").param("id", UUID.fromString(foodId)).update();
 
-        mvc.perform(get(DAY).with(TestSessions.of(USER)))
+        perform(get(DAY))
                 .andExpect(jsonPath("$.meals[0].entries[0].macros.kcal").value(100))
                 .andExpect(jsonPath("$.total.kcal").value(100));
     }
@@ -115,10 +121,10 @@ class DiaryApiTest {
         String second = logEntry(foodId, "Jantar", "100");
         String third = logEntry(foodId, "Almoço", "100");
 
-        mvc.perform(patch("/api/diary/entries/" + first).with(TestSessions.of(USER)).contentType(MediaType.APPLICATION_JSON)
+        perform(patch("/api/diary/entries/" + first).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"quantity\": {\"amount\": 300, \"unit\": \"GRAM\"}}")).andExpect(status().isOk());
 
-        mvc.perform(get(DAY).with(TestSessions.of(USER)))
+        perform(get(DAY))
                 .andExpect(jsonPath("$.meals[0].name").value("Almoço"))
                 .andExpect(jsonPath("$.meals[0].entries[0].id").value(first))
                 .andExpect(jsonPath("$.meals[0].entries[1].id").value(third))
@@ -130,26 +136,26 @@ class DiaryApiTest {
     void anUnknownFoodOrEntryIsNotFound() throws Exception {
         String unknown = UUID.randomUUID().toString();
 
-        mvc.perform(post(DAY + "/entries").with(TestSessions.of(USER)).contentType(MediaType.APPLICATION_JSON).content(entryJson(unknown, "Almoço", "100")))
+        perform(post(DAY + "/entries").contentType(MediaType.APPLICATION_JSON).content(entryJson(unknown, "Almoço", "100")))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Food not found: " + unknown));
-        mvc.perform(patch("/api/diary/entries/" + unknown).with(TestSessions.of(USER)).contentType(MediaType.APPLICATION_JSON)
+        perform(patch("/api/diary/entries/" + unknown).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"quantity\": {\"amount\": 100, \"unit\": \"GRAM\"}}"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Diary entry not found: " + unknown));
-        mvc.perform(delete("/api/diary/entries/" + unknown).with(TestSessions.of(USER))).andExpect(status().isNotFound());
+        perform(delete("/api/diary/entries/" + unknown)).andExpect(status().isNotFound());
     }
 
     @Test
     void invalidRequestsAreBadRequests() throws Exception {
         String foodId = createFood();
 
-        mvc.perform(post(DAY + "/entries").with(TestSessions.of(USER)).contentType(MediaType.APPLICATION_JSON).content("""
+        perform(post(DAY + "/entries").contentType(MediaType.APPLICATION_JSON).content("""
                         {"foodId": "%s", "mealName": "Almoço", "quantity": {"amount": 100, "unit": "MILLILITER"}}
                         """.formatted(foodId)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Quantity must be in GRAM"));
-        mvc.perform(post(DAY + "/entries").with(TestSessions.of(USER)).contentType(MediaType.APPLICATION_JSON).content("""
+        perform(post(DAY + "/entries").contentType(MediaType.APPLICATION_JSON).content("""
                         {"mealName": "Almoço", "quantity": {"amount": 100, "unit": "GRAM"}}
                         """))
                 .andExpect(status().isBadRequest())
@@ -162,7 +168,7 @@ class DiaryApiTest {
         String chicken = createFood("Frango de teste", 200);
         createActivePlan(threeItems(rice, chicken));
 
-        String filled = mvc.perform(post(DAY + "/plan").with(TestSessions.of(USER)))
+        String filled = perform(post(DAY + "/plan"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.meals.length()").value(2))
                 .andExpect(jsonPath("$.meals[0].name").value("Almoço"))
@@ -179,7 +185,7 @@ class DiaryApiTest {
         String dinnerRice = JsonPath.read(filled, "$.meals[1].entries[0].id");
         String dinnerChicken = JsonPath.read(filled, "$.meals[1].entries[1].id");
 
-        mvc.perform(get("/api/diary/2026-11-20").with(TestSessions.of(USER))).andExpect(jsonPath("$.meals").isEmpty());
+        perform(get("/api/diary/2026-11-20")).andExpect(jsonPath("$.meals").isEmpty());
 
         patchEntry(lunchRice, "{\"quantity\": {\"amount\": 250, \"unit\": \"GRAM\"}}")
                 .andExpect(jsonPath("$.origin").value("ADJUSTED"))
@@ -198,7 +204,7 @@ class DiaryApiTest {
                 .andExpect(jsonPath("$.mealName").value("Pós-treino"))
                 .andExpect(jsonPath("$.origin").value("ADJUSTED"));
 
-        mvc.perform(get(DAY).with(TestSessions.of(USER)))
+        perform(get(DAY))
                 .andExpect(jsonPath("$.meals[0].name").value("Pós-treino"))
                 .andExpect(jsonPath("$.total.kcal").value(450))
                 .andExpect(jsonPath("$.plannedTotal.kcal").value(350))
@@ -206,11 +212,11 @@ class DiaryApiTest {
                 .andExpect(jsonPath("$.meals[1].plannedTotal.kcal").value(200))
                 .andExpect(jsonPath("$.meals[1].differenceFromPlan.kcal").value(0));
 
-        mvc.perform(delete("/api/diary/entries/" + lunchRice).with(TestSessions.of(USER)))
+        perform(delete("/api/diary/entries/" + lunchRice))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("An entry of the plan cannot be deleted: change its quantity to zero to skip it"));
         String extra = logEntry(rice, "Lanche", "50");
-        mvc.perform(delete("/api/diary/entries/" + extra).with(TestSessions.of(USER))).andExpect(status().isNoContent());
+        perform(delete("/api/diary/entries/" + extra)).andExpect(status().isNoContent());
     }
 
     @Test
@@ -219,16 +225,16 @@ class DiaryApiTest {
         String chicken = createFood("Frango de teste", 200);
         createActivePlan(threeItems(rice, chicken));
 
-        String first = mvc.perform(post(DAY + "/plan").with(TestSessions.of(USER))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        String second = mvc.perform(post(DAY + "/plan").with(TestSessions.of(USER))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String first = perform(post(DAY + "/plan")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String second = perform(post(DAY + "/plan")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
 
         assertThat(second).isEqualTo(first);
         assertThat(count("diary_entry")).isEqualTo(3);
 
         String otherDay = "/api/diary/2026-11-21";
-        mvc.perform(post(otherDay + "/entries").with(TestSessions.of(USER)).contentType(MediaType.APPLICATION_JSON).content(entryJson(rice, "Lanche", "50")))
+        perform(post(otherDay + "/entries").contentType(MediaType.APPLICATION_JSON).content(entryJson(rice, "Lanche", "50")))
                 .andExpect(status().isCreated());
-        mvc.perform(post(otherDay + "/plan").with(TestSessions.of(USER)))
+        perform(post(otherDay + "/plan"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.meals.length()").value(1))
                 .andExpect(jsonPath("$.meals[0].entries[0].origin").value("EXTRA"));
@@ -237,7 +243,7 @@ class DiaryApiTest {
 
     @Test
     void fillingWithoutAnActivePlanIsNotFound() throws Exception {
-        mvc.perform(post(DAY + "/plan").with(TestSessions.of(USER)))
+        perform(post(DAY + "/plan"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("There is no active plan to fill the day"));
         assertThat(count("diary_entry")).isZero();
@@ -260,16 +266,16 @@ class DiaryApiTest {
     }
 
     private int fill(String path) throws Exception {
-        return mvc.perform(post(path).with(TestSessions.of(USER))).andReturn().getResponse().getStatus();
+        return perform(post(path)).andReturn().getResponse().getStatus();
     }
 
     private ResultActions patchEntry(String entryId, String body) throws Exception {
-        return mvc.perform(patch("/api/diary/entries/" + entryId).with(TestSessions.of(USER)).contentType(MediaType.APPLICATION_JSON).content(body))
+        return perform(patch("/api/diary/entries/" + entryId).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk());
     }
 
     private void createActivePlan(String meals) throws Exception {
-        String body = mvc.perform(post("/api/plans").with(TestSessions.of(USER)).contentType(MediaType.APPLICATION_JSON).content("""
+        String body = perform(post("/api/plans").contentType(MediaType.APPLICATION_JSON).content("""
                         {"name": "Plano de teste",
                          "targets": {"kcal": 2000, "protein": 140, "carbohydrate": 200, "fat": 60},
                          "meals": %s}
@@ -277,7 +283,7 @@ class DiaryApiTest {
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         String planId = JsonPath.read(body, "$.id");
-        mvc.perform(post("/api/plans/" + planId + "/activation").with(TestSessions.of(USER))).andExpect(status().isOk());
+        perform(post("/api/plans/" + planId + "/activation")).andExpect(status().isOk());
     }
 
     private static String threeItems(String firstFood, String secondFood) {
@@ -297,7 +303,7 @@ class DiaryApiTest {
     }
 
     private String createFood(String name, int kcal) throws Exception {
-        String body = mvc.perform(post("/api/foods").with(TestSessions.of(USER)).contentType(MediaType.APPLICATION_JSON).content("""
+        String body = perform(post("/api/foods").contentType(MediaType.APPLICATION_JSON).content("""
                         {"name": "%s", "referenceAmount": {"amount": 100, "unit": "GRAM"},
                          "nutrients": {"kcal": %d, "protein": 10, "carbohydrate": 20, "fat": 5}}
                         """.formatted(name, kcal)))
@@ -307,7 +313,7 @@ class DiaryApiTest {
     }
 
     private String logEntry(String foodId, String mealName, String grams) throws Exception {
-        String body = mvc.perform(post(DAY + "/entries").with(TestSessions.of(USER)).contentType(MediaType.APPLICATION_JSON).content(entryJson(foodId, mealName, grams)))
+        String body = perform(post(DAY + "/entries").contentType(MediaType.APPLICATION_JSON).content(entryJson(foodId, mealName, grams)))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         return JsonPath.read(body, "$.id");

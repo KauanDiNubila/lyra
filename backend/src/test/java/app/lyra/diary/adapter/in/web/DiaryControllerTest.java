@@ -1,6 +1,6 @@
 package app.lyra.diary.adapter.in.web;
 
-import app.lyra.TestSessions;
+import app.lyra.SignedInControllerTest;
 import app.lyra.diary.application.port.in.ChangeEntryUseCase;
 import app.lyra.diary.application.port.in.ChangeEntryUseCase.ChangeEntryCommand;
 import app.lyra.diary.application.port.in.DeleteEntryUseCase;
@@ -19,9 +19,6 @@ import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
 import app.lyra.shared.domain.InvalidInputException;
-import app.lyra.shared.domain.UserId;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -34,7 +31,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -53,7 +49,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(DiaryController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(DiaryControllerTest.FakeUseCases.class)
-class DiaryControllerTest {
+class DiaryControllerTest extends SignedInControllerTest {
 
     private static final LocalDate DATE = LocalDate.of(2026, 11, 19);
     private static final UUID RICE_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
@@ -70,22 +66,9 @@ class DiaryControllerTest {
     private static final DiaryEntry LUNCH = entry(LUNCH_ID, "Almoço", "100");
     private static final DiaryEntry DINNER = entry(DINNER_ID, "Jantar", "50");
     private static final AtomicReference<ChangeEntryCommand> LAST_CHANGE = new AtomicReference<>();
-    private static final UserId SIGNED_IN = UserId.random();
-    private static final List<UserId> CALLERS = new ArrayList<>();
 
     @Autowired
     private MockMvc mvc;
-
-    @BeforeEach
-    void signIn() {
-        TestSessions.signIn(SIGNED_IN);
-        CALLERS.clear();
-    }
-
-    @AfterEach
-    void signOut() {
-        TestSessions.signOut();
-    }
 
     @TestConfiguration
     static class FakeUseCases {

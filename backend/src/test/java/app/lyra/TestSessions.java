@@ -7,6 +7,9 @@ import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 public final class TestSessions {
@@ -23,7 +26,12 @@ public final class TestSessions {
 
     public static RequestPostProcessor withCsrfToken() {
         return request -> {
-            request.setCookies(new Cookie("XSRF-TOKEN", CSRF_TOKEN));
+            List<Cookie> cookies = new ArrayList<>();
+            if (request.getCookies() != null) {
+                cookies.addAll(List.of(request.getCookies()));
+            }
+            cookies.add(new Cookie("XSRF-TOKEN", CSRF_TOKEN));
+            request.setCookies(cookies.toArray(new Cookie[0]));
             request.addHeader("X-XSRF-TOKEN", CSRF_TOKEN);
             return request;
         };

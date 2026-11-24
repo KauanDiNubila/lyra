@@ -1,5 +1,6 @@
 package app.lyra.food.adapter.in.web;
 
+import app.lyra.SignedInControllerTest;
 import app.lyra.TestSessions;
 import app.lyra.food.application.port.in.CreateCustomFoodUseCase;
 import app.lyra.food.application.port.in.SearchFoodsUseCase;
@@ -9,9 +10,6 @@ import app.lyra.food.domain.FoodSource;
 import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Nutrients;
 import app.lyra.food.domain.Quantity;
-import app.lyra.shared.domain.UserId;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -23,7 +21,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(FoodController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(FoodControllerTest.FakeUseCases.class)
-class FoodControllerTest {
+class FoodControllerTest extends SignedInControllerTest {
 
     private static final UUID RICE_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final Food RICE = new Food(RICE_ID, "Arroz, tipo 1, cozido", FoodSource.TACO,
@@ -45,22 +42,9 @@ class FoodControllerTest {
             new Nutrients(new BigDecimal("128.2585"), new BigDecimal("2.5208"), new BigDecimal("28.0598"),
                     new BigDecimal("0.227"), new BigDecimal("1.561"), null));
 
-    private static final UserId SIGNED_IN = UserId.random();
-    private static final List<UserId> CALLERS = new ArrayList<>();
 
     @Autowired
     private MockMvc mvc;
-
-    @BeforeEach
-    void signIn() {
-        TestSessions.signIn(SIGNED_IN);
-        CALLERS.clear();
-    }
-
-    @AfterEach
-    void signOut() {
-        TestSessions.signOut();
-    }
 
     @TestConfiguration
     static class FakeUseCases {

@@ -1,6 +1,6 @@
 package app.lyra.plan.adapter.in.web;
 
-import app.lyra.TestSessions;
+import app.lyra.SignedInControllerTest;
 import app.lyra.food.application.port.in.FindFoodsByIdsUseCase;
 import app.lyra.food.domain.Food;
 import app.lyra.food.domain.FoodNotFoundException;
@@ -18,9 +18,6 @@ import app.lyra.plan.domain.DietPlan;
 import app.lyra.plan.domain.PlanNotFoundException;
 import app.lyra.plan.domain.PlannedItem;
 import app.lyra.plan.domain.PlannedMeal;
-import app.lyra.shared.domain.UserId;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -36,7 +33,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(PlanController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import({PlanControllerTest.FakeUseCases.class, PlanResponseFactory.class})
-class PlanControllerTest {
+class PlanControllerTest extends SignedInControllerTest {
 
     private static final UUID RICE_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final UUID PLAN_ID = UUID.fromString("00000000-0000-0000-0000-0000000000b1");
@@ -78,22 +74,9 @@ class PlanControllerTest {
                                    "quantity": {"amount": 200, "unit": "GRAM"}}]}]}
             """;
 
-    private static final UserId SIGNED_IN = UserId.random();
-    private static final List<UserId> CALLERS = new ArrayList<>();
 
     @Autowired
     private MockMvc mvc;
-
-    @BeforeEach
-    void signIn() {
-        TestSessions.signIn(SIGNED_IN);
-        CALLERS.clear();
-    }
-
-    @AfterEach
-    void signOut() {
-        TestSessions.signOut();
-    }
 
     @TestConfiguration
     static class FakeUseCases {

@@ -66,20 +66,24 @@ class IdentitySecurityTest {
 
     @Test
     void logoutNeedsTheCsrfToken() throws Exception {
-        mvc.perform(post("/api/logout")).andExpect(status().isForbidden());
+        UserId id = UserId.random();
 
-        Cookie token = mvc.perform(get("/api/me")).andReturn().getResponse().getCookie("XSRF-TOKEN");
-
-        mvc.perform(post("/api/logout").cookie(token).header("X-XSRF-TOKEN", token.getValue()))
-                .andExpect(status().isNoContent());
+        mvc.perform(post("/api/logout").with(user(id.toString()))).andExpect(status().isForbidden());
+        mvc.perform(post("/api/logout").with(TestSessions.of(id))).andExpect(status().isNoContent());
     }
 
     @Test
     void refusesALogoutWithATokenThatIsNotTheOneOfTheCookie() throws Exception {
-        Cookie token = mvc.perform(get("/api/me")).andReturn().getResponse().getCookie("XSRF-TOKEN");
-
-        mvc.perform(post("/api/logout").cookie(token).header("X-XSRF-TOKEN", "another-token"))
+        mvc.perform(post("/api/logout").with(user(UserId.random().toString()))
+                        .cookie(new Cookie("XSRF-TOKEN", "the-cookie-token")).header("X-XSRF-TOKEN", "another-token"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void aWriteWithoutASessionAsksForOneEvenWithoutTheCsrfToken() throws Exception {
+        mvc.perform(post("/api/plans").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.title").value("Unauthorized"));
     }
 
     @Test
