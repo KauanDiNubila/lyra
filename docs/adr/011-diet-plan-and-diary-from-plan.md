@@ -37,20 +37,23 @@ Um `DietPlan` tem nome, metas diárias (kcal, proteína, carboidrato e gordura),
 
 - O `GET /api/diary/{date}` continua sem efeito colateral.
 - `POST /api/diary/{date}/plan` preenche o dia: para cada item do plano ativo cria uma entrada com o nome da refeição, o snapshot do alimento e a quantidade planejada. Só preenche um dia **sem nenhuma entrada**; se o dia já tem entradas, não faz nada e devolve o dia. Sem plano ativo, responde `404`.
-- Cada entrada preenchida guarda a posição de origem (refeição e item) numa coluna `planned_slot`, com restrição única por data. Dois preenchimentos simultâneos não duplicam: o segundo bate na restrição e devolve o dia já preenchido.
+- Cada entrada preenchida guarda a posição de origem (refeição e item) numa coluna `planned_slot`, com restrição única por data.
+- Dois preenchimentos simultâneos não duplicam: o preenchimento toma um lock advisory do PostgreSQL por data (`pg_advisory_xact_lock`, a mesma técnica do lock do plano), e o segundo espera, vê o dia já preenchido e o devolve. A restrição única fica como rede de segurança. Esperar o lock evita tratar a violação da restrição na aplicação, que vazaria a exceção do Hibernate.
 - A tela chama esse `POST` sozinha ao abrir um dia vazio de **hoje ou do futuro**. Em um dia **passado** vazio mostra um botão "Preencher com o plano", porque um dia passado vazio quer dizer que nada foi registrado, e não que o plano foi seguido.
 
 ### Origem e quantidade planejada
 
-Toda entrada preenchida pelo plano guarda a **quantidade planejada** e os **macros planejados** (kcal, proteína, carboidrato e gordura), calculados e copiados na hora do preenchimento. A origem **não é guardada**, é calculada:
+Toda entrada preenchida pelo plano guarda o **alimento planejado**, a **quantidade planejada** (valor e unidade) e os **macros planejados** (kcal, proteína, carboidrato e gordura), calculados e copiados na hora do preenchimento. O alimento planejado é necessário porque a entrada pode trocar de alimento, e só comparando com ele se sabe que houve troca. A origem **não é guardada**, é calculada, nesta ordem de precedência:
 
 | Situação | Origem |
 |---|---|
 | Sem quantidade planejada | `EXTRA` |
-| Mesmo alimento, mesma quantidade do plano | `PLANNED` |
-| Mesmo alimento, outra quantidade, maior que zero | `ADJUSTED` |
 | Quantidade zero | `SKIPPED` |
 | Outro alimento no lugar do planejado | `SWAPPED` |
+| Mesmo alimento, outra quantidade | `ADJUSTED` |
+| Mesmo alimento, mesma quantidade do plano | `PLANNED` |
+
+Pular um item que foi trocado conta como pulado (`SKIPPED`).
 
 O `QUICK_ADD` do RFC fica para a slice 5. Como os macros planejados são copiados, mudar o plano depois não altera dias já preenchidos, e dias ainda não abertos pegam o plano novo.
 
@@ -71,7 +74,13 @@ Uma entrada que veio do plano **não pode ser apagada**: a API responde `400` co
 
 ### Diferença e metas
 
-A resposta do dia passa a trazer, para cada entrada, a origem e o planejado, e para o dia, o total planejado (soma dos macros planejados das entradas que têm plano, inclusive as puladas), a diferença `total do dia − total planejado` e a diferença para as metas. O formato exato é definido no PR do backend do diário e fica no `docs/api/openapi.json`.
+A resposta do dia passa a trazer:
+
+- em cada entrada, `origin` e `planned` (quantidade e macros planejados; nulo nas extras);
+- em cada refeição e no dia, `plannedTotal` (soma dos macros planejados das entradas que têm plano, inclusive as puladas) e `differenceFromPlan` (`total − plannedTotal`);
+- no dia, `targets` e `differenceFromTargets` (`total − metas`), ambos nulos quando não há plano ativo.
+
+Os campos exatos ficam no `docs/api/openapi.json`.
 
 As metas vêm do **plano ativo no momento da leitura**. Se o usuário trocar de plano, dias antigos passam a ser comparados com as metas novas. É uma limitação consciente: guardar as metas em cada dia seria estado a mais sem valor agora.
 
@@ -101,7 +110,7 @@ Os erros seguem o Problem Details das ADRs 008 e 010: o módulo `plan` lança as
 - Bom: a diferença para o plano continua calculável depois de ajustar, trocar ou pular, porque o planejado fica na própria entrada.
 - Bom: a origem é calculada, então não existe estado de origem para ficar inconsistente.
 - Bom: mudar o plano não reescreve a história.
-- Ruim: cada entrada ganha 5 colunas novas (quantidade planejada, 4 macros planejados) mais a posição de origem; as entradas antigas ficam sem planejado e passam a ser extras.
+- Ruim: cada entrada ganha 8 colunas novas (alimento planejado, quantidade e unidade planejadas, 4 macros planejados e a posição de origem); as entradas antigas ficam sem planejado e passam a ser extras.
 - Ruim: não se pode apagar uma entrada do plano; quem preencheu o dia por engano precisa pular item por item.
 - Ruim: as metas dos dias antigos acompanham o plano ativo de hoje.
 - Ruim: um plano só, global, vale até existir autenticação.
