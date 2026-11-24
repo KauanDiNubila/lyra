@@ -56,7 +56,17 @@ O núcleo é um pacote sob `app.lyra`, organizado como um módulo, então as reg
 
 Uma regra nova, `sharedKernelDependsOnNoModule`, garante o que as outras não garantem: as classes de `app.lyra.shared` só dependem de `java`, `lombok`, `org.springframework` e do próprio `shared`. Sem ela, o `shared.domain` poderia importar o `domain` de um módulo e o build passaria.
 
-### O que continua copiado
+### O que continua copiado (emenda de 2026-11-24)
+
+Esta seção diz que o `QuantityJson` continua copiado "até que `Quantity` mude de lugar ou um terceiro módulo precise dela". O terceiro módulo (`plan`) passou a usá-lo na slice 4, então o gatilho foi atingido. Ele foi reavaliado e a decisão é **manter as três cópias** (em `food`, `diary` e `plan`), pelos motivos abaixo.
+
+- Mover só o `Quantity` para o núcleo não elimina a cópia. Um `QuantityJson` compartilhado teria de ficar em `shared.adapter.in.web`, e os adaptadores web de outros módulos o alcançariam. A regra `modulesTalkOnlyThroughInboundPortsAndDomain` só permite que módulos se alcancem por `application.port.in` e `domain`, então seria preciso abrir uma exceção na regra (que exige uma ADR própria).
+- O `Quantity` carrega um conceito de negócio de `food` (as unidades `GRAM`, `MILLILITER` e `PORTION`), e a regra de entrada acima diz que nada assim entra no núcleo.
+- O custo seria de cerca de 44 arquivos com imports trocados, mais uma exceção de regra, para apagar três cópias de 12 linhas.
+- Nenhuma slice planejada cria uma quarta cópia: o registro rápido (slice 5) fica dentro de `diary` e o peso (slice 7) usa quilos, não `Quantity`.
+- Serializar o `Quantity` direto, sem o DTO, foi descartado: o erro de uma quantidade inválida sairia no formato padrão do Spring em vez do Problem Details `Invalid input`, e o schema do `openapi.json` mudaria de nome.
+
+A cópia é revisitada quando um quarto módulo precisar de `Quantity`, quando uma cópia divergir das outras (uma correção feita em uma e esquecida nas demais) ou quando uma ADR permitir um kit web compartilhado.
 
 O `QuantityJson` é um DTO web de cada módulo e usa `food.domain.Quantity`. Um núcleo que conhecesse `Quantity` passaria a depender de `food`, então a cópia no adaptador web do diário continua até que `Quantity` mude de lugar ou um terceiro módulo precise dela.
 
