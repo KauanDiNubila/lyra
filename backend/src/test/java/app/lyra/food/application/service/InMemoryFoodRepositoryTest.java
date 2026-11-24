@@ -2,6 +2,7 @@ package app.lyra.food.application.service;
 
 import app.lyra.food.application.port.out.FoodRepository;
 import app.lyra.food.application.port.out.FoodRepositoryContract;
+import app.lyra.food.domain.Food;
 import app.lyra.shared.domain.UserId;
 
 class InMemoryFoodRepositoryTest implements FoodRepositoryContract {
@@ -13,6 +14,11 @@ class InMemoryFoodRepositoryTest implements FoodRepositoryContract {
     @Override
     public FoodRepository repository() {
         return repository;
+    }
+
+    @Override
+    public void seedTaco(Food food) {
+        repository.seedTaco(food);
     }
 
     @Override

@@ -28,7 +28,14 @@ class InMemoryFoodRepository implements FoodRepository {
 
     @Override
     public void save(UserId owner, Food food) {
-        foods.add(new Stored(food.getSource() == FoodSource.CUSTOM ? owner : null, food));
+        if (food.getSource() != FoodSource.CUSTOM) {
+            throw new IllegalArgumentException("Only custom foods are saved by a user");
+        }
+        foods.add(new Stored(owner, food));
+    }
+
+    void seedTaco(Food food) {
+        foods.add(new Stored(null, food));
     }
 
     @Override

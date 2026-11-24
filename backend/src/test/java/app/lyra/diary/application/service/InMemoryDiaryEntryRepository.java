@@ -24,6 +24,10 @@ class InMemoryDiaryEntryRepository implements DiaryEntryRepository {
 
     @Override
     public void save(UserId owner, DiaryEntry entry) {
+        Stored current = entries.get(entry.getId());
+        if (current != null && !current.owner().equals(owner)) {
+            throw new IllegalStateException("The entry belongs to another user");
+        }
         entries.put(entry.getId(), new Stored(owner, entry));
     }
 

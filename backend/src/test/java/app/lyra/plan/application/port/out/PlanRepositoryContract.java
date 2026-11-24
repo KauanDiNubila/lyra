@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public interface PlanRepositoryContract {
 
@@ -117,6 +118,16 @@ public interface PlanRepositoryContract {
         assertThat(repository().findAll(otherOwner())).isEmpty();
     }
 
+
+    @Test
+    default void refusesToSaveOverAPlanOfAnotherUser() {
+        DietPlan plan = plan("Cutting");
+        repository().save(owner(), plan);
+
+        assertThatThrownBy(() -> repository().save(otherOwner(), plan.withContent("Roubado", plan.getTargets(), plan.getMeals())))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(repository().findById(owner(), plan.getId()).orElseThrow().getName()).isEqualTo("Cutting");
+    }
     @Test
     default void eachUserHasTheirOwnActivePlan() {
         DietPlan mine = plan("Minha");

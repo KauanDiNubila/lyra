@@ -8,6 +8,11 @@ public final class TestUsers {
     private TestUsers() {
     }
 
+    public static void deleteEverything(JdbcClient jdbc) {
+        jdbc.sql("delete from app_user").update();
+        jdbc.sql("delete from food where source_reference like 'TEST-%'").update();
+    }
+
     public static UserId insert(JdbcClient jdbc) {
         UserId id = UserId.random();
         jdbc.sql("""

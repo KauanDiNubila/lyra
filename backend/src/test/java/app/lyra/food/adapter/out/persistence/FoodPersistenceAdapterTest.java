@@ -8,6 +8,7 @@ import app.lyra.food.domain.Food;
 import app.lyra.food.domain.FoodSearchQuery;
 import app.lyra.food.domain.FoodSource;
 import app.lyra.food.domain.MeasurementUnit;
+import app.lyra.food.domain.SearchText;
 import app.lyra.shared.domain.UserId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +42,20 @@ class FoodPersistenceAdapterTest implements FoodRepositoryContract {
     }
 
     @Override
+    public void seedTaco(Food food) {
+        jdbc.sql("""
+                        insert into food (id, name, search_name, source, source_reference, reference_amount, reference_unit,
+                            kcal, protein, carbohydrate, fat)
+                        values (:id, :name, :searchName, 'TACO', :reference, 100, 'GRAM', 1, 1, 1, 1)
+                        """)
+                .param("id", food.getId())
+                .param("name", food.getName())
+                .param("searchName", SearchText.normalize(food.getName()))
+                .param("reference", "TEST-" + food.getId())
+                .update();
+    }
+
+    @Override
     public UserId owner() {
         return owner;
     }
@@ -57,8 +72,7 @@ class FoodPersistenceAdapterTest implements FoodRepositoryContract {
 
     @AfterEach
     void removeFoodsCreatedByTheTest() {
-        jdbc.sql("delete from food where source_reference is null").update();
-        jdbc.sql("delete from app_user").update();
+        TestUsers.deleteEverything(jdbc);
     }
 
     @Test

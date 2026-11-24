@@ -38,6 +38,10 @@ class DiaryEntryPersistenceAdapter implements DiaryEntryRepository {
     @Override
     @Transactional
     public void save(UserId owner, DiaryEntry entry) {
+        DiaryEntryJpaEntity existing = entityManager.find(DiaryEntryJpaEntity.class, entry.getId());
+        if (existing != null && !existing.getUserId().equals(owner.value())) {
+            throw new IllegalStateException("The entry belongs to another user");
+        }
         entityManager.merge(toEntity(owner, entry));
     }
 

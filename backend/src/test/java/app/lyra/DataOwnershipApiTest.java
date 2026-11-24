@@ -1,5 +1,6 @@
 package app.lyra;
 
+import app.lyra.TestUsers;
 import app.lyra.shared.domain.UserId;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.AfterEach;
@@ -15,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -55,10 +57,7 @@ class DataOwnershipApiTest {
 
     @AfterEach
     void removeWhatTheTestCreated() {
-        jdbc.sql("delete from diary_entry").update();
-        jdbc.sql("delete from diet_plan").update();
-        jdbc.sql("delete from food where source_reference is null").update();
-        jdbc.sql("delete from app_user").update();
+        TestUsers.deleteEverything(jdbc);
     }
 
     @Test
@@ -139,9 +138,31 @@ class DataOwnershipApiTest {
     }
 
     @Test
+    void deletingAUserRemovesEverythingTheyOwnAndNothingOfTheOthers() throws Exception {
+        createFood(bruno, "Quimera do Bruno");
+        String brunoPlan = createPlan(bruno, "Plano do Bruno", tacoFood(bruno));
+        perform(bruno, post("/api/plans/" + brunoPlan + "/activation")).andExpect(status().isOk());
+
+        jdbc.sql("delete from app_user where id = :id").param("id", ana.value()).update();
+
+        for (String table : new String[] {"food", "diet_plan", "diary_entry"}) {
+            assertThat(rowsOf(table, ana)).as(table + " of the deleted user").isZero();
+        }
+        assertThat(rowsOf("food", bruno)).isEqualTo(1);
+        assertThat(rowsOf("diet_plan", bruno)).isEqualTo(1);
+    }
+
+    @Test
     void eachUserSeesOnlyWhoTheyAre() throws Exception {
         perform(ana, get("/api/me")).andExpect(jsonPath("$.id").value(ana.toString()));
         perform(bruno, get("/api/me")).andExpect(jsonPath("$.id").value(bruno.toString()));
+    }
+
+    private int rowsOf(String table, UserId user) {
+        return jdbc.sql("select count(*) from " + table + " where user_id = :id")
+                .param("id", user.value())
+                .query(Integer.class)
+                .single();
     }
 
     private ResultActions perform(UserId user, MockHttpServletRequestBuilder request) throws Exception {

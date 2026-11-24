@@ -28,4 +28,12 @@ drop index diary_entry_entry_date_idx;
 
 create unique index diary_entry_user_id_entry_date_planned_slot_idx on diary_entry (user_id, entry_date, planned_slot);
 
-create index diary_entry_user_id_entry_date_idx on diary_entry (user_id, entry_date);
+alter table planned_item
+    drop constraint planned_item_food_id_fkey,
+    add constraint planned_item_food_id_fkey foreign key (food_id) references food (id) deferrable initially deferred;
+
+alter table diary_entry
+    drop constraint diary_entry_food_id_fkey,
+    drop constraint diary_entry_planned_food_id_fkey,
+    add constraint diary_entry_food_id_fkey foreign key (food_id) references food (id) deferrable initially deferred,
+    add constraint diary_entry_planned_food_id_fkey foreign key (planned_food_id) references food (id) deferrable initially deferred;

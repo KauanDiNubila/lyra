@@ -34,20 +34,16 @@ class FoodPersistenceAdapter implements FoodRepository {
     @Override
     @Transactional
     public void save(UserId owner, Food food) {
+        if (food.getSource() != FoodSource.CUSTOM) {
+            throw new IllegalArgumentException("Only custom foods are saved by a user");
+        }
         entityManager.persist(toEntity(owner, food));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<Food> findById(UserId user, UUID id) {
-        return entityManager
-                .createQuery("select f from FoodJpaEntity f where f.id = :id and (f.userId is null or f.userId = :user)",
-                        FoodJpaEntity.class)
-                .setParameter("id", id)
-                .setParameter("user", user.value())
-                .getResultStream()
-                .findFirst()
-                .map(FoodPersistenceAdapter::toDomain);
+        return findAllById(user, List.of(id)).stream().findFirst();
     }
 
     @Override
@@ -98,7 +94,7 @@ class FoodPersistenceAdapter implements FoodRepository {
         entity.setId(food.getId());
         entity.setName(food.getName());
         entity.setSearchName(SearchText.normalize(food.getName()));
-        entity.setUserId(food.getSource() == FoodSource.CUSTOM ? owner.value() : null);
+        entity.setUserId(owner.value());
         entity.setSource(food.getSource());
         entity.setReferenceAmount(food.getReferenceAmount().amount());
         entity.setReferenceUnit(food.getReferenceAmount().unit());

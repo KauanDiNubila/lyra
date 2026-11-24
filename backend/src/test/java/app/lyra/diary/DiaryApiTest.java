@@ -57,10 +57,7 @@ class DiaryApiTest {
 
     @AfterEach
     void removeWhatTheTestCreated() {
-        jdbc.sql("delete from diary_entry").update();
-        jdbc.sql("delete from diet_plan").update();
-        jdbc.sql("delete from food where source_reference is null").update();
-        jdbc.sql("delete from app_user").update();
+        TestUsers.deleteEverything(jdbc);
     }
 
     @Test

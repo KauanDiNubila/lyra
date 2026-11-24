@@ -16,6 +16,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public interface DiaryEntryRepositoryContract {
 
@@ -209,6 +210,16 @@ public interface DiaryEntryRepositoryContract {
         assertThat(repository().findByDate(otherOwner(), DATE)).isEmpty();
     }
 
+
+    @Test
+    default void refusesToSaveOverAnEntryOfAnotherUser() {
+        DiaryEntry entry = entry(DATE, "Almoço", "100", nutrients(null, null));
+        repository().save(owner(), entry);
+
+        assertThatThrownBy(() -> repository().save(otherOwner(), entry.withQuantity(grams("200"))))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(repository().findById(owner(), entry.getId()).orElseThrow().getQuantity().amount()).isEqualByComparingTo("100");
+    }
     @Test
     default void anotherUserCannotDeleteAnEntry() {
         DiaryEntry entry = entry(DATE, "Almoço", "100", nutrients(null, null));

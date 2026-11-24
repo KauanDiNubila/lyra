@@ -38,6 +38,10 @@ class PlanPersistenceAdapter implements PlanRepository {
     @Override
     @Transactional
     public void save(UserId owner, DietPlan plan) {
+        DietPlanJpaEntity existing = entityManager.find(DietPlanJpaEntity.class, plan.getId());
+        if (existing != null && !existing.getUserId().equals(owner.value())) {
+            throw new IllegalStateException("The plan belongs to another user");
+        }
         entityManager.merge(toEntity(owner, plan));
         entityManager.flush();
     }

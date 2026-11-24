@@ -23,6 +23,10 @@ class InMemoryPlanRepository implements PlanRepository {
 
     @Override
     public void save(UserId owner, DietPlan plan) {
+        Stored current = plans.get(plan.getId());
+        if (current != null && !current.owner().equals(owner)) {
+            throw new IllegalStateException("The plan belongs to another user");
+        }
         boolean anotherIsActive = plansOf(owner).stream().anyMatch(other -> other.isActive() && !other.equals(plan));
         if (plan.isActive() && anotherIsActive) {
             throw new IllegalStateException("Only one plan can be active");

@@ -15,6 +15,7 @@ import java.util.UUID;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public interface FoodRepositoryContract {
 
@@ -23,6 +24,8 @@ public interface FoodRepositoryContract {
     UserId owner();
 
     UserId otherOwner();
+
+    void seedTaco(Food food);
 
     @Test
     default void findsFoodsMatchingEveryTermIgnoringAccentsAndCase() {
@@ -47,7 +50,7 @@ public interface FoodRepositoryContract {
 
     @Test
     default void listsCustomFoodsBeforeTacoFoods() {
-        repository().save(owner(), food("Quimera curto", FoodSource.TACO));
+        seedTaco(food("Quimera curto", FoodSource.TACO));
         repository().save(owner(), food("Quimera personalizado com nome bem mais longo", FoodSource.CUSTOM));
 
         assertThat(names(search("quimera"))).containsExactly("Quimera personalizado com nome bem mais longo", "Quimera curto");
@@ -158,10 +161,17 @@ public interface FoodRepositoryContract {
         assertThat(repository().findById(owner(), mine.getId())).isPresent();
     }
 
+
+    @Test
+    default void refusesToSaveAFoodThatIsNotCustom() {
+        Food taco = food("Quimera taco", FoodSource.TACO);
+
+        assertThatThrownBy(() -> repository().save(owner(), taco)).isInstanceOf(IllegalArgumentException.class);
+    }
     @Test
     default void tacoFoodsAreVisibleToEveryUser() {
         Food taco = food("Quimera publico", FoodSource.TACO);
-        repository().save(owner(), taco);
+        seedTaco(taco);
 
         assertThat(repository().findById(otherOwner(), taco.getId())).isPresent();
         assertThat(repository().findAllById(otherOwner(), List.of(taco.getId()))).containsExactly(taco);
