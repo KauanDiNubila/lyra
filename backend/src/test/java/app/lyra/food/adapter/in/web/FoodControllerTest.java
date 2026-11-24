@@ -84,6 +84,16 @@ class FoodControllerTest {
     }
 
     @Test
+    void withoutASignedInUserTheAnswerIsAnUnauthorizedProblem() throws Exception {
+        TestSessions.signOut();
+
+        mvc.perform(get("/api/foods").param("query", "arroz"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Unauthorized"));
+    }
+
+    @Test
     void searchAsksTheUseCaseOnBehalfOfTheSignedInUser() throws Exception {
         mvc.perform(get("/api/foods").param("query", "arroz")).andExpect(status().isOk());
 

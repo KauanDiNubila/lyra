@@ -5,17 +5,26 @@ import app.lyra.TestcontainersConfiguration;
 import app.lyra.shared.domain.UserId;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.UUID;
+import java.util.stream.Stream;
+
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.startsWith;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -45,10 +54,6 @@ class IdentitySecurityTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    @Test
-    void aRouteThatKnowsTheUserAnswersUnauthorizedWithoutASession() throws Exception {
-        mvc.perform(get("/api/plans")).andExpect(status().isUnauthorized());
-    }
 
     @Test
     void sendsTheUserToGoogleToSignIn() throws Exception {
@@ -78,8 +83,37 @@ class IdentitySecurityTest {
     }
 
     @Test
-    void writesToTheOtherRoutesNeedNoCsrfTokenYet() throws Exception {
+    void writesToTheOtherRoutesNeedTheCsrfToken() throws Exception {
+        mvc.perform(post("/api/plans").with(user(UserId.random().toString())).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isForbidden());
         mvc.perform(post("/api/plans").with(TestSessions.of(UserId.random())).contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @ParameterizedTest
+    @MethodSource("apiRoutes")
+    void everyApiRouteAsksForASession(HttpMethod method, String path) throws Exception {
+        mvc.perform(request(method, path).with(TestSessions.withCsrfToken()))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Unauthorized"));
+    }
+
+    static Stream<Arguments> apiRoutes() {
+        String id = UUID.randomUUID().toString();
+        return Stream.of(
+                Arguments.of(HttpMethod.GET, "/api/me"),
+                Arguments.of(HttpMethod.GET, "/api/foods?query=arroz"),
+                Arguments.of(HttpMethod.POST, "/api/foods"),
+                Arguments.of(HttpMethod.GET, "/api/plans"),
+                Arguments.of(HttpMethod.POST, "/api/plans"),
+                Arguments.of(HttpMethod.GET, "/api/plans/" + id),
+                Arguments.of(HttpMethod.PUT, "/api/plans/" + id),
+                Arguments.of(HttpMethod.POST, "/api/plans/" + id + "/activation"),
+                Arguments.of(HttpMethod.GET, "/api/diary/2026-11-19"),
+                Arguments.of(HttpMethod.POST, "/api/diary/2026-11-19/entries"),
+                Arguments.of(HttpMethod.POST, "/api/diary/2026-11-19/plan"),
+                Arguments.of(HttpMethod.PATCH, "/api/diary/entries/" + id),
+                Arguments.of(HttpMethod.DELETE, "/api/diary/entries/" + id));
     }
 }
