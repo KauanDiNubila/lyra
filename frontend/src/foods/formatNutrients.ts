@@ -37,3 +37,22 @@ export function formatMacroValues({ kcal, protein, carbohydrate, fat }: MacroVal
 export function formatMacros(food: Food): string {
   return `${formatMacroValues(food.nutrients)} em ${formatReference(food.referenceAmount)}`
 }
+
+const signedOneDecimal = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1, signDisplay: 'exceptZero' })
+
+export function formatKcalDifference(kcal: number): string {
+  return `${signedOneDecimal.format(kcal)} kcal`
+}
+
+export function formatMacroDifference({ kcal, protein, carbohydrate, fat }: MacroValues): string {
+  return [
+    formatKcalDifference(kcal),
+    `P ${signedOneDecimal.format(protein)} g`,
+    `C ${signedOneDecimal.format(carbohydrate)} g`,
+    `G ${signedOneDecimal.format(fat)} g`,
+  ].join(' · ')
+}
+
+export function formatKcal(kcal: number): string {
+  return `${oneDecimal.format(kcal)} kcal`
+}

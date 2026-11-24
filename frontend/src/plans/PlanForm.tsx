@@ -6,8 +6,7 @@ import { NumberInput } from '@astryxdesign/core/NumberInput'
 import { TextInput } from '@astryxdesign/core/TextInput'
 import { VStack } from '@astryxdesign/core/VStack'
 import type { Food } from '../foods/foodApi.ts'
-import { FoodSearchPanel } from '../foods/FoodSearchPanel.tsx'
-import { useFoodSearch } from '../foods/useFoodSearch.ts'
+import { FoodPicker } from '../foods/FoodPicker.tsx'
 import { useSubmit } from '../useSubmit.ts'
 import { MealFields } from './MealFields.tsx'
 import type { PlanRequest } from './planApi.ts'
@@ -32,7 +31,6 @@ export function PlanForm({ initial, save, onSaved }: Props) {
   const [form, setForm] = useState(initial)
   const [pickingForMeal, setPickingForMeal] = useState<number | null>(null)
   const [query, setQuery] = useState('')
-  const { search, reload } = useFoodSearch(query)
   const { run, isRunning, error } = useSubmit()
   const request = toRequest(form)
 
@@ -77,11 +75,9 @@ export function PlanForm({ initial, save, onSaved }: Props) {
     return (
       <VStack gap={4}>
         <Button label="Voltar ao plano" variant="ghost" onClick={() => setPickingForMeal(null)} />
-        <FoodSearchPanel
+        <FoodPicker
           query={query}
           onQueryChange={setQuery}
-          search={search}
-          onRetry={reload}
           onSelect={(food) => addItem(pickingForMeal, food)}
           emptyDescription="Cadastre o alimento na aba Alimentos e volte aqui para usá-lo no plano."
         />

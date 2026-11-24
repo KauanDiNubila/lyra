@@ -19,7 +19,7 @@ function serve(options: { day?: DiaryDay; foods?: Food[]; post?: (init: RequestI
 }
 
 function posts() {
-  return fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST')
+  return fetchMock.mock.calls.filter(([url, init]) => init?.method === 'POST' && !String(url).endsWith('/plan'))
 }
 
 function dayRequests() {

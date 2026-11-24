@@ -1,3 +1,12 @@
+export class ApiError extends Error {
+  readonly status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.status = status
+  }
+}
+
 export async function send(url: string, init: RequestInit = {}): Promise<Response> {
   try {
     return await fetch(url, init)
@@ -10,7 +19,10 @@ export async function send(url: string, init: RequestInit = {}): Promise<Respons
 export async function ensureOk(response: Response): Promise<void> {
   if (response.ok) return
   const problem = await response.json().catch(() => null)
-  throw new Error(problem?.detail ?? `O servidor não conseguiu responder (erro ${response.status}). Tente de novo.`)
+  throw new ApiError(
+    problem?.detail ?? `O servidor não conseguiu responder (erro ${response.status}). Tente de novo.`,
+    response.status,
+  )
 }
 
 export async function readJson<T>(response: Response): Promise<T> {

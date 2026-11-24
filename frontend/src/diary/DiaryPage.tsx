@@ -10,18 +10,22 @@ import { List, ListItem } from '@astryxdesign/core/List'
 import { Spinner } from '@astryxdesign/core/Spinner'
 import { Text } from '@astryxdesign/core/Text'
 import { VStack } from '@astryxdesign/core/VStack'
-import { formatMacroValues, formatReference } from '../foods/formatNutrients.ts'
+import { formatKcal, formatKcalDifference, formatMacroValues, formatReference } from '../foods/formatNutrients.ts'
 import { AddEntryForm } from './AddEntryForm.tsx'
 import { shiftDay, todayIso } from './dates.ts'
 import type { DiaryEntry } from './diaryApi.ts'
+import { planNote } from './diaryFormat.ts'
 import { EditEntryForm } from './EditEntryForm.tsx'
+import { PlanSummary } from './PlanSummary.tsx'
 import { useDiaryDay } from './useDiaryDay.ts'
+import { useFillFromPlan } from './useFillFromPlan.ts'
 
 export function DiaryPage() {
   const [date, setDate] = useState(() => todayIso())
   const [isAdding, setIsAdding] = useState(false)
   const [editing, setEditing] = useState<DiaryEntry | null>(null)
   const { day, reload } = useDiaryDay(date)
+  const fill = useFillFromPlan(date, day, reload)
   const mealNames = day.status === 'success' ? day.data.meals.map((meal) => meal.name) : []
 
   function showAdded() {
@@ -52,12 +56,27 @@ export function DiaryPage() {
           <Button label="Tentar de novo" variant="secondary" onClick={reload} />
         </>
       )}
-      {day.status === 'success' && day.data.meals.length === 0 && (
-        <EmptyState
-          title="Nada registrado neste dia"
-          description="Quando você registrar o que comeu, as refeições e os totais aparecem aqui."
-          actions={<Button label="Adicionar alimento" variant="secondary" onClick={() => setIsAdding(true)} />}
-        />
+      {fill.isEmpty && fill.isFilling && <Spinner label="Preenchendo o dia com o plano" />}
+      {fill.isEmpty && !fill.isFilling && (
+        <>
+          {fill.failure && <Banner status="error" title="Não foi possível preencher o dia" description={fill.failure} />}
+          <EmptyState
+            title="Nada registrado neste dia"
+            description={
+              fill.hasNoPlan
+                ? 'Ative um plano na aba Plano para o diário abrir preenchido.'
+                : 'Quando você registrar o que comeu, as refeições e os totais aparecem aqui.'
+            }
+            actions={
+              <HStack gap={2} wrap="wrap">
+                {(date < todayIso() || fill.hasNoPlan || fill.failure !== null) && (
+                  <Button label="Preencher com o plano" variant="secondary" onClick={fill.fill} />
+                )}
+                <Button label="Adicionar alimento" variant="secondary" onClick={() => setIsAdding(true)} />
+              </HStack>
+            }
+          />
+        </>
       )}
       {day.status === 'success' && day.data.meals.length > 0 && (
         <>
@@ -65,10 +84,16 @@ export function DiaryPage() {
             <Text type="label">Total do dia</Text>
             <Text type="large">{formatMacroValues(day.data.total)}</Text>
           </VStack>
+          <PlanSummary day={day.data} />
           {day.data.meals.map((meal) => (
             <VStack key={meal.name} gap={1}>
               <Heading level={2}>{meal.name}</Heading>
               <Text type="supporting">{formatMacroValues(meal.total)}</Text>
+              {meal.entries.some((entry) => entry.planned !== null) && (
+                <Text type="supporting">
+                  {`Plano ${formatKcal(meal.plannedTotal.kcal)} · ${formatKcalDifference(meal.differenceFromPlan.kcal)}`}
+                </Text>
+              )}
               <List hasDividers>
                 {meal.entries.map((entry) => (
                   <ListItem
@@ -76,9 +101,12 @@ export function DiaryPage() {
                     label={entry.foodName}
                     onClick={() => setEditing(entry)}
                     description={
-                      <Text type="supporting" maxLines={2}>
-                        {`${formatReference(entry.quantity)} · ${formatMacroValues(entry.macros)}`}
-                      </Text>
+                      <VStack gap={0}>
+                        {planNote(entry) && <Text type="supporting">{planNote(entry)}</Text>}
+                        <Text type="supporting" maxLines={2}>
+                          {`${formatReference(entry.quantity)} · ${formatMacroValues(entry.macros)}`}
+                        </Text>
+                      </VStack>
                     }
                   />
                 ))}
