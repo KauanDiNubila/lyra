@@ -2,8 +2,10 @@ package app.lyra.identity;
 
 import app.lyra.TestSessions;
 import app.lyra.TestcontainersConfiguration;
+import app.lyra.TestUsers;
 import app.lyra.shared.domain.UserId;
 import jakarta.servlet.http.Cookie;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -14,6 +16,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
@@ -37,6 +40,14 @@ class IdentitySecurityTest {
 
     @Autowired
     private MockMvc mvc;
+
+    @Autowired
+    private JdbcClient jdbc;
+
+    @AfterEach
+    void removeWhatTheTestCreated() {
+        TestUsers.deleteEverything(jdbc);
+    }
 
     @Test
     void asksForASessionWithAProblemDetailsAnswer() throws Exception {
@@ -90,7 +101,7 @@ class IdentitySecurityTest {
     void writesToTheOtherRoutesNeedTheCsrfToken() throws Exception {
         mvc.perform(post("/api/plans").with(user(UserId.random().toString())).contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isForbidden());
-        mvc.perform(post("/api/plans").with(TestSessions.of(UserId.random())).contentType(MediaType.APPLICATION_JSON).content("{}"))
+        mvc.perform(post("/api/plans").with(TestSessions.of(TestUsers.insert(jdbc))).contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -107,6 +118,8 @@ class IdentitySecurityTest {
         String id = UUID.randomUUID().toString();
         return Stream.of(
                 Arguments.of(HttpMethod.GET, "/api/me"),
+                Arguments.of(HttpMethod.GET, "/api/me/export"),
+                Arguments.of(HttpMethod.DELETE, "/api/me"),
                 Arguments.of(HttpMethod.GET, "/api/foods?query=arroz"),
                 Arguments.of(HttpMethod.POST, "/api/foods"),
                 Arguments.of(HttpMethod.GET, "/api/plans"),

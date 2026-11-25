@@ -13,4 +13,6 @@ public interface UserRepository {
     Optional<User> findById(UserId id);
 
     Optional<User> findByProvider(AuthProvider provider, String providerSubject);
+
+    void deleteById(UserId id);
 }

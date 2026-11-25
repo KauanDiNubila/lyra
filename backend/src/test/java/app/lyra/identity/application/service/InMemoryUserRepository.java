@@ -36,6 +36,11 @@ class InMemoryUserRepository implements UserRepository {
                 .findFirst();
     }
 
+    @Override
+    public void deleteById(UserId id) {
+        users.remove(id);
+    }
+
     int count() {
         return users.size();
     }

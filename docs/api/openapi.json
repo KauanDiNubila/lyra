@@ -33,8 +33,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -43,8 +43,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "404" : {
+            "description" : "Not Found",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -98,8 +98,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -108,8 +108,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "404" : {
+            "description" : "Not Found",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -146,8 +146,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -156,8 +156,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "404" : {
+            "description" : "Not Found",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -205,8 +205,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -215,8 +215,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "404" : {
+            "description" : "Not Found",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -262,8 +262,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -272,8 +272,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "404" : {
+            "description" : "Not Found",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -318,8 +318,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -328,8 +328,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "404" : {
+            "description" : "Not Found",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -377,8 +377,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -387,8 +387,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "404" : {
+            "description" : "Not Found",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -434,8 +434,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -444,8 +444,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "404" : {
+            "description" : "Not Found",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -501,8 +501,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -511,8 +511,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "404" : {
+            "description" : "Not Found",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -558,8 +558,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -568,8 +568,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "404" : {
+            "description" : "Not Found",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -616,8 +616,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -626,8 +626,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "404" : {
+            "description" : "Not Found",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -664,8 +664,44 @@
               }
             }
           },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "404" : {
             "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "me-controller" ],
+        "operationId" : "deleteAccount",
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -684,12 +720,63 @@
               }
             }
           },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "204" : {
+            "description" : "No Content"
+          }
+        }
+      }
+    },
+    "/api/me/export" : {
+      "get" : {
+        "tags" : [ "me-controller" ],
+        "operationId" : "exportAccount",
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "200" : {
             "description" : "OK",
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/MeResponse"
+                  "$ref" : "#/components/schemas/AccountExportResponse"
                 }
               }
             }
@@ -721,8 +808,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -731,8 +818,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "404" : {
+            "description" : "Not Found",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -1157,6 +1244,243 @@
           },
           "name" : {
             "type" : "string"
+          }
+        }
+      },
+      "AccountExportResponse" : {
+        "type" : "object",
+        "properties" : {
+          "version" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "exportedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "account" : {
+            "$ref" : "#/components/schemas/ExportAccountJson"
+          },
+          "customFoods" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ExportFoodJson"
+            }
+          },
+          "plans" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ExportPlanJson"
+            }
+          },
+          "diaryEntries" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ExportDiaryEntryJson"
+            }
+          }
+        }
+      },
+      "ExportAccountJson" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "ExportDiaryEntryJson" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "date" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "mealName" : {
+            "type" : "string"
+          },
+          "foodId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "foodName" : {
+            "type" : "string"
+          },
+          "referenceAmount" : {
+            "type" : "number"
+          },
+          "referenceUnit" : {
+            "type" : "string"
+          },
+          "nutrients" : {
+            "$ref" : "#/components/schemas/ExportNutrientsJson"
+          },
+          "quantityAmount" : {
+            "type" : "number"
+          },
+          "quantityUnit" : {
+            "type" : "string"
+          },
+          "planned" : {
+            "$ref" : "#/components/schemas/ExportPlannedJson"
+          }
+        }
+      },
+      "ExportFoodJson" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "referenceAmount" : {
+            "type" : "number"
+          },
+          "referenceUnit" : {
+            "type" : "string"
+          },
+          "nutrients" : {
+            "$ref" : "#/components/schemas/ExportNutrientsJson"
+          }
+        }
+      },
+      "ExportItemJson" : {
+        "type" : "object",
+        "properties" : {
+          "foodId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "quantityAmount" : {
+            "type" : "number"
+          },
+          "quantityUnit" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ExportMacrosJson" : {
+        "type" : "object",
+        "properties" : {
+          "kcal" : {
+            "type" : "number"
+          },
+          "protein" : {
+            "type" : "number"
+          },
+          "carbohydrate" : {
+            "type" : "number"
+          },
+          "fat" : {
+            "type" : "number"
+          }
+        }
+      },
+      "ExportMealJson" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "time" : {
+            "type" : "string",
+            "format" : "time-local"
+          },
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ExportItemJson"
+            }
+          }
+        }
+      },
+      "ExportNutrientsJson" : {
+        "type" : "object",
+        "properties" : {
+          "kcal" : {
+            "type" : "number"
+          },
+          "protein" : {
+            "type" : "number"
+          },
+          "carbohydrate" : {
+            "type" : "number"
+          },
+          "fat" : {
+            "type" : "number"
+          },
+          "fiber" : {
+            "type" : "number"
+          },
+          "sodium" : {
+            "type" : "number"
+          }
+        }
+      },
+      "ExportPlanJson" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "active" : {
+            "type" : "boolean"
+          },
+          "targets" : {
+            "$ref" : "#/components/schemas/ExportMacrosJson"
+          },
+          "meals" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ExportMealJson"
+            }
+          }
+        }
+      },
+      "ExportPlannedJson" : {
+        "type" : "object",
+        "properties" : {
+          "foodId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "foodName" : {
+            "type" : "string"
+          },
+          "quantityAmount" : {
+            "type" : "number"
+          },
+          "quantityUnit" : {
+            "type" : "string"
+          },
+          "macros" : {
+            "$ref" : "#/components/schemas/ExportMacrosJson"
+          },
+          "slot" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       }

@@ -71,6 +71,18 @@ class DiaryEntryPersistenceAdapter implements DiaryEntryRepository {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<DiaryEntry> findAll(UserId user) {
+        return entityManager
+                .createQuery("select e from DiaryEntryJpaEntity e where e.userId = :user order by e.entryDate, e.entryOrder",
+                        DiaryEntryJpaEntity.class)
+                .setParameter("user", user.value())
+                .getResultList().stream()
+                .map(DiaryEntryPersistenceAdapter::toDomain)
+                .toList();
+    }
+
+    @Override
     @Transactional
     public void deleteById(UserId user, UUID id) {
         entityManager.createQuery("delete from DiaryEntryJpaEntity e where e.id = :id and e.userId = :user")

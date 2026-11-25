@@ -43,6 +43,14 @@ class UserPersistenceAdapter implements UserRepository {
                 .map(UserPersistenceAdapter::toDomain);
     }
 
+    @Override
+    @Transactional
+    public void deleteById(UserId id) {
+        entityManager.createQuery("delete from UserJpaEntity u where u.id = :id")
+                .setParameter("id", id.value())
+                .executeUpdate();
+    }
+
     private static UserJpaEntity toEntity(User user) {
         UserJpaEntity entity = new UserJpaEntity();
         entity.setId(user.getId().value());

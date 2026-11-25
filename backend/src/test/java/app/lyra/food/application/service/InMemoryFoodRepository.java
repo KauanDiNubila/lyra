@@ -58,6 +58,15 @@ class InMemoryFoodRepository implements FoodRepository {
                 .toList();
     }
 
+    @Override
+    public List<Food> findCustom(UserId user) {
+        return foods.stream()
+                .filter(stored -> user.equals(stored.owner()))
+                .map(Stored::food)
+                .sorted(Comparator.comparing(Food::getName).thenComparing(Food::getId))
+                .toList();
+    }
+
     List<Food> all() {
         return foods.stream().map(Stored::food).toList();
     }

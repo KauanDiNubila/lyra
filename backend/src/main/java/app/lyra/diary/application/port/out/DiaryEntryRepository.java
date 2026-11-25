@@ -18,5 +18,7 @@ public interface DiaryEntryRepository {
 
     List<DiaryEntry> findByDate(UserId user, LocalDate date);
 
+    List<DiaryEntry> findAll(UserId user);
+
     void deleteById(UserId user, UUID id);
 }

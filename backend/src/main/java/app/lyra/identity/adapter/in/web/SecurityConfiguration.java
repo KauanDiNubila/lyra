@@ -1,5 +1,6 @@
 package app.lyra.identity.adapter.in.web;
 
+import app.lyra.identity.application.port.in.GetCurrentUserUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -7,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 
 @Configuration
@@ -17,6 +19,7 @@ class SecurityConfiguration {
     private final GoogleOidcUserService googleOidcUserService;
     private final ProblemDetailsAuthenticationEntryPoint authenticationEntryPoint;
     private final SessionAwareAccessDeniedHandler accessDeniedHandler;
+    private final GetCurrentUserUseCase getCurrentUser;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) {
@@ -32,6 +35,7 @@ class SecurityConfiguration {
                         .logoutUrl("/api/logout")
                         .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
                 .csrf(csrf -> csrf.spa())
+                .addFilterBefore(new SignedInUserFilter(getCurrentUser, authenticationEntryPoint), AuthorizationFilter.class)
                 .exceptionHandling(handling -> handling
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler));

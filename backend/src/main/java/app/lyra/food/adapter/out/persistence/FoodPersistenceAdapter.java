@@ -84,6 +84,17 @@ class FoodPersistenceAdapter implements FoodRepository {
                 .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<Food> findCustom(UserId user) {
+        return entityManager
+                .createQuery("select f from FoodJpaEntity f where f.userId = :user order by f.name, f.id", FoodJpaEntity.class)
+                .setParameter("user", user.value())
+                .getResultList().stream()
+                .map(FoodPersistenceAdapter::toDomain)
+                .toList();
+    }
+
     private static String containsPattern(String term) {
         String literal = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
         return "%" + literal + "%";
