@@ -21,7 +21,7 @@ export type Nutrients = {
 export type Food = {
   id: string
   name: string
-  source: 'TACO' | 'CUSTOM'
+  source: 'TACO' | 'CUSTOM' | 'OPEN_FOOD_FACTS'
   referenceAmount: Quantity
   nutrients: Nutrients
 }
@@ -31,6 +31,11 @@ export type NewFood = Omit<Food, 'id' | 'source'>
 export async function searchFoods(query: string, signal: AbortSignal): Promise<Food[]> {
   const response = await send(`/api/foods?query=${encodeURIComponent(query)}`, { signal })
   return readJson<Food[]>(response)
+}
+
+export async function lookupBarcode(code: string): Promise<Food> {
+  const response = await send(`/api/foods/barcode/${encodeURIComponent(code)}`)
+  return readJson<Food>(response)
 }
 
 export async function createFood(food: NewFood): Promise<Food> {

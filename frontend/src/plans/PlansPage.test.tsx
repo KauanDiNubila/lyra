@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { jsonResponse, milkshake, rice } from '../diary/testSupport.ts'
+import { jsonResponse, milkshake, nutella, rice } from '../diary/testSupport.ts'
 import type { PlanSummary } from './planApi.ts'
 import { PlansPage } from './PlansPage.tsx'
 import { bulking, cutting, summary } from './testSupport.ts'
@@ -17,6 +17,7 @@ function serve(server: Server) {
   fetchMock.mockImplementation(async (url, init) => {
     const path = String(url)
     const method = init?.method ?? 'GET'
+    if (path.startsWith('/api/foods/barcode/')) return jsonResponse(nutella)
     if (path.startsWith('/api/foods')) return jsonResponse([rice, milkshake])
     if (path.endsWith('/activation')) return server.activate ? server.activate() : jsonResponse(cutting)
     if (method === 'POST' || method === 'PUT') {
@@ -142,6 +143,22 @@ describe('creating a plan', () => {
     })
     await waitFor(() => expect(screen.queryByRole('form', { name: 'Plano alimentar' })).not.toBeInTheDocument())
     expect(planListRequests()).toHaveLength(2)
+  })
+
+  it('adds a packaged food to a meal by its barcode', async () => {
+    serve({ plans: [] })
+    render(<PlansPage />)
+    const form = await openNewPlan()
+    const meal = within(form).getByRole('group', { name: 'Refeição 1' })
+    fireEvent.click(within(meal).getByRole('button', { name: 'Adicionar alimento' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Código de barras' }))
+    const barcode = await screen.findByRole('form', { name: 'Buscar por código de barras' })
+
+    setText(barcode, 'Código de barras', '7891000100103')
+    fireEvent.click(within(barcode).getByRole('button', { name: 'Buscar produto' }))
+
+    const withFood = await screen.findByRole('form', { name: 'Plano alimentar' })
+    expect(within(withFood).getByRole('group', { name: 'Nutella (Ferrero)' })).toBeInTheDocument()
   })
 
   it('starts the quantity from the reference amount of the food', async () => {
