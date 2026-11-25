@@ -1,6 +1,6 @@
 # ADR-013: Busca por código de barras com o Open Food Facts
 
-- **Data**: 2026-11-26
+- **Data**: 2026-11-25
 - **Status**: Proposta
 - **Decisores**: Kauan Di Nubila
 - **Tags**: alimentos, fontes externas, api, dados
