@@ -167,14 +167,15 @@ describe('adding a food to the diary', () => {
     await waitFor(() => expect(addButton(form)).not.toHaveAttribute('aria-disabled', 'true'))
   })
 
-  it('tells the user to register a missing food in the foods tab', async () => {
+  it('points to the quick add when the search finds nothing', async () => {
     serve({ foods: [] })
     render(<DiaryPage />)
     fireEvent.click(await screen.findByRole('button', { name: 'Adicionar' }))
 
     fireEvent.change(await screen.findByLabelText('Buscar alimento'), { target: { value: 'xyzzy' } })
 
-    expect(await screen.findByText('Cadastre o alimento na aba Alimentos e volte aqui para registrá-lo.')).toBeInTheDocument()
+    expect(await screen.findByText('Não achou? Use o botão abaixo para adicionar com os valores de uma porção.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Não achou? Adicionar rápido' })).toBeInTheDocument()
   })
 
   it('opens the same sheet from the empty day', async () => {
@@ -184,5 +185,125 @@ describe('adding a food to the diary', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Adicionar alimento' }))
 
     expect(await screen.findByLabelText('Buscar alimento')).toBeInTheDocument()
+  })
+})
+
+async function openQuickAdd(query: string) {
+  fireEvent.click(await screen.findByRole('button', { name: 'Adicionar' }))
+  fireEvent.change(await screen.findByLabelText('Buscar alimento'), { target: { value: query } })
+  fireEvent.click(await screen.findByRole('button', { name: 'Não achou? Adicionar rápido' }))
+  return screen.findByRole('form', { name: 'Adicionar rápido' })
+}
+
+function fillQuickAdd(form: HTMLElement) {
+  setAmount(form, 'Porções', '2')
+  setAmount(form, 'Calorias', '550')
+  setAmount(form, 'Proteína', '25')
+  setAmount(form, 'Carboidrato', '45')
+  setAmount(form, 'Gordura', '30')
+  fireEvent.click(within(form).getByRole('button', { name: 'Almoço' }))
+}
+
+describe('the quick add', () => {
+  it('is offered next to the results too, with the typed text as the name', async () => {
+    serve({})
+    render(<DiaryPage />)
+
+    const form = await openQuickAdd('Big Mac')
+
+    expect(within(form).getByLabelText('Nome', { exact: false })).toHaveValue('Big Mac')
+  })
+
+  it('puts the focus on the name when the form opens', async () => {
+    serve({})
+    render(<DiaryPage />)
+
+    const form = await openQuickAdd('Big Mac')
+
+    await waitFor(() => expect(within(form).getByLabelText('Nome', { exact: false })).toHaveFocus())
+  })
+
+  it('only allows adding when the name, the portions, the four values and the meal are filled', async () => {
+    serve({})
+    render(<DiaryPage />)
+    const form = await openQuickAdd('Big Mac')
+    expect(addButton(form)).toHaveAttribute('aria-disabled', 'true')
+
+    setAmount(form, 'Calorias', '550')
+    setAmount(form, 'Proteína', '25')
+    setAmount(form, 'Carboidrato', '45')
+    fireEvent.click(within(form).getByRole('button', { name: 'Almoço' }))
+    expect(addButton(form)).toHaveAttribute('aria-disabled', 'true')
+
+    setAmount(form, 'Gordura', '30')
+    await waitFor(() => expect(addButton(form)).not.toHaveAttribute('aria-disabled', 'true'))
+  })
+
+  it('sends the values of one portion and the number of portions, then shows the day again', async () => {
+    serve({})
+    render(<DiaryPage />)
+    const form = await openQuickAdd('Big Mac')
+    fillQuickAdd(form)
+    await waitFor(() => expect(addButton(form)).not.toHaveAttribute('aria-disabled', 'true'))
+    const requestsBefore = dayRequests().length
+
+    fireEvent.click(addButton(form))
+
+    await waitFor(() => expect(posts()).toHaveLength(1))
+    const [url, init] = posts()[0]
+    expect(String(url)).toBe('/api/diary/2026-11-19/quick-entries')
+    expect(JSON.parse(String(init?.body))).toEqual({
+      name: 'Big Mac',
+      mealName: 'Almoço',
+      portions: 2,
+      macros: { kcal: 550, protein: 25, carbohydrate: 45, fat: 30 },
+    })
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(dayRequests().length).toBeGreaterThan(requestsBefore)
+  })
+
+  it('sends once when the user clicks twice', async () => {
+    let answer: (response: Response) => void = () => {}
+    serve({ post: () => new Promise((resolve) => { answer = resolve }) })
+    render(<DiaryPage />)
+    const form = await openQuickAdd('Big Mac')
+    fillQuickAdd(form)
+    await waitFor(() => expect(addButton(form)).not.toHaveAttribute('aria-disabled', 'true'))
+
+    fireEvent.click(addButton(form))
+    fireEvent.click(addButton(form))
+
+    expect(posts()).toHaveLength(1)
+    await act(async () => answer(jsonResponse(lunchRice, 201)))
+    expect(posts()).toHaveLength(1)
+  })
+
+  it('says why the server refused and keeps what the user typed', async () => {
+    serve({ post: () => Promise.resolve(jsonResponse({ detail: 'Food name must have between 2 and 200 characters' }, 400)) })
+    render(<DiaryPage />)
+    const form = await openQuickAdd('Big Mac')
+    fillQuickAdd(form)
+    await waitFor(() => expect(addButton(form)).not.toHaveAttribute('aria-disabled', 'true'))
+
+    fireEvent.click(addButton(form))
+
+    const message = await screen.findByText('Food name must have between 2 and 200 characters')
+    const fat = within(form).getByLabelText('Gordura', { exact: false })
+    expect(fat.compareDocumentPosition(message) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(message.compareDocumentPosition(addButton(form)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByText('Não foi possível adicionar')).toBeInTheDocument()
+    expect(within(screen.getByRole('form', { name: 'Adicionar rápido' })).getByLabelText('Nome', { exact: false })).toHaveValue('Big Mac')
+    await waitFor(() => expect(addButton(form)).not.toHaveAttribute('aria-disabled', 'true'))
+  })
+
+  it('goes back to the search with the text the user had typed', async () => {
+    serve({})
+    render(<DiaryPage />)
+    const form = await openQuickAdd('arroz')
+
+    fireEvent.click(within(form).getByRole('button', { name: 'Voltar à busca' }))
+
+    expect(await screen.findByLabelText('Buscar alimento')).toHaveValue('arroz')
+    expect(screen.queryByRole('form', { name: 'Adicionar rápido' })).not.toBeInTheDocument()
   })
 })

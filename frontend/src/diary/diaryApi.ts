@@ -96,3 +96,19 @@ export async function removeEntry(id: string): Promise<void> {
   const response = await send(`/api/diary/entries/${id}`, { method: 'DELETE' })
   await ensureOk(response)
 }
+
+export type NewQuickEntry = {
+  mealName: string
+  name: string
+  portions: number
+  macros: Macros
+}
+
+export async function quickAddEntry(date: string, entry: NewQuickEntry): Promise<DiaryEntry> {
+  const response = await send(`/api/diary/${date}/quick-entries`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(entry),
+  })
+  return readJson<DiaryEntry>(response)
+}
