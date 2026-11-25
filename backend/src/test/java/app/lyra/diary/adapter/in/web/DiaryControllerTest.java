@@ -7,6 +7,7 @@ import app.lyra.diary.application.port.in.DeleteEntryUseCase;
 import app.lyra.diary.application.port.in.FillDayFromPlanUseCase;
 import app.lyra.diary.application.port.in.GetDiaryDayUseCase;
 import app.lyra.diary.application.port.in.LogEntryUseCase;
+import app.lyra.diary.application.port.in.QuickAddUseCase;
 import app.lyra.diary.domain.DiaryDay;
 import app.lyra.diary.domain.DiaryEntry;
 import app.lyra.diary.domain.DiaryEntryNotFoundException;
@@ -63,6 +64,10 @@ class DiaryControllerTest extends SignedInControllerTest {
     private static final LocalDate NO_PLAN_DATE = LocalDate.of(2026, 11, 26);
     private static final Macros TARGETS = new Macros(new BigDecimal("2000"), new BigDecimal("140"),
             new BigDecimal("200"), new BigDecimal("60"));
+    private static final String QUICK_ADD = """
+            {"mealName": "Almoço", "name": "Big Mac",
+             "macros": {"kcal": 550, "protein": 25, "carbohydrate": 45, "fat": 30}}
+            """;
     private static final DiaryEntry LUNCH = entry(LUNCH_ID, "Almoço", "100");
     private static final DiaryEntry DINNER = entry(DINNER_ID, "Jantar", "50");
     private static final AtomicReference<ChangeEntryCommand> LAST_CHANGE = new AtomicReference<>();
@@ -110,6 +115,16 @@ class DiaryControllerTest extends SignedInControllerTest {
         }
 
         @Bean
+        QuickAddUseCase quickAdd() {
+            return (userId, command) -> {
+                CALLERS.add(userId);
+                Food food = Food.custom(command.name(), new Quantity(BigDecimal.ONE, MeasurementUnit.PORTION), command.nutrients());
+                return DiaryEntry.log(food, command.date(), command.mealName(),
+                        new Quantity(command.portions(), MeasurementUnit.PORTION));
+            };
+        }
+
+        @Bean
         ChangeEntryUseCase changeEntry() {
             return (userId, id, command) -> {
                 CALLERS.add(userId);
@@ -149,13 +164,68 @@ class DiaryControllerTest extends SignedInControllerTest {
                 {"foodId": "00000000-0000-0000-0000-000000000001", "mealName": "Almoço",
                  "quantity": {"amount": 150, "unit": "GRAM"}}
                 """));
+        mvc.perform(post("/api/diary/2026-11-19/quick-entries").contentType(MediaType.APPLICATION_JSON).content(QUICK_ADD));
         mvc.perform(post("/api/diary/2026-11-25/plan"));
         mvc.perform(patch("/api/diary/entries/" + LUNCH_ID).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"mealName\": \"Jantar\"}"));
         mvc.perform(delete("/api/diary/entries/" + LUNCH_ID));
 
-        assertThat(CALLERS).hasSize(5).containsOnly(SIGNED_IN);
+        assertThat(CALLERS).hasSize(6).containsOnly(SIGNED_IN);
     }
+
+    @Test
+    void quickAddReturnsTheNewEntryWithTheMacrosOfAllThePortions() throws Exception {
+        mvc.perform(post("/api/diary/2026-11-19/quick-entries").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"mealName": "Almoço", "name": "Big Mac", "portions": 2,
+                         "macros": {"kcal": 550, "protein": 25, "carbohydrate": 45, "fat": 30}}
+                        """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").isNotEmpty())
+                .andExpect(jsonPath("$.foodId").isNotEmpty())
+                .andExpect(jsonPath("$.date").value("2026-11-19"))
+                .andExpect(jsonPath("$.mealName").value("Almoço"))
+                .andExpect(jsonPath("$.foodName").value("Big Mac"))
+                .andExpect(jsonPath("$.quantity.amount").value(2))
+                .andExpect(jsonPath("$.quantity.unit").value("PORTION"))
+                .andExpect(jsonPath("$.macros.kcal").value(1100))
+                .andExpect(jsonPath("$.origin").value("EXTRA"));
+    }
+
+    @Test
+    void quickAddEatsOnePortionWhenTheQuantityIsOmitted() throws Exception {
+        mvc.perform(post("/api/diary/2026-11-19/quick-entries").contentType(MediaType.APPLICATION_JSON).content(QUICK_ADD))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.quantity.amount").value(1))
+                .andExpect(jsonPath("$.macros.kcal").value(550));
+    }
+
+    @Test
+    void quickAddWithoutTheMacrosIsABadRequestProblem() throws Exception {
+        mvc.perform(post("/api/diary/2026-11-19/quick-entries").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"mealName\": \"Almoço\", \"name\": \"Big Mac\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.detail").value("macros are required"));
+    }
+
+    @Test
+    void quickAddWithAMissingNutrientNamesIt() throws Exception {
+        mvc.perform(post("/api/diary/2026-11-19/quick-entries").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"mealName": "Almoço", "name": "Big Mac", "macros": {"kcal": 550, "protein": 25, "fat": 30}}
+                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("carbohydrate is required"));
+    }
+
+    @Test
+    void quickAddWithAFoodNameThatIsTooShortIsABadRequestProblem() throws Exception {
+        mvc.perform(post("/api/diary/2026-11-19/quick-entries").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"mealName": "Almoço", "name": "B", "macros": {"kcal": 1, "protein": 1, "carbohydrate": 1, "fat": 1}}
+                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Invalid input"));
+    }
+
     @Test
     void dayGroupsEntriesByMealWithTotals() throws Exception {
         mvc.perform(get("/api/diary/2026-11-19"))
