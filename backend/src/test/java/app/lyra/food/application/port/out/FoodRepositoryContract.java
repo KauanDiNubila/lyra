@@ -168,6 +168,16 @@ public interface FoodRepositoryContract {
 
         assertThatThrownBy(() -> repository().save(owner(), taco)).isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    default void listsOnlyTheCustomFoodsOfTheUserByName() {
+        repository().save(owner(), food("Quimera b", FoodSource.CUSTOM));
+        repository().save(owner(), food("Quimera a", FoodSource.CUSTOM));
+        repository().save(otherOwner(), food("Quimera dele", FoodSource.CUSTOM));
+        seedTaco(food("Quimera taco", FoodSource.TACO));
+
+        assertThat(names(repository().findCustom(owner()))).containsExactly("Quimera a", "Quimera b");
+    }
     @Test
     default void tacoFoodsAreVisibleToEveryUser() {
         Food taco = food("Quimera publico", FoodSource.TACO);

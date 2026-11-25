@@ -695,6 +695,93 @@
             }
           }
         }
+      },
+      "delete" : {
+        "tags" : [ "me-controller" ],
+        "operationId" : "delete",
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "204" : {
+            "description" : "No Content"
+          }
+        }
+      }
+    },
+    "/api/me/export" : {
+      "get" : {
+        "tags" : [ "me-controller" ],
+        "operationId" : "export",
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountExportResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/diary/{date}" : {
@@ -1157,6 +1244,243 @@
           },
           "name" : {
             "type" : "string"
+          }
+        }
+      },
+      "AccountExportResponse" : {
+        "type" : "object",
+        "properties" : {
+          "version" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "exportedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "account" : {
+            "$ref" : "#/components/schemas/AccountJson"
+          },
+          "customFoods" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/FoodJson"
+            }
+          },
+          "plans" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PlanJson"
+            }
+          },
+          "diaryEntries" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DiaryEntryJson"
+            }
+          }
+        }
+      },
+      "AccountJson" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "DiaryEntryJson" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "date" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "mealName" : {
+            "type" : "string"
+          },
+          "foodId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "foodName" : {
+            "type" : "string"
+          },
+          "referenceAmount" : {
+            "type" : "number"
+          },
+          "referenceUnit" : {
+            "type" : "string"
+          },
+          "nutrients" : {
+            "$ref" : "#/components/schemas/ExportNutrientsJson"
+          },
+          "quantityAmount" : {
+            "type" : "number"
+          },
+          "quantityUnit" : {
+            "type" : "string"
+          },
+          "planned" : {
+            "$ref" : "#/components/schemas/PlannedJson"
+          }
+        }
+      },
+      "ExportMacrosJson" : {
+        "type" : "object",
+        "properties" : {
+          "kcal" : {
+            "type" : "number"
+          },
+          "protein" : {
+            "type" : "number"
+          },
+          "carbohydrate" : {
+            "type" : "number"
+          },
+          "fat" : {
+            "type" : "number"
+          }
+        }
+      },
+      "ExportNutrientsJson" : {
+        "type" : "object",
+        "properties" : {
+          "kcal" : {
+            "type" : "number"
+          },
+          "protein" : {
+            "type" : "number"
+          },
+          "carbohydrate" : {
+            "type" : "number"
+          },
+          "fat" : {
+            "type" : "number"
+          },
+          "fiber" : {
+            "type" : "number"
+          },
+          "sodium" : {
+            "type" : "number"
+          }
+        }
+      },
+      "FoodJson" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "referenceAmount" : {
+            "type" : "number"
+          },
+          "referenceUnit" : {
+            "type" : "string"
+          },
+          "nutrients" : {
+            "$ref" : "#/components/schemas/ExportNutrientsJson"
+          }
+        }
+      },
+      "ItemJson" : {
+        "type" : "object",
+        "properties" : {
+          "foodId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "quantityAmount" : {
+            "type" : "number"
+          },
+          "quantityUnit" : {
+            "type" : "string"
+          }
+        }
+      },
+      "MealJson" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "time" : {
+            "type" : "string",
+            "format" : "time-local"
+          },
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ItemJson"
+            }
+          }
+        }
+      },
+      "PlanJson" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "active" : {
+            "type" : "boolean"
+          },
+          "targets" : {
+            "$ref" : "#/components/schemas/ExportMacrosJson"
+          },
+          "meals" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MealJson"
+            }
+          }
+        }
+      },
+      "PlannedJson" : {
+        "type" : "object",
+        "properties" : {
+          "foodId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "foodName" : {
+            "type" : "string"
+          },
+          "quantityAmount" : {
+            "type" : "number"
+          },
+          "quantityUnit" : {
+            "type" : "string"
+          },
+          "macros" : {
+            "$ref" : "#/components/schemas/ExportMacrosJson"
+          },
+          "slot" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       }

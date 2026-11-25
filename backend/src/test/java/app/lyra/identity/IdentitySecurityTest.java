@@ -107,6 +107,8 @@ class IdentitySecurityTest {
         String id = UUID.randomUUID().toString();
         return Stream.of(
                 Arguments.of(HttpMethod.GET, "/api/me"),
+                Arguments.of(HttpMethod.GET, "/api/me/export"),
+                Arguments.of(HttpMethod.DELETE, "/api/me"),
                 Arguments.of(HttpMethod.GET, "/api/foods?query=arroz"),
                 Arguments.of(HttpMethod.POST, "/api/foods"),
                 Arguments.of(HttpMethod.GET, "/api/plans"),

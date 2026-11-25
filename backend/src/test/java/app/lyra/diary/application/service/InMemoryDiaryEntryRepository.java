@@ -5,6 +5,7 @@ import app.lyra.diary.domain.DiaryEntry;
 import app.lyra.shared.domain.UserId;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,15 @@ class InMemoryDiaryEntryRepository implements DiaryEntryRepository {
         return entries.values().stream()
                 .filter(stored -> stored.owner().equals(user) && stored.entry().getDate().equals(date))
                 .map(Stored::entry)
+                .toList();
+    }
+
+    @Override
+    public List<DiaryEntry> findAll(UserId user) {
+        return entries.values().stream()
+                .filter(stored -> stored.owner().equals(user))
+                .map(Stored::entry)
+                .sorted(Comparator.comparing(DiaryEntry::getDate))
                 .toList();
     }
 

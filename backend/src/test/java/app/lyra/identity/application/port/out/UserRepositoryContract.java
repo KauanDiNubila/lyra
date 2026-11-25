@@ -45,6 +45,30 @@ public interface UserRepositoryContract {
     }
 
     @Test
+    default void deletesOnlyTheUserWithThatId() {
+        User ana = User.create(AuthProvider.GOOGLE, "sub-1", "ana@example.com", "Ana");
+        User bia = User.create(AuthProvider.GOOGLE, "sub-2", "bia@example.com", "Bia");
+        repository().save(ana);
+        repository().save(bia);
+
+        repository().deleteById(ana.getId());
+
+        assertThat(repository().findById(ana.getId())).isEmpty();
+        assertThat(repository().findByProvider(AuthProvider.GOOGLE, "sub-1")).isEmpty();
+        assertThat(repository().findById(bia.getId())).isPresent();
+    }
+
+    @Test
+    default void deletingAnUnknownUserChangesNothing() {
+        User ana = User.create(AuthProvider.GOOGLE, "sub-1", "ana@example.com", "Ana");
+        repository().save(ana);
+
+        repository().deleteById(UserId.random());
+
+        assertThat(repository().findById(ana.getId())).isPresent();
+    }
+
+    @Test
     default void savingAgainWithTheSameIdChangesTheProfile() {
         User user = User.create(AuthProvider.GOOGLE, "sub-1", "ana@example.com", "Ana");
         repository().save(user);

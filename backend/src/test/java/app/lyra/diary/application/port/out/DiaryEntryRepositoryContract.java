@@ -220,6 +220,19 @@ public interface DiaryEntryRepositoryContract {
                 .isInstanceOf(IllegalStateException.class);
         assertThat(repository().findById(owner(), entry.getId()).orElseThrow().getQuantity().amount()).isEqualByComparingTo("100");
     }
+
+    @Test
+    default void listsEveryEntryOfTheUserByDateThenByTheOrderTheyWereSaved() {
+        DiaryEntry later = entry(DATE.plusDays(1), "Almoço", "100", nutrients(null, null));
+        DiaryEntry first = entry(DATE, "Almoço", "100", nutrients(null, null));
+        DiaryEntry second = entry(DATE, "Jantar", "100", nutrients(null, null));
+        repository().save(owner(), later);
+        repository().save(owner(), first);
+        repository().save(otherOwner(), entry(DATE, "Almoço", "100", nutrients(null, null)));
+        repository().save(owner(), second);
+
+        assertThat(repository().findAll(owner())).containsExactly(first, second, later);
+    }
     @Test
     default void anotherUserCannotDeleteAnEntry() {
         DiaryEntry entry = entry(DATE, "Almoço", "100", nutrients(null, null));

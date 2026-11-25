@@ -1,5 +1,6 @@
 package app.lyra.identity.adapter.in.web;
 
+import app.lyra.TestSessions;
 import app.lyra.TestcontainersConfiguration;
 import app.lyra.identity.application.port.in.SignInUseCase;
 import app.lyra.identity.application.port.in.SignInUseCase.SignInCommand;
@@ -15,15 +16,20 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import java.time.Instant;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -55,6 +61,45 @@ class MeApiTest {
                 .andExpect(jsonPath("$.id").value(user.getId().toString()))
                 .andExpect(jsonPath("$.email").value("ana@example.com"))
                 .andExpect(jsonPath("$.name").value("Ana Souza"));
+    }
+
+    @Test
+    void exportsTheAccountAsADownloadEvenWhenItHasNoData() throws Exception {
+        User user = signIn.signIn(new SignInCommand(AuthProvider.GOOGLE, "sub-1", "Ana@Example.com", "Ana Souza"));
+
+        mvc.perform(get("/api/me/export").with(sessionOf(user.getId())))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=\"lyra-export.json\""))
+                .andExpect(jsonPath("$.version").value(1))
+                .andExpect(jsonPath("$.exportedAt").isNotEmpty())
+                .andExpect(jsonPath("$.account.id").value(user.getId().toString()))
+                .andExpect(jsonPath("$.account.email").value("ana@example.com"))
+                .andExpect(jsonPath("$.account.name").value("Ana Souza"))
+                .andExpect(jsonPath("$.customFoods", hasSize(0)))
+                .andExpect(jsonPath("$.plans", hasSize(0)))
+                .andExpect(jsonPath("$.diaryEntries", hasSize(0)));
+    }
+
+    @Test
+    void deletesTheAccountAndEndsTheSession() throws Exception {
+        User user = signIn.signIn(new SignInCommand(AuthProvider.GOOGLE, "sub-1", "ana@example.com", "Ana"));
+        MockHttpSession session = new MockHttpSession();
+
+        mvc.perform(delete("/api/me").session(session).with(TestSessions.of(user.getId())))
+                .andExpect(status().isNoContent());
+
+        assertThat(session.isInvalid()).isTrue();
+        assertThat(jdbc.sql("select count(*) from app_user").query(Integer.class).single()).isZero();
+    }
+
+    @Test
+    void deletingTheAccountNeedsTheCsrfToken() throws Exception {
+        User user = signIn.signIn(new SignInCommand(AuthProvider.GOOGLE, "sub-1", "ana@example.com", "Ana"));
+
+        mvc.perform(delete("/api/me").with(sessionOf(user.getId())))
+                .andExpect(status().isForbidden());
+
+        assertThat(jdbc.sql("select count(*) from app_user").query(Integer.class).single()).isEqualTo(1);
     }
 
     @Test

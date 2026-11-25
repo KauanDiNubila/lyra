@@ -18,4 +18,6 @@ public interface FoodRepository {
     List<Food> findAllById(UserId user, Collection<UUID> ids);
 
     List<Food> search(UserId user, FoodSearchQuery query, int limit);
+
+    List<Food> findCustom(UserId user);
 }

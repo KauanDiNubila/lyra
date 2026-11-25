@@ -23,6 +23,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -143,13 +144,51 @@ class DataOwnershipApiTest {
         String brunoPlan = createPlan(bruno, "Plano do Bruno", tacoFood(bruno));
         perform(bruno, post("/api/plans/" + brunoPlan + "/activation")).andExpect(status().isOk());
 
-        jdbc.sql("delete from app_user where id = :id").param("id", ana.value()).update();
+        perform(ana, delete("/api/me")).andExpect(status().isNoContent());
 
-        for (String table : new String[] {"food", "diet_plan", "diary_entry"}) {
-            assertThat(rowsOf(table, ana)).as(table + " of the deleted user").isZero();
+        for (String table : new String[] {"app_user", "food", "diet_plan", "diary_entry"}) {
+            assertThat(rowsOf(table, "app_user".equals(table) ? "id" : "user_id", ana)).as(table + " of the deleted user").isZero();
         }
-        assertThat(rowsOf("food", bruno)).isEqualTo(1);
-        assertThat(rowsOf("diet_plan", bruno)).isEqualTo(1);
+        assertThat(rowsOf("food", "user_id", bruno)).isEqualTo(1);
+        assertThat(rowsOf("diet_plan", "user_id", bruno)).isEqualTo(1);
+        perform(bruno, get("/api/me/export"))
+                .andExpect(jsonPath("$.customFoods", hasSize(1)))
+                .andExpect(jsonPath("$.plans", hasSize(1)));
+    }
+
+    @Test
+    void theExportHasOnlyTheDataOfWhoAsks() throws Exception {
+        perform(ana, get("/api/me/export"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=\"lyra-export.json\""))
+                .andExpect(jsonPath("$.version").value(1))
+                .andExpect(jsonPath("$.account.id").value(ana.toString()))
+                .andExpect(jsonPath("$.customFoods", hasSize(1)))
+                .andExpect(jsonPath("$.customFoods[0].name").value("Quimera da Ana"))
+                .andExpect(jsonPath("$.plans", hasSize(1)))
+                .andExpect(jsonPath("$.plans[0].name").value("Plano da Ana"))
+                .andExpect(jsonPath("$.plans[0].active").value(true))
+                .andExpect(jsonPath("$.diaryEntries", hasSize(1)))
+                .andExpect(jsonPath("$.diaryEntries[0].foodId").value(anaFood));
+        perform(bruno, get("/api/me/export"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.account.id").value(bruno.toString()))
+                .andExpect(jsonPath("$.customFoods", hasSize(0)))
+                .andExpect(jsonPath("$.plans", hasSize(0)))
+                .andExpect(jsonPath("$.diaryEntries", hasSize(0)));
+    }
+
+    @Test
+    void theExportOfAFilledDayKeepsWhatWasPlanned() throws Exception {
+        perform(bruno, post("/api/plans/" + createPlan(bruno, "Plano do Bruno", tacoFood(bruno)) + "/activation"))
+                .andExpect(status().isOk());
+        perform(bruno, post(DAY + "/plan")).andExpect(status().isOk());
+
+        perform(bruno, get("/api/me/export"))
+                .andExpect(jsonPath("$.plans[0].meals[0].items", hasSize(1)))
+                .andExpect(jsonPath("$.diaryEntries", hasSize(1)))
+                .andExpect(jsonPath("$.diaryEntries[0].planned.slot").value(0))
+                .andExpect(jsonPath("$.diaryEntries[0].planned.macros.kcal").isNotEmpty());
     }
 
     @Test
@@ -158,8 +197,8 @@ class DataOwnershipApiTest {
         perform(bruno, get("/api/me")).andExpect(jsonPath("$.id").value(bruno.toString()));
     }
 
-    private int rowsOf(String table, UserId user) {
-        return jdbc.sql("select count(*) from " + table + " where user_id = :id")
+    private int rowsOf(String table, String column, UserId user) {
+        return jdbc.sql("select count(*) from " + table + " where " + column + " = :id")
                 .param("id", user.value())
                 .query(Integer.class)
                 .single();
