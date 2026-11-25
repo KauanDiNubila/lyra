@@ -9,12 +9,13 @@ import { VStack } from '@astryxdesign/core/VStack'
 import { DiaryPage } from './diary/DiaryPage.tsx'
 import { FoodsPage } from './foods/FoodsPage.tsx'
 import { PlansPage } from './plans/PlansPage.tsx'
+import { AccountPage } from './session/AccountPage.tsx'
 import { LoginPage } from './session/LoginPage.tsx'
 import { useSession } from './session/useSession.ts'
 import { useSubmit } from './useSubmit.ts'
 
 function App() {
-  const { session, retry, signOut } = useSession()
+  const { session, retry, signOut, deleteAccount } = useSession()
   const [tab, setTab] = useState('diary')
   const exit = useSubmit()
 
@@ -46,6 +47,7 @@ function App() {
         <Tab value="diary" label="Diário" panelId="diary-page" />
         <Tab value="plans" label="Plano" panelId="plans-page" />
         <Tab value="foods" label="Alimentos" panelId="foods-page" />
+        <Tab value="account" label="Conta" panelId="account-page" />
       </TabList>
       <section id="diary-page" role="tabpanel" hidden={tab !== 'diary'}>
         <DiaryPage />
@@ -55,6 +57,9 @@ function App() {
       </section>
       <section id="foods-page" role="tabpanel" hidden={tab !== 'foods'}>
         <FoodsPage />
+      </section>
+      <section id="account-page" role="tabpanel" hidden={tab !== 'account'}>
+        {tab === 'account' && <AccountPage user={session.user} onDeleteAccount={deleteAccount} />}
       </section>
     </>
   )

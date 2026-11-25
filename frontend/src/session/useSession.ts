@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { onUnauthorized } from '../http.ts'
 import { useAsyncResource, type Resource } from '../useAsyncResource.ts'
-import { fetchMe, logout, type User } from './sessionApi.ts'
+import { deleteAccount as requestAccountDeletion, fetchMe, logout, type User } from './sessionApi.ts'
 
 export type Session =
   | { status: 'loading' }
@@ -9,7 +9,12 @@ export type Session =
   | { status: 'signed-out' }
   | { status: 'error'; message: string }
 
-export function useSession(): { session: Session; retry: () => void; signOut: () => Promise<void> } {
+export function useSession(): {
+  session: Session
+  retry: () => void
+  signOut: () => Promise<void>
+  deleteAccount: () => Promise<void>
+} {
   const { resource, reload } = useAsyncResource('me', fetchMe)
   const [isEnded, setIsEnded] = useState(false)
 
@@ -20,12 +25,17 @@ export function useSession(): { session: Session; retry: () => void; signOut: ()
     setIsEnded(true)
   }
 
+  async function deleteAccount() {
+    await requestAccountDeletion()
+    setIsEnded(true)
+  }
+
   function retry() {
     setIsEnded(false)
     reload()
   }
 
-  return { session: toSession(resource, isEnded), retry, signOut }
+  return { session: toSession(resource, isEnded), retry, signOut, deleteAccount }
 }
 
 function toSession(resource: Resource<User | null>, isEnded: boolean): Session {
