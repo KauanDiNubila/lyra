@@ -9,6 +9,141 @@
     "description" : "Generated server url"
   } ],
   "paths" : {
+    "/api/weights/{date}" : {
+      "put" : {
+        "tags" : [ "weight-controller" ],
+        "operationId" : "recordWeight",
+        "parameters" : [ {
+          "name" : "date",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/WeightRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "Service Unavailable",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WeightResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "weight-controller" ],
+        "operationId" : "delete",
+        "parameters" : [ {
+          "name" : "date",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "Service Unavailable",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "204" : {
+            "description" : "No Content"
+          }
+        }
+      }
+    },
     "/api/plans/{id}" : {
       "get" : {
         "tags" : [ "plan-controller" ],
@@ -43,8 +178,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -53,8 +188,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "Service Unavailable",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -118,8 +253,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -128,8 +263,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "Service Unavailable",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -176,8 +311,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -186,8 +321,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "Service Unavailable",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -245,8 +380,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -255,8 +390,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "Service Unavailable",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -312,8 +447,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -322,8 +457,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "Service Unavailable",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -378,8 +513,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -388,8 +523,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "Service Unavailable",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -447,8 +582,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -457,8 +592,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "Service Unavailable",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -524,8 +659,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -534,8 +669,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "Service Unavailable",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -591,8 +726,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -601,8 +736,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "Service Unavailable",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -668,8 +803,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -678,8 +813,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "Service Unavailable",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -735,8 +870,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -745,8 +880,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "Service Unavailable",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -803,8 +938,56 @@
               }
             }
           },
+          "503" : {
+            "description" : "Service Unavailable",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Unauthorized",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EntryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/weights" : {
+      "get" : {
+        "tags" : [ "weight-controller" ],
+        "operationId" : "list",
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -823,12 +1006,25 @@
               }
             }
           },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "200" : {
             "description" : "OK",
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/EntryResponse"
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/WeightResponse"
+                  }
                 }
               }
             }
@@ -861,8 +1057,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -871,8 +1067,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "Service Unavailable",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -917,8 +1113,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -927,8 +1123,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "Service Unavailable",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -968,8 +1164,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -978,8 +1174,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "Service Unavailable",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -1034,8 +1230,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -1044,8 +1240,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "Service Unavailable",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -1101,8 +1297,8 @@
               }
             }
           },
-          "401" : {
-            "description" : "Unauthorized",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -1111,8 +1307,8 @@
               }
             }
           },
-          "503" : {
-            "description" : "Service Unavailable",
+          "401" : {
+            "description" : "Unauthorized",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -1161,6 +1357,26 @@
           "properties" : {
             "type" : "object",
             "additionalProperties" : { }
+          }
+        }
+      },
+      "WeightRequest" : {
+        "type" : "object",
+        "properties" : {
+          "kilograms" : {
+            "type" : "number"
+          }
+        }
+      },
+      "WeightResponse" : {
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "kilograms" : {
+            "type" : "number"
           }
         }
       },
@@ -1588,6 +1804,12 @@
             "items" : {
               "$ref" : "#/components/schemas/ExportDiaryEntryJson"
             }
+          },
+          "weights" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ExportWeightJson"
+            }
           }
         }
       },
@@ -1791,6 +2013,18 @@
           "slot" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }
+      },
+      "ExportWeightJson" : {
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "kilograms" : {
+            "type" : "number"
           }
         }
       }

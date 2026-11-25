@@ -54,6 +54,8 @@ class DataOwnershipApiTest {
         anaPlan = createPlan(ana, "Plano da Ana", tacoFood(ana));
         perform(ana, post("/api/plans/" + anaPlan + "/activation")).andExpect(status().isOk());
         anaEntry = logEntry(ana, anaFood);
+        perform(ana, put("/api/weights/2026-11-19").contentType(MediaType.APPLICATION_JSON).content("{\"kilograms\": 82.4}"))
+                .andExpect(status().isOk());
     }
 
     @AfterEach
@@ -142,6 +144,20 @@ class DataOwnershipApiTest {
     }
 
     @Test
+    void theWeightsOfAnotherUserAreNeitherListedNorDeletedNorOverwritten() throws Exception {
+        perform(bruno, get("/api/weights"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+        perform(bruno, delete("/api/weights/2026-11-19")).andExpect(status().isNotFound());
+        perform(bruno, put("/api/weights/2026-11-19").contentType(MediaType.APPLICATION_JSON).content("{\"kilograms\": 60}"))
+                .andExpect(status().isOk());
+
+        perform(ana, get("/api/weights"))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].kilograms").value(82.4));
+    }
+
+    @Test
     void fillingTheDayUsesOnlyThePlanOfWhoAsks() throws Exception {
         perform(bruno, post(DAY + "/plan")).andExpect(status().isNotFound());
 
@@ -161,7 +177,7 @@ class DataOwnershipApiTest {
 
         perform(ana, delete("/api/me")).andExpect(status().isNoContent());
 
-        for (String table : new String[] {"app_user", "food", "diet_plan", "diary_entry"}) {
+        for (String table : new String[] {"app_user", "food", "diet_plan", "diary_entry", "weight_entry"}) {
             assertThat(rowsOf(table, "app_user".equals(table) ? "id" : "user_id", ana)).as(table + " of the deleted user").isZero();
         }
         assertThat(rowsOf("food", "user_id", bruno)).isEqualTo(1);
@@ -198,13 +214,17 @@ class DataOwnershipApiTest {
                 .andExpect(jsonPath("$.plans[0].name").value("Plano da Ana"))
                 .andExpect(jsonPath("$.plans[0].active").value(true))
                 .andExpect(jsonPath("$.diaryEntries", hasSize(1)))
-                .andExpect(jsonPath("$.diaryEntries[0].foodId").value(anaFood));
+                .andExpect(jsonPath("$.diaryEntries[0].foodId").value(anaFood))
+                .andExpect(jsonPath("$.weights", hasSize(1)))
+                .andExpect(jsonPath("$.weights[0].date").value("2026-11-19"))
+                .andExpect(jsonPath("$.weights[0].kilograms").value(82.4));
         perform(bruno, get("/api/me/export"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.account.id").value(bruno.toString()))
                 .andExpect(jsonPath("$.customFoods", hasSize(0)))
                 .andExpect(jsonPath("$.plans", hasSize(0)))
-                .andExpect(jsonPath("$.diaryEntries", hasSize(0)));
+                .andExpect(jsonPath("$.diaryEntries", hasSize(0)))
+                .andExpect(jsonPath("$.weights", hasSize(0)));
     }
 
     @Test

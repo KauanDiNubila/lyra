@@ -112,7 +112,8 @@ Os recursos futuros se encaixam como novos adaptadores ou novos módulos: o regi
 | POST | `/api/diary/{date}/entries` | Registrar um alimento em uma refeição |
 | PATCH | `/api/diary/entries/{id}` | Mudar a quantidade (a troca do alimento chega com a slice 4) |
 | DELETE | `/api/diary/entries/{id}` | Remover uma entrada |
-| GET, POST | `/api/weights` | Listar e registrar o peso corporal |
+| GET | `/api/weights` | Listar os pesos do usuário |
+| PUT, DELETE | `/api/weights/{date}` | Registrar (ou trocar) e apagar o peso de uma data ([ADR-016](../adr/016-weight-log.md)) |
 
 O contrato das rotas já construídas é o `docs/api/openapi.json` que fica no repositório ([ADR-008](../adr/008-food-catalog-import-and-api.md), [ADR-009](../adr/009-diary-entries-and-api.md)); as outras rotas continuam sendo um rascunho.
 
