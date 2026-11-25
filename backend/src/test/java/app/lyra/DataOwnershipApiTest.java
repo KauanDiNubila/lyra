@@ -157,6 +157,20 @@ class DataOwnershipApiTest {
     }
 
     @Test
+    void aSessionOfADeletedAccountIsRefusedOnEveryRoute() throws Exception {
+        perform(ana, delete("/api/me")).andExpect(status().isNoContent());
+
+        perform(ana, get("/api/me")).andExpect(status().isUnauthorized());
+        perform(ana, get("/api/plans")).andExpect(status().isUnauthorized());
+        perform(ana, post("/api/foods").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"name": "Fantasma", "referenceAmount": {"amount": 100, "unit": "GRAM"},
+                         "nutrients": {"kcal": 1, "protein": 1, "carbohydrate": 1, "fat": 1}}
+                        """))
+                .andExpect(status().isUnauthorized());
+        assertThat(rowsOf("food", "user_id", ana)).isZero();
+    }
+
+    @Test
     void theExportHasOnlyTheDataOfWhoAsks() throws Exception {
         perform(ana, get("/api/me/export"))
                 .andExpect(status().isOk())

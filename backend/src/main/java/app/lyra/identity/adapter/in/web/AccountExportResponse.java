@@ -22,10 +22,10 @@ import java.util.UUID;
 record AccountExportResponse(
         int version,
         Instant exportedAt,
-        AccountJson account,
-        List<FoodJson> customFoods,
-        List<PlanJson> plans,
-        List<DiaryEntryJson> diaryEntries) {
+        ExportAccountJson account,
+        List<ExportFoodJson> customFoods,
+        List<ExportPlanJson> plans,
+        List<ExportDiaryEntryJson> diaryEntries) {
 
     static final int VERSION = 1;
 
@@ -33,16 +33,16 @@ record AccountExportResponse(
         return new AccountExportResponse(
                 VERSION,
                 Instant.now(),
-                AccountJson.from(export.user()),
-                export.customFoods().stream().map(FoodJson::from).toList(),
-                export.plans().stream().map(PlanJson::from).toList(),
-                export.diaryEntries().stream().map(DiaryEntryJson::from).toList());
+                ExportAccountJson.from(export.user()),
+                export.customFoods().stream().map(ExportFoodJson::from).toList(),
+                export.plans().stream().map(ExportPlanJson::from).toList(),
+                export.diaryEntries().stream().map(ExportDiaryEntryJson::from).toList());
     }
 
-    record AccountJson(UUID id, String email, String name, Instant createdAt) {
+    record ExportAccountJson(UUID id, String email, String name, Instant createdAt) {
 
-        static AccountJson from(User user) {
-            return new AccountJson(user.getId().value(), user.getEmail(), user.getName(), user.getCreatedAt());
+        static ExportAccountJson from(User user) {
+            return new ExportAccountJson(user.getId().value(), user.getEmail(), user.getName(), user.getCreatedAt());
         }
     }
 
@@ -66,53 +66,53 @@ record AccountExportResponse(
         }
     }
 
-    record FoodJson(UUID id, String name, BigDecimal referenceAmount, String referenceUnit, ExportNutrientsJson nutrients) {
+    record ExportFoodJson(UUID id, String name, BigDecimal referenceAmount, String referenceUnit, ExportNutrientsJson nutrients) {
 
-        static FoodJson from(Food food) {
-            return new FoodJson(food.getId(), food.getName(), food.getReferenceAmount().amount(),
+        static ExportFoodJson from(Food food) {
+            return new ExportFoodJson(food.getId(), food.getName(), food.getReferenceAmount().amount(),
                     food.getReferenceAmount().unit().name(), ExportNutrientsJson.from(food.getNutrients()));
         }
     }
 
-    record PlanJson(UUID id, String name, boolean active, ExportMacrosJson targets, List<MealJson> meals) {
+    record ExportPlanJson(UUID id, String name, boolean active, ExportMacrosJson targets, List<ExportMealJson> meals) {
 
-        static PlanJson from(DietPlan plan) {
-            return new PlanJson(plan.getId(), plan.getName(), plan.isActive(), ExportMacrosJson.from(plan.getTargets()),
-                    plan.getMeals().stream().map(MealJson::from).toList());
+        static ExportPlanJson from(DietPlan plan) {
+            return new ExportPlanJson(plan.getId(), plan.getName(), plan.isActive(), ExportMacrosJson.from(plan.getTargets()),
+                    plan.getMeals().stream().map(ExportMealJson::from).toList());
         }
     }
 
-    record MealJson(String name, LocalTime time, List<ItemJson> items) {
+    record ExportMealJson(String name, LocalTime time, List<ExportItemJson> items) {
 
-        static MealJson from(PlannedMeal meal) {
-            return new MealJson(meal.name(), meal.time(), meal.items().stream().map(ItemJson::from).toList());
+        static ExportMealJson from(PlannedMeal meal) {
+            return new ExportMealJson(meal.name(), meal.time(), meal.items().stream().map(ExportItemJson::from).toList());
         }
     }
 
-    record ItemJson(UUID foodId, BigDecimal quantityAmount, String quantityUnit) {
+    record ExportItemJson(UUID foodId, BigDecimal quantityAmount, String quantityUnit) {
 
-        static ItemJson from(PlannedItem item) {
-            return new ItemJson(item.foodId(), item.quantity().amount(), item.quantity().unit().name());
+        static ExportItemJson from(PlannedItem item) {
+            return new ExportItemJson(item.foodId(), item.quantity().amount(), item.quantity().unit().name());
         }
     }
 
-    record DiaryEntryJson(UUID id, LocalDate date, String mealName, UUID foodId, String foodName,
+    record ExportDiaryEntryJson(UUID id, LocalDate date, String mealName, UUID foodId, String foodName,
                           BigDecimal referenceAmount, String referenceUnit, ExportNutrientsJson nutrients,
-                          BigDecimal quantityAmount, String quantityUnit, PlannedJson planned) {
+                          BigDecimal quantityAmount, String quantityUnit, ExportPlannedJson planned) {
 
-        static DiaryEntryJson from(DiaryEntry entry) {
-            return new DiaryEntryJson(entry.getId(), entry.getDate(), entry.getMealName(), entry.getFoodId(),
+        static ExportDiaryEntryJson from(DiaryEntry entry) {
+            return new ExportDiaryEntryJson(entry.getId(), entry.getDate(), entry.getMealName(), entry.getFoodId(),
                     entry.getFoodName(), entry.getFoodReference().amount(), entry.getFoodReference().unit().name(),
                     ExportNutrientsJson.from(entry.getNutrients()), entry.getQuantity().amount(),
-                    entry.getQuantity().unit().name(), entry.getPlanned().map(PlannedJson::from).orElse(null));
+                    entry.getQuantity().unit().name(), entry.getPlanned().map(ExportPlannedJson::from).orElse(null));
         }
     }
 
-    record PlannedJson(UUID foodId, String foodName, BigDecimal quantityAmount, String quantityUnit,
+    record ExportPlannedJson(UUID foodId, String foodName, BigDecimal quantityAmount, String quantityUnit,
                        ExportMacrosJson macros, int slot) {
 
-        static PlannedJson from(Planned planned) {
-            return new PlannedJson(planned.foodId(), planned.foodName(), planned.quantity().amount(),
+        static ExportPlannedJson from(Planned planned) {
+            return new ExportPlannedJson(planned.foodId(), planned.foodName(), planned.quantity().amount(),
                     planned.quantity().unit().name(), ExportMacrosJson.from(planned.macros()), planned.slot());
         }
     }

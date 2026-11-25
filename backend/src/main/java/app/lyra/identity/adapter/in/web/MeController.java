@@ -26,8 +26,8 @@ class MeController {
     private static final String EXPORT_DISPOSITION = "attachment; filename=\"lyra-export.json\"";
 
     private final GetCurrentUserUseCase getCurrentUser;
-    private final ExportAccountUseCase exportAccount;
-    private final DeleteAccountUseCase deleteAccount;
+    private final ExportAccountUseCase exportAccountUseCase;
+    private final DeleteAccountUseCase deleteAccountUseCase;
 
     @GetMapping
     MeResponse me(UserId userId) {
@@ -35,16 +35,16 @@ class MeController {
     }
 
     @GetMapping("/export")
-    ResponseEntity<AccountExportResponse> export(UserId userId) {
+    ResponseEntity<AccountExportResponse> exportAccount(UserId userId) {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, EXPORT_DISPOSITION)
-                .body(AccountExportResponse.from(exportAccount.export(userId)));
+                .body(AccountExportResponse.from(exportAccountUseCase.export(userId)));
     }
 
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void delete(UserId userId, Authentication authentication, HttpServletRequest request, HttpServletResponse response) {
-        deleteAccount.delete(userId);
+    void deleteAccount(UserId userId, Authentication authentication, HttpServletRequest request, HttpServletResponse response) {
+        deleteAccountUseCase.delete(userId);
         new SecurityContextLogoutHandler().logout(request, response, authentication);
     }
 }

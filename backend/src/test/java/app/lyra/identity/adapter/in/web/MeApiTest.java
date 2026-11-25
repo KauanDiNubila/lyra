@@ -103,10 +103,14 @@ class MeApiTest {
     }
 
     @Test
-    void answersNotFoundWhenTheSessionBelongsToAUserThatIsGone() throws Exception {
-        mvc.perform(get("/api/me").with(sessionOf(UserId.random())))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.title").value("Not found"));
+    void answersUnauthorizedAndEndsTheSessionWhenTheUserIsGone() throws Exception {
+        MockHttpSession session = new MockHttpSession();
+
+        mvc.perform(get("/api/me").session(session).with(sessionOf(UserId.random())))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.title").value("Unauthorized"));
+
+        assertThat(session.isInvalid()).isTrue();
     }
 
     @Test
