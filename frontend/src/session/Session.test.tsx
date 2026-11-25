@@ -2,9 +2,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../App.tsx'
 import { emptyDay, jsonResponse } from '../diary/testSupport.ts'
-
-const fetchMock = vi.fn<typeof fetch>()
-const USER = { id: 'user-1', email: 'ana@example.com', name: 'Ana Souza' }
+import { calls, fetchMock, USER } from './testSupport.ts'
 
 type Server = {
   me?: () => Promise<Response>
@@ -27,10 +25,6 @@ function serve({ me, logout }: Server = {}) {
     }
     return jsonResponse([])
   })
-}
-
-function calls(path: string) {
-  return fetchMock.mock.calls.filter(([url]) => String(url) === path)
 }
 
 beforeEach(() => {
