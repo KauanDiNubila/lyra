@@ -10,7 +10,7 @@ public final class TestUsers {
 
     public static void deleteEverything(JdbcClient jdbc) {
         jdbc.sql("delete from app_user").update();
-        jdbc.sql("delete from food where source_reference like 'TEST-%'").update();
+        jdbc.sql("delete from food where source_reference like 'TEST-%' or source_reference like 'off:%'").update();
     }
 
     public static UserId insert(JdbcClient jdbc) {

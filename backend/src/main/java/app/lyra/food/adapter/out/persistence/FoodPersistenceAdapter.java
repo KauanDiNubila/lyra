@@ -1,6 +1,7 @@
 package app.lyra.food.adapter.out.persistence;
 
 import app.lyra.food.application.port.out.FoodRepository;
+import app.lyra.food.domain.Barcode;
 import app.lyra.food.domain.Food;
 import app.lyra.food.domain.FoodSearchQuery;
 import app.lyra.food.domain.FoodSource;
@@ -28,6 +29,8 @@ import java.util.stream.Stream;
 class FoodPersistenceAdapter implements FoodRepository {
 
     private static final char LIKE_ESCAPE = '\\';
+    private static final String PRODUCT_REFERENCE_PREFIX = "off:";
+    private static final int PRODUCT_LOCK_NAMESPACE = 7_403;
 
     private final EntityManager entityManager;
 
@@ -37,7 +40,9 @@ class FoodPersistenceAdapter implements FoodRepository {
         if (food.getSource() != FoodSource.CUSTOM) {
             throw new IllegalArgumentException("Only custom foods are saved by a user");
         }
-        entityManager.persist(toEntity(owner, food));
+        FoodJpaEntity entity = toEntity(food);
+        entity.setUserId(owner.value());
+        entityManager.persist(entity);
     }
 
     @Override
@@ -95,17 +100,51 @@ class FoodPersistenceAdapter implements FoodRepository {
                 .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Food> findByBarcode(Barcode barcode) {
+        return entityManager
+                .createQuery("select f from FoodJpaEntity f where f.source = :source and f.sourceReference = :reference",
+                        FoodJpaEntity.class)
+                .setParameter("source", FoodSource.OPEN_FOOD_FACTS)
+                .setParameter("reference", PRODUCT_REFERENCE_PREFIX + barcode.value())
+                .getResultStream()
+                .findFirst()
+                .map(FoodPersistenceAdapter::toDomain);
+    }
+
+    @Override
+    @Transactional
+    public Food saveProduct(Barcode barcode, Food product) {
+        if (product.getSource() != FoodSource.OPEN_FOOD_FACTS) {
+            throw new IllegalArgumentException("Only products of the Open Food Facts are saved by barcode");
+        }
+        lockProduct(barcode);
+        return findByBarcode(barcode).orElseGet(() -> {
+            FoodJpaEntity entity = toEntity(product);
+            entity.setSourceReference(PRODUCT_REFERENCE_PREFIX + barcode.value());
+            entityManager.persist(entity);
+            return product;
+        });
+    }
+
+    private void lockProduct(Barcode barcode) {
+        entityManager.createNativeQuery("select count(*) from (select pg_advisory_xact_lock(:barcode, :namespace)) as locked")
+                .setParameter("barcode", barcode.value().hashCode())
+                .setParameter("namespace", PRODUCT_LOCK_NAMESPACE)
+                .getSingleResult();
+    }
+
     private static String containsPattern(String term) {
         String literal = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
         return "%" + literal + "%";
     }
 
-    private static FoodJpaEntity toEntity(UserId owner, Food food) {
+    private static FoodJpaEntity toEntity(Food food) {
         FoodJpaEntity entity = new FoodJpaEntity();
         entity.setId(food.getId());
         entity.setName(food.getName());
         entity.setSearchName(SearchText.normalize(food.getName()));
-        entity.setUserId(owner.value());
         entity.setSource(food.getSource());
         entity.setReferenceAmount(food.getReferenceAmount().amount());
         entity.setReferenceUnit(food.getReferenceAmount().unit());

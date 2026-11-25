@@ -3,13 +3,17 @@ package app.lyra.food.adapter.in.web;
 import app.lyra.SignedInControllerTest;
 import app.lyra.TestSessions;
 import app.lyra.food.application.port.in.CreateCustomFoodUseCase;
+import app.lyra.food.application.port.in.LookupFoodByBarcodeUseCase;
 import app.lyra.food.application.port.in.SearchFoodsUseCase;
+import app.lyra.food.domain.Barcode;
 import app.lyra.food.domain.Food;
 import app.lyra.food.domain.FoodSearchQuery;
 import app.lyra.food.domain.FoodSource;
 import app.lyra.food.domain.MeasurementUnit;
 import app.lyra.food.domain.Nutrients;
+import app.lyra.food.domain.ProductNotFoundException;
 import app.lyra.food.domain.Quantity;
+import app.lyra.shared.domain.ServiceUnavailableException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -41,6 +45,12 @@ class FoodControllerTest extends SignedInControllerTest {
             new Quantity(new BigDecimal("100"), MeasurementUnit.GRAM),
             new Nutrients(new BigDecimal("128.2585"), new BigDecimal("2.5208"), new BigDecimal("28.0598"),
                     new BigDecimal("0.227"), new BigDecimal("1.561"), null));
+    private static final String KNOWN_CODE = "7891000100103";
+    private static final String DOWN_CODE = "99999999";
+    private static final Food PRODUCT = new Food(UUID.fromString("00000000-0000-0000-0000-000000000002"),
+            "Biscoito (Marca)", FoodSource.OPEN_FOOD_FACTS, new Quantity(new BigDecimal("100"), MeasurementUnit.GRAM),
+            new Nutrients(new BigDecimal("450"), new BigDecimal("7"), new BigDecimal("70"), new BigDecimal("15"),
+                    new BigDecimal("2"), new BigDecimal("300")));
 
 
     @Autowired
@@ -55,6 +65,21 @@ class FoodControllerTest extends SignedInControllerTest {
                 CALLERS.add(userId);
                 FoodSearchQuery.of(query);
                 return List.of(RICE);
+            };
+        }
+
+        @Bean
+        LookupFoodByBarcodeUseCase lookupByBarcode() {
+            return (userId, code) -> {
+                CALLERS.add(userId);
+                Barcode barcode = new Barcode(code);
+                if (code.equals(KNOWN_CODE)) {
+                    return PRODUCT;
+                }
+                if (code.equals(DOWN_CODE)) {
+                    throw new ServiceUnavailableException("The product source is unavailable, try again later", null);
+                }
+                throw ProductNotFoundException.missing(barcode);
             };
         }
 
@@ -75,6 +100,51 @@ class FoodControllerTest extends SignedInControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.title").value("Unauthorized"));
+    }
+
+    @Test
+    void barcodeReturnsTheProductWithItsSourceAndNutrients() throws Exception {
+        mvc.perform(get("/api/foods/barcode/" + KNOWN_CODE))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Biscoito (Marca)"))
+                .andExpect(jsonPath("$.source").value("OPEN_FOOD_FACTS"))
+                .andExpect(jsonPath("$.referenceAmount.amount").value(100))
+                .andExpect(jsonPath("$.referenceAmount.unit").value("GRAM"))
+                .andExpect(jsonPath("$.nutrients.kcal").value(450))
+                .andExpect(jsonPath("$.nutrients.sodium").value(300));
+    }
+
+    @Test
+    void barcodeOfAnUnknownProductIsANotFoundProblem() throws Exception {
+        mvc.perform(get("/api/foods/barcode/00000000"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Not found"))
+                .andExpect(jsonPath("$.detail").value("Product not found: 00000000"));
+    }
+
+    @Test
+    void barcodeThatIsNotEightToFourteenDigitsIsABadRequestProblem() throws Exception {
+        mvc.perform(get("/api/foods/barcode/12ab"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.detail").value("Barcode must have between 8 and 14 digits"));
+    }
+
+    @Test
+    void barcodeWhenTheProductSourceIsDownIsAServiceUnavailableProblem() throws Exception {
+        mvc.perform(get("/api/foods/barcode/" + DOWN_CODE))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Service unavailable"))
+                .andExpect(jsonPath("$.detail").value("The product source is unavailable, try again later"));
+    }
+
+    @Test
+    void barcodeAsksTheUseCaseOnBehalfOfTheSignedInUser() throws Exception {
+        mvc.perform(get("/api/foods/barcode/" + KNOWN_CODE)).andExpect(status().isOk());
+
+        assertThat(CALLERS).containsExactly(SIGNED_IN);
     }
 
     @Test

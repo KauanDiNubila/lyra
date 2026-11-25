@@ -1,7 +1,7 @@
 # ADR-008: Catálogo de alimentos: importação da TACO, busca e contrato da API
 
 - **Data**: 2026-11-19
-- **Status**: Proposta, alterada pela [ADR-012](012-user-identity-and-data-ownership.md) (os alimentos personalizados passam a ter dono)
+- **Status**: Proposta, alterada pela [ADR-012](012-user-identity-and-data-ownership.md) (os alimentos personalizados passam a ter dono) e pela [ADR-013](013-open-food-facts-barcode-lookup.md) (o dono só existe nos alimentos personalizados)
 - **Decisores**: Kauan Di Nubila
 - **Tags**: alimentos, dados, api
 

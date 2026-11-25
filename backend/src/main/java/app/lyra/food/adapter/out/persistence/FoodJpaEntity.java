@@ -26,6 +26,7 @@ class FoodJpaEntity {
     private UUID id;
     private String name;
     private String searchName;
+    private String sourceReference;
     private UUID userId;
     @Enumerated(EnumType.STRING)
     private FoodSource source;

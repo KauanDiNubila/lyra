@@ -1,7 +1,7 @@
 # ADR-012: Identidade de usuário e dono dos dados
 
 - **Data**: 2026-11-24
-- **Status**: Proposta
+- **Status**: Proposta, alterada pela [ADR-013](013-open-food-facts-barcode-lookup.md) (a restrição de dono dos alimentos passa a ser: só o alimento personalizado tem dono)
 - **Decisores**: Kauan Di Nubila
 - **Tags**: identidade, segurança, dados, arquitetura, api
 
