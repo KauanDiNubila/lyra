@@ -2,6 +2,7 @@ package app.lyra.shared.adapter.in.web;
 
 import app.lyra.shared.domain.InvalidInputException;
 import app.lyra.shared.domain.NotFoundException;
+import app.lyra.shared.domain.ServiceUnavailableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.AuthenticationException;
@@ -25,6 +26,14 @@ class ProblemDetailsHandler {
     ProblemDetail unauthorized() {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Sign in to use the API");
         problem.setTitle("Unauthorized");
+        return problem;
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    ProblemDetail serviceUnavailable(ServiceUnavailableException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
+        problem.setTitle("Service unavailable");
         return problem;
     }
 

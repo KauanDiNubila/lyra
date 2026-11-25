@@ -121,6 +121,7 @@ class IdentitySecurityTest {
                 Arguments.of(HttpMethod.GET, "/api/me/export"),
                 Arguments.of(HttpMethod.DELETE, "/api/me"),
                 Arguments.of(HttpMethod.GET, "/api/foods?query=arroz"),
+                Arguments.of(HttpMethod.GET, "/api/foods/barcode/7891000100103"),
                 Arguments.of(HttpMethod.POST, "/api/foods"),
                 Arguments.of(HttpMethod.GET, "/api/plans"),
                 Arguments.of(HttpMethod.POST, "/api/plans"),

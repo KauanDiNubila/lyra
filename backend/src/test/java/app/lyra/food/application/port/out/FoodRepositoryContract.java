@@ -1,5 +1,6 @@
 package app.lyra.food.application.port.out;
 
+import app.lyra.food.domain.Barcode;
 import app.lyra.food.domain.Food;
 import app.lyra.food.domain.FoodSearchQuery;
 import app.lyra.food.domain.FoodSource;
@@ -177,6 +178,57 @@ public interface FoodRepositoryContract {
         seedTaco(food("Quimera taco", FoodSource.TACO));
 
         assertThat(names(repository().findCustom(owner()))).containsExactly("Quimera a", "Quimera b");
+    }
+
+    @Test
+    default void findsNothingForAnUnknownBarcode() {
+        assertThat(repository().findByBarcode(new Barcode("7891000100103"))).isEmpty();
+    }
+
+    @Test
+    default void aSavedProductIsFoundByItsBarcodeAndVisibleToEveryUser() {
+        Barcode barcode = new Barcode("7891000100103");
+        Food product = food("Quimera biscoito", FoodSource.OPEN_FOOD_FACTS);
+
+        Food saved = repository().saveProduct(barcode, product);
+
+        assertThat(saved).isEqualTo(product);
+        assertThat(repository().findByBarcode(barcode)).contains(product);
+        assertThat(repository().findById(owner(), product.getId())).contains(product);
+        assertThat(repository().findById(otherOwner(), product.getId())).contains(product);
+        assertThat(names(repository().search(otherOwner(), FoodSearchQuery.of("quimera biscoito"), 20)))
+                .containsExactly("Quimera biscoito");
+    }
+
+    @Test
+    default void savingTheSameBarcodeAgainKeepsTheFirstProduct() {
+        Barcode barcode = new Barcode("7891000100103");
+        Food first = food("Quimera primeiro", FoodSource.OPEN_FOOD_FACTS);
+        repository().saveProduct(barcode, first);
+
+        Food second = repository().saveProduct(barcode, food("Quimera segundo", FoodSource.OPEN_FOOD_FACTS));
+
+        assertThat(second).isEqualTo(first);
+        assertThat(repository().findByBarcode(barcode).orElseThrow().getName()).isEqualTo("Quimera primeiro");
+        assertThat(names(repository().search(owner(), FoodSearchQuery.of("quimera"), 20))).containsExactly("Quimera primeiro");
+    }
+
+    @Test
+    default void twoBarcodesAreTwoProducts() {
+        Food first = food("Quimera um", FoodSource.OPEN_FOOD_FACTS);
+        Food second = food("Quimera dois", FoodSource.OPEN_FOOD_FACTS);
+        repository().saveProduct(new Barcode("7891000100103"), first);
+        repository().saveProduct(new Barcode("7891000100110"), second);
+
+        assertThat(repository().findByBarcode(new Barcode("7891000100110"))).contains(second);
+    }
+
+    @Test
+    default void refusesToSaveAsAProductAFoodThatIsNotFromTheOpenFoodFacts() {
+        Food custom = food("Quimera caseiro", FoodSource.CUSTOM);
+
+        assertThatThrownBy(() -> repository().saveProduct(new Barcode("7891000100103"), custom))
+                .isInstanceOf(IllegalArgumentException.class);
     }
     @Test
     default void tacoFoodsAreVisibleToEveryUser() {

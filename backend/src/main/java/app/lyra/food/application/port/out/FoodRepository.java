@@ -1,5 +1,6 @@
 package app.lyra.food.application.port.out;
 
+import app.lyra.food.domain.Barcode;
 import app.lyra.food.domain.Food;
 import app.lyra.food.domain.FoodSearchQuery;
 import app.lyra.shared.domain.UserId;
@@ -20,4 +21,8 @@ public interface FoodRepository {
     List<Food> search(UserId user, FoodSearchQuery query, int limit);
 
     List<Food> findCustom(UserId user);
+
+    Optional<Food> findByBarcode(Barcode barcode);
+
+    Food saveProduct(Barcode barcode, Food product);
 }

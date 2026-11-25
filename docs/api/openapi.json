@@ -33,6 +33,16 @@
               }
             }
           },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Unauthorized",
             "content" : {
@@ -43,8 +53,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -98,6 +108,16 @@
               }
             }
           },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Unauthorized",
             "content" : {
@@ -108,8 +128,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -146,6 +166,16 @@
               }
             }
           },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Unauthorized",
             "content" : {
@@ -156,8 +186,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -205,6 +235,16 @@
               }
             }
           },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Unauthorized",
             "content" : {
@@ -215,8 +255,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -262,6 +302,16 @@
               }
             }
           },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Unauthorized",
             "content" : {
@@ -272,8 +322,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -318,6 +368,16 @@
               }
             }
           },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Unauthorized",
             "content" : {
@@ -328,8 +388,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -377,6 +437,16 @@
               }
             }
           },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Unauthorized",
             "content" : {
@@ -387,8 +457,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -444,6 +514,16 @@
               }
             }
           },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Unauthorized",
             "content" : {
@@ -454,8 +534,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -501,6 +581,16 @@
               }
             }
           },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Unauthorized",
             "content" : {
@@ -511,8 +601,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -568,6 +658,16 @@
               }
             }
           },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Unauthorized",
             "content" : {
@@ -578,8 +678,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -625,6 +725,16 @@
               }
             }
           },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Unauthorized",
             "content" : {
@@ -635,8 +745,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -683,6 +793,16 @@
               }
             }
           },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Unauthorized",
             "content" : {
@@ -693,8 +813,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -731,6 +851,16 @@
               }
             }
           },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Unauthorized",
             "content" : {
@@ -741,8 +871,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -777,6 +907,16 @@
               }
             }
           },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Unauthorized",
             "content" : {
@@ -787,8 +927,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -818,8 +958,64 @@
               }
             }
           },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Unauthorized",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "Service Unavailable",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountExportResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/foods/barcode/{code}" : {
+      "get" : {
+        "tags" : [ "food-controller" ],
+        "operationId" : "findByBarcode",
+        "parameters" : [ {
+          "name" : "code",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -838,12 +1034,32 @@
               }
             }
           },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "Service Unavailable",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "200" : {
             "description" : "OK",
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/AccountExportResponse"
+                  "$ref" : "#/components/schemas/FoodResponse"
                 }
               }
             }
@@ -875,6 +1091,16 @@
               }
             }
           },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401" : {
             "description" : "Unauthorized",
             "content" : {
@@ -885,8 +1111,8 @@
               }
             }
           },
-          "404" : {
-            "description" : "Not Found",
+          "503" : {
+            "description" : "Service Unavailable",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -1120,7 +1346,7 @@
           },
           "source" : {
             "type" : "string",
-            "enum" : [ "TACO", "CUSTOM" ]
+            "enum" : [ "TACO", "CUSTOM", "OPEN_FOOD_FACTS" ]
           },
           "referenceAmount" : {
             "$ref" : "#/components/schemas/QuantityJson"

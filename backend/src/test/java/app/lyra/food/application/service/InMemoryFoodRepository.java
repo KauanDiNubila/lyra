@@ -1,6 +1,7 @@
 package app.lyra.food.application.service;
 
 import app.lyra.food.application.port.out.FoodRepository;
+import app.lyra.food.domain.Barcode;
 import app.lyra.food.domain.Food;
 import app.lyra.food.domain.FoodSearchQuery;
 import app.lyra.food.domain.FoodSource;
@@ -17,7 +18,7 @@ import java.util.stream.Stream;
 
 class InMemoryFoodRepository implements FoodRepository {
 
-    private record Stored(UserId owner, Food food) {
+    private record Stored(UserId owner, Food food, Barcode barcode) {
 
         boolean isVisibleTo(UserId user) {
             return owner == null || owner.equals(user);
@@ -31,11 +32,27 @@ class InMemoryFoodRepository implements FoodRepository {
         if (food.getSource() != FoodSource.CUSTOM) {
             throw new IllegalArgumentException("Only custom foods are saved by a user");
         }
-        foods.add(new Stored(owner, food));
+        foods.add(new Stored(owner, food, null));
     }
 
     void seedTaco(Food food) {
-        foods.add(new Stored(null, food));
+        foods.add(new Stored(null, food, null));
+    }
+
+    @Override
+    public Optional<Food> findByBarcode(Barcode barcode) {
+        return foods.stream().filter(stored -> barcode.equals(stored.barcode())).map(Stored::food).findFirst();
+    }
+
+    @Override
+    public Food saveProduct(Barcode barcode, Food product) {
+        if (product.getSource() != FoodSource.OPEN_FOOD_FACTS) {
+            throw new IllegalArgumentException("Only products of the Open Food Facts are saved by barcode");
+        }
+        return findByBarcode(barcode).orElseGet(() -> {
+            foods.add(new Stored(null, product, barcode));
+            return product;
+        });
     }
 
     @Override

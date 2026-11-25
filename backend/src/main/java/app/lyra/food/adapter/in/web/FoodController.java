@@ -1,11 +1,13 @@
 package app.lyra.food.adapter.in.web;
 
 import app.lyra.food.application.port.in.CreateCustomFoodUseCase;
+import app.lyra.food.application.port.in.LookupFoodByBarcodeUseCase;
 import app.lyra.food.application.port.in.SearchFoodsUseCase;
 import app.lyra.shared.domain.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,10 +24,16 @@ class FoodController {
 
     private final SearchFoodsUseCase searchFoods;
     private final CreateCustomFoodUseCase createCustomFood;
+    private final LookupFoodByBarcodeUseCase lookupByBarcode;
 
     @GetMapping
     List<FoodResponse> search(UserId userId, @RequestParam String query) {
         return searchFoods.search(userId, query).stream().map(FoodResponse::from).toList();
+    }
+
+    @GetMapping("/barcode/{code}")
+    FoodResponse findByBarcode(UserId userId, @PathVariable String code) {
+        return FoodResponse.from(lookupByBarcode.lookup(userId, code));
     }
 
     @PostMapping
