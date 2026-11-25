@@ -410,6 +410,73 @@
         }
       }
     },
+    "/api/diary/{date}/quick-entries" : {
+      "post" : {
+        "tags" : [ "diary-controller" ],
+        "operationId" : "addQuickEntry",
+        "parameters" : [ {
+          "name" : "date",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/QuickAddRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EntryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/diary/{date}/plan" : {
       "post" : {
         "tags" : [ "diary-controller" ],
@@ -1063,32 +1130,36 @@
           }
         }
       },
-      "DiaryDayResponse" : {
+      "MacrosJson" : {
         "type" : "object",
         "properties" : {
-          "date" : {
-            "type" : "string",
-            "format" : "date"
+          "kcal" : {
+            "type" : "number"
           },
-          "meals" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/MealResponse"
-            }
+          "protein" : {
+            "type" : "number"
           },
-          "total" : {
-            "$ref" : "#/components/schemas/MacrosJson"
+          "carbohydrate" : {
+            "type" : "number"
           },
-          "plannedTotal" : {
-            "$ref" : "#/components/schemas/MacrosJson"
+          "fat" : {
+            "type" : "number"
+          }
+        }
+      },
+      "QuickAddRequest" : {
+        "type" : "object",
+        "properties" : {
+          "mealName" : {
+            "type" : "string"
           },
-          "differenceFromPlan" : {
-            "$ref" : "#/components/schemas/MacrosJson"
+          "name" : {
+            "type" : "string"
           },
-          "targets" : {
-            "$ref" : "#/components/schemas/MacrosJson"
+          "portions" : {
+            "type" : "number"
           },
-          "differenceFromTargets" : {
+          "macros" : {
             "$ref" : "#/components/schemas/MacrosJson"
           }
         }
@@ -1129,20 +1200,51 @@
           }
         }
       },
-      "MacrosJson" : {
+      "PlannedResponse" : {
         "type" : "object",
         "properties" : {
-          "kcal" : {
-            "type" : "number"
+          "foodId" : {
+            "type" : "string",
+            "format" : "uuid"
           },
-          "protein" : {
-            "type" : "number"
+          "foodName" : {
+            "type" : "string"
           },
-          "carbohydrate" : {
-            "type" : "number"
+          "quantity" : {
+            "$ref" : "#/components/schemas/QuantityJson"
           },
-          "fat" : {
-            "type" : "number"
+          "macros" : {
+            "$ref" : "#/components/schemas/MacrosJson"
+          }
+        }
+      },
+      "DiaryDayResponse" : {
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "meals" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MealResponse"
+            }
+          },
+          "total" : {
+            "$ref" : "#/components/schemas/MacrosJson"
+          },
+          "plannedTotal" : {
+            "$ref" : "#/components/schemas/MacrosJson"
+          },
+          "differenceFromPlan" : {
+            "$ref" : "#/components/schemas/MacrosJson"
+          },
+          "targets" : {
+            "$ref" : "#/components/schemas/MacrosJson"
+          },
+          "differenceFromTargets" : {
+            "$ref" : "#/components/schemas/MacrosJson"
           }
         }
       },
@@ -1165,24 +1267,6 @@
             "$ref" : "#/components/schemas/MacrosJson"
           },
           "differenceFromPlan" : {
-            "$ref" : "#/components/schemas/MacrosJson"
-          }
-        }
-      },
-      "PlannedResponse" : {
-        "type" : "object",
-        "properties" : {
-          "foodId" : {
-            "type" : "string",
-            "format" : "uuid"
-          },
-          "foodName" : {
-            "type" : "string"
-          },
-          "quantity" : {
-            "$ref" : "#/components/schemas/QuantityJson"
-          },
-          "macros" : {
             "$ref" : "#/components/schemas/MacrosJson"
           }
         }

@@ -61,6 +61,39 @@ class DiaryApiTest {
     }
 
     @Test
+    void aQuickAddCreatesTheFoodAndLogsTheEntryInOneStep() throws Exception {
+        perform(post(DAY + "/quick-entries").contentType(MediaType.APPLICATION_JSON).content(quickAddJson("Almoço", "Big Mac Teste", 2)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.foodName").value("Big Mac Teste"))
+                .andExpect(jsonPath("$.quantity.amount").value(2))
+                .andExpect(jsonPath("$.quantity.unit").value("PORTION"))
+                .andExpect(jsonPath("$.macros.kcal").value(1100));
+
+        perform(get(DAY))
+                .andExpect(jsonPath("$.meals[0].name").value("Almoço"))
+                .andExpect(jsonPath("$.total.kcal").value(1100))
+                .andExpect(jsonPath("$.total.protein").value(50));
+        perform(get("/api/foods").param("query", "big mac teste"))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].source").value("CUSTOM"))
+                .andExpect(jsonPath("$[0].referenceAmount.unit").value("PORTION"))
+                .andExpect(jsonPath("$[0].nutrients.kcal").value(550))
+                .andExpect(jsonPath("$[0].nutrients.fiber").isEmpty());
+    }
+
+    @Test
+    void aQuickAddThatFailsLeavesNoFoodBehind() throws Exception {
+        perform(post(DAY + "/quick-entries").contentType(MediaType.APPLICATION_JSON).content(quickAddJson("  ", "Big Mac Teste", 1)))
+                .andExpect(status().isBadRequest());
+        perform(post(DAY + "/quick-entries").contentType(MediaType.APPLICATION_JSON).content(quickAddJson("Almoço", "Big Mac Teste", 0)))
+                .andExpect(status().isBadRequest());
+
+        assertThat(jdbc.sql("select count(*) from food where user_id = :user").param("user", user.value())
+                .query(Integer.class).single()).isZero();
+        assertThat(count("diary_entry")).isZero();
+    }
+
+    @Test
     void aWholeDayFromLoggingToDeleting() throws Exception {
         String foodId = createFood();
         String lunchId = logEntry(foodId, "Almoço", "200");
@@ -322,6 +355,13 @@ class DiaryApiTest {
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         return JsonPath.read(body, "$.id");
+    }
+
+    private static String quickAddJson(String mealName, String name, int portions) {
+        return """
+                {"mealName": "%s", "name": "%s", "portions": %d,
+                 "macros": {"kcal": 550, "protein": 25, "carbohydrate": 45, "fat": 30}}
+                """.formatted(mealName, name, portions);
     }
 
     private static String entryJson(String foodId, String mealName, String grams) {

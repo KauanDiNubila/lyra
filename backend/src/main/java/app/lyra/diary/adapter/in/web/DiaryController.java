@@ -5,6 +5,7 @@ import app.lyra.diary.application.port.in.DeleteEntryUseCase;
 import app.lyra.diary.application.port.in.FillDayFromPlanUseCase;
 import app.lyra.diary.application.port.in.GetDiaryDayUseCase;
 import app.lyra.diary.application.port.in.LogEntryUseCase;
+import app.lyra.diary.application.port.in.QuickAddUseCase;
 import app.lyra.shared.domain.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -29,6 +30,7 @@ class DiaryController {
 
     private final GetDiaryDayUseCase getDiaryDay;
     private final LogEntryUseCase logEntry;
+    private final QuickAddUseCase quickAdd;
     private final FillDayFromPlanUseCase fillDay;
     private final ChangeEntryUseCase changeEntry;
     private final DeleteEntryUseCase deleteEntry;
@@ -43,6 +45,13 @@ class DiaryController {
     EntryResponse addEntry(UserId userId, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                       @RequestBody LogEntryRequest request) {
         return EntryResponse.from(logEntry.log(userId, request.toCommand(date)));
+    }
+
+    @PostMapping("/{date}/quick-entries")
+    @ResponseStatus(HttpStatus.CREATED)
+    EntryResponse addQuickEntry(UserId userId, @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                           @RequestBody QuickAddRequest request) {
+        return EntryResponse.from(quickAdd.quickAdd(userId, request.toCommand(date)));
     }
 
     @PostMapping("/{date}/plan")

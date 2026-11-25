@@ -75,6 +75,21 @@ class DataOwnershipApiTest {
     }
 
     @Test
+    void aQuickAddedFoodIsOnlyFoundByItsOwner() throws Exception {
+        perform(ana, post(DAY + "/quick-entries").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"mealName": "Almoço", "name": "Big Mac da Ana",
+                         "macros": {"kcal": 550, "protein": 25, "carbohydrate": 45, "fat": 30}}
+                        """))
+                .andExpect(status().isCreated());
+
+        perform(ana, get("/api/foods").param("query", "big mac da ana"))
+                .andExpect(jsonPath("$", hasSize(1)));
+        perform(bruno, get("/api/foods").param("query", "big mac da ana"))
+                .andExpect(jsonPath("$", hasSize(0)));
+        perform(bruno, get(DAY)).andExpect(jsonPath("$.meals", hasSize(0)));
+    }
+
+    @Test
     void aCustomFoodOfAnotherUserCannotBeUsedInAPlanOrAnEntry() throws Exception {
         perform(bruno, post("/api/plans").contentType(MediaType.APPLICATION_JSON).content(planJson("Do Bruno", anaFood)))
                 .andExpect(status().isNotFound());

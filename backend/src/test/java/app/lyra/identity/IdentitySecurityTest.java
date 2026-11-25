@@ -129,6 +129,7 @@ class IdentitySecurityTest {
                 Arguments.of(HttpMethod.POST, "/api/plans/" + id + "/activation"),
                 Arguments.of(HttpMethod.GET, "/api/diary/2026-11-19"),
                 Arguments.of(HttpMethod.POST, "/api/diary/2026-11-19/entries"),
+                Arguments.of(HttpMethod.POST, "/api/diary/2026-11-19/quick-entries"),
                 Arguments.of(HttpMethod.POST, "/api/diary/2026-11-19/plan"),
                 Arguments.of(HttpMethod.PATCH, "/api/diary/entries/" + id),
                 Arguments.of(HttpMethod.DELETE, "/api/diary/entries/" + id));
