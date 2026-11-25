@@ -4,14 +4,14 @@ import { Button } from '@astryxdesign/core/Button'
 import { Heading } from '@astryxdesign/core/Heading'
 import { HStack } from '@astryxdesign/core/HStack'
 import { NumberInput } from '@astryxdesign/core/NumberInput'
-import { TextInput } from '@astryxdesign/core/TextInput'
 import { VStack } from '@astryxdesign/core/VStack'
 import type { Food } from '../foods/foodApi.ts'
 import { FoodPicker } from '../foods/FoodPicker.tsx'
 import { quantityLabel } from '../foods/formatNutrients.ts'
 import { useSubmit } from '../useSubmit.ts'
 import { addEntry, type NewEntry } from './diaryApi.ts'
-import { suggestMeals } from './meals.ts'
+import { MealField } from './MealField.tsx'
+import { QuickAddForm } from './QuickAddForm.tsx'
 
 type Props = {
   date: string
@@ -19,30 +19,46 @@ type Props = {
   onAdded: () => void
 }
 
+type Step = { name: 'search' } | { name: 'details'; food: Food } | { name: 'quick-add' }
+
+const SEARCH: Step = { name: 'search' }
+
 export function AddEntryForm({ date, mealNames, onAdded }: Props) {
   const [query, setQuery] = useState('')
-  const [food, setFood] = useState<Food | null>(null)
+  const [step, setStep] = useState<Step>(SEARCH)
 
-  if (food === null) {
+  if (step.name === 'quick-add') {
     return (
-      <VStack gap={4}>
-        <FoodPicker
-          query={query}
-          onQueryChange={setQuery}
-          onSelect={setFood}
-          emptyDescription="Cadastre o alimento na aba Alimentos e volte aqui para registrá-lo."
-        />
-      </VStack>
+      <QuickAddForm
+        date={date}
+        mealNames={mealNames}
+        initialName={query}
+        onAdded={onAdded}
+        onBack={() => setStep(SEARCH)}
+      />
+    )
+  }
+  if (step.name === 'details') {
+    return (
+      <EntryDetails
+        food={step.food}
+        date={date}
+        mealNames={mealNames}
+        onChangeFood={() => setStep(SEARCH)}
+        onAdded={onAdded}
+      />
     )
   }
   return (
-    <EntryDetails
-      food={food}
-      date={date}
-      mealNames={mealNames}
-      onChangeFood={() => setFood(null)}
-      onAdded={onAdded}
-    />
+    <VStack gap={4}>
+      <FoodPicker
+        query={query}
+        onQueryChange={setQuery}
+        onSelect={(food) => setStep({ name: 'details', food })}
+        emptyDescription="Não achou? Use o botão abaixo para adicionar com os valores de uma porção."
+      />
+      <Button label="Não achou? Adicionar rápido" variant="secondary" onClick={() => setStep({ name: 'quick-add' })} />
+    </VStack>
   )
 }
 
@@ -81,12 +97,7 @@ function EntryDetails({ food, date, mealNames, onChangeFood, onAdded }: DetailsP
           <Button label="Trocar alimento" variant="ghost" onClick={onChangeFood} />
         </HStack>
         <NumberInput label={quantityLabel(unit)} value={amount} onChange={setAmount} min={0} isRequired />
-        <TextInput label="Refeição" value={mealName} onChange={setMealName} isRequired />
-        <HStack gap={2} wrap="wrap">
-          {suggestMeals(mealNames).map((name) => (
-            <Button key={name} label={name} size="sm" variant="secondary" onClick={() => setMealName(name)} />
-          ))}
-        </HStack>
+        <MealField value={mealName} onChange={setMealName} mealNames={mealNames} />
         <Button type="submit" label="Adicionar ao dia" variant="primary" isDisabled={!entry} isLoading={isRunning} />
       </VStack>
     </form>
