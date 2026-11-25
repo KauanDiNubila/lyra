@@ -8,6 +8,7 @@ import app.lyra.identity.domain.User;
 import app.lyra.identity.domain.UserNotFoundException;
 import app.lyra.plan.application.port.in.ListPlansUseCase;
 import app.lyra.shared.domain.UserId;
+import app.lyra.weight.application.port.in.ListWeightsUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,7 @@ class ExportAccountService implements ExportAccountUseCase {
     private final ListCustomFoodsUseCase listCustomFoods;
     private final ListPlansUseCase listPlans;
     private final ListDiaryEntriesUseCase listDiaryEntries;
+    private final ListWeightsUseCase listWeights;
 
     @Override
     public AccountExport export(UserId userId) {
@@ -27,6 +29,7 @@ class ExportAccountService implements ExportAccountUseCase {
                 user,
                 listCustomFoods.listCustomFoods(userId),
                 listPlans.listPlans(userId),
-                listDiaryEntries.listEntries(userId));
+                listDiaryEntries.listEntries(userId),
+                listWeights.listWeights(userId));
     }
 }

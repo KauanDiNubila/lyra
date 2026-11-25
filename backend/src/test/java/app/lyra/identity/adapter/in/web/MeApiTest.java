@@ -77,7 +77,8 @@ class MeApiTest {
                 .andExpect(jsonPath("$.account.name").value("Ana Souza"))
                 .andExpect(jsonPath("$.customFoods", hasSize(0)))
                 .andExpect(jsonPath("$.plans", hasSize(0)))
-                .andExpect(jsonPath("$.diaryEntries", hasSize(0)));
+                .andExpect(jsonPath("$.diaryEntries", hasSize(0)))
+                .andExpect(jsonPath("$.weights", hasSize(0)));
     }
 
     @Test

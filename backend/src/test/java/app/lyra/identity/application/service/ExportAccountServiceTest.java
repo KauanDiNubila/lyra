@@ -14,6 +14,7 @@ import app.lyra.plan.domain.DietPlan;
 import app.lyra.plan.domain.PlannedItem;
 import app.lyra.plan.domain.PlannedMeal;
 import app.lyra.shared.domain.UserId;
+import app.lyra.weight.domain.WeightEntry;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -32,6 +33,7 @@ class ExportAccountServiceTest {
             new DailyTargets(new BigDecimal("2000"), new BigDecimal("140"), new BigDecimal("200"), new BigDecimal("60")),
             List.of(new PlannedMeal("Almoço", null, List.of(new PlannedItem(CAKE.getId(), HUNDRED_GRAMS)))));
     private static final DiaryEntry ENTRY = DiaryEntry.log(CAKE, LocalDate.of(2026, 11, 19), "Almoço", HUNDRED_GRAMS);
+    private static final WeightEntry WEIGHT = new WeightEntry(LocalDate.of(2026, 11, 19), new BigDecimal("82.4"));
 
     private final InMemoryUserRepository repository = new InMemoryUserRepository();
 
@@ -40,7 +42,7 @@ class ExportAccountServiceTest {
         User ana = User.create(AuthProvider.GOOGLE, "sub-1", "ana@example.com", "Ana");
         repository.save(ana);
         ExportAccountService service = new ExportAccountService(
-                repository, user -> List.of(CAKE), user -> List.of(PLAN), user -> List.of(ENTRY));
+                repository, user -> List.of(CAKE), user -> List.of(PLAN), user -> List.of(ENTRY), user -> List.of(WEIGHT));
 
         AccountExport export = service.export(ana.getId());
 
@@ -48,6 +50,7 @@ class ExportAccountServiceTest {
         assertThat(export.customFoods()).containsExactly(CAKE);
         assertThat(export.plans()).containsExactly(PLAN);
         assertThat(export.diaryEntries()).containsExactly(ENTRY);
+        assertThat(export.weights()).containsExactly(WEIGHT);
     }
 
     @Test
@@ -58,19 +61,22 @@ class ExportAccountServiceTest {
                 repository,
                 user -> user.equals(ana.getId()) ? List.of(CAKE) : List.of(),
                 user -> user.equals(ana.getId()) ? List.of(PLAN) : List.of(),
-                user -> user.equals(ana.getId()) ? List.of(ENTRY) : List.of());
+                user -> user.equals(ana.getId()) ? List.of(ENTRY) : List.of(),
+                user -> user.equals(ana.getId()) ? List.of(WEIGHT) : List.of());
 
         AccountExport export = service.export(ana.getId());
 
         assertThat(export.customFoods()).hasSize(1);
         assertThat(export.plans()).hasSize(1);
         assertThat(export.diaryEntries()).hasSize(1);
+        assertThat(export.weights()).hasSize(1);
     }
 
     @Test
     void failsWhenThereIsNoUserWithThatId() {
         UserId unknown = UserId.random();
-        ExportAccountService service = new ExportAccountService(repository, user -> List.of(), user -> List.of(), user -> List.of());
+        ExportAccountService service = new ExportAccountService(repository, user -> List.of(), user -> List.of(), user -> List.of(),
+                user -> List.of());
 
         assertThatThrownBy(() -> service.export(unknown))
                 .isInstanceOf(UserNotFoundException.class)

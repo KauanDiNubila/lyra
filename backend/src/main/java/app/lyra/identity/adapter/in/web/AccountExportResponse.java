@@ -11,6 +11,7 @@ import app.lyra.plan.domain.DailyTargets;
 import app.lyra.plan.domain.DietPlan;
 import app.lyra.plan.domain.PlannedItem;
 import app.lyra.plan.domain.PlannedMeal;
+import app.lyra.weight.domain.WeightEntry;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -25,7 +26,8 @@ record AccountExportResponse(
         ExportAccountJson account,
         List<ExportFoodJson> customFoods,
         List<ExportPlanJson> plans,
-        List<ExportDiaryEntryJson> diaryEntries) {
+        List<ExportDiaryEntryJson> diaryEntries,
+        List<ExportWeightJson> weights) {
 
     static final int VERSION = 1;
 
@@ -36,7 +38,8 @@ record AccountExportResponse(
                 ExportAccountJson.from(export.user()),
                 export.customFoods().stream().map(ExportFoodJson::from).toList(),
                 export.plans().stream().map(ExportPlanJson::from).toList(),
-                export.diaryEntries().stream().map(ExportDiaryEntryJson::from).toList());
+                export.diaryEntries().stream().map(ExportDiaryEntryJson::from).toList(),
+                export.weights().stream().map(ExportWeightJson::from).toList());
     }
 
     record ExportAccountJson(UUID id, String email, String name, Instant createdAt) {
@@ -114,6 +117,13 @@ record AccountExportResponse(
         static ExportPlannedJson from(Planned planned) {
             return new ExportPlannedJson(planned.foodId(), planned.foodName(), planned.quantity().amount(),
                     planned.quantity().unit().name(), ExportMacrosJson.from(planned.macros()), planned.slot());
+        }
+    }
+
+    record ExportWeightJson(LocalDate date, BigDecimal kilograms) {
+
+        static ExportWeightJson from(WeightEntry weight) {
+            return new ExportWeightJson(weight.date(), weight.kilograms());
         }
     }
 }
