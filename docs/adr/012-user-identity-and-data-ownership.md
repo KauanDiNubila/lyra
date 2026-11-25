@@ -1,7 +1,7 @@
 # ADR-012: Identidade de usuário e dono dos dados
 
 - **Data**: 2026-11-24
-- **Status**: Proposta, alterada pela [ADR-013](013-open-food-facts-barcode-lookup.md) (a restrição de dono dos alimentos passa a ser: só o alimento personalizado tem dono) e complementada pela [ADR-014](014-iphone-app-login-scan-and-distribution.md) (o app do iPhone usa um token por dispositivo, e a web mantém o cookie)
+- **Status**: Proposta, alterada pela [ADR-013](013-open-food-facts-barcode-lookup.md) (a restrição de dono dos alimentos passa a ser: só o alimento personalizado tem dono) e complementada pela [ADR-014](014-iphone-app-login-scan-and-distribution.md) (o app do iPhone usa um token por dispositivo, e a web mantém o cookie) e pela [ADR-016](016-weight-log.md) (o peso é um dado do usuário: entra na exportação e some ao apagar a conta)
 - **Decisores**: Kauan Di Nubila
 - **Tags**: identidade, segurança, dados, arquitetura, api
 
