@@ -141,6 +141,14 @@ export const rice: Food = {
   nutrients: { kcal: 128.2585, protein: 2.5208, carbohydrate: 28.0598, fat: 0.227, fiber: 1.561, sodium: 1.2007 },
 }
 
+export const nutella: Food = {
+  id: 'nutella',
+  name: 'Nutella (Ferrero)',
+  source: 'OPEN_FOOD_FACTS',
+  referenceAmount: { amount: 100, unit: 'GRAM' },
+  nutrients: { kcal: 539, protein: 6.3, carbohydrate: 57.5, fat: 30.9, fiber: null, sodium: 41 },
+}
+
 export const milkshake: Food = {
   id: 'milkshake',
   name: 'Milkshake de morango',

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Food } from '../foods/foodApi.ts'
 import type { DiaryDay } from './diaryApi.ts'
 import { DiaryPage } from './DiaryPage.tsx'
-import { day, emptyDay, jsonResponse, lunchRice, milkshake, rice } from './testSupport.ts'
+import { day, emptyDay, jsonResponse, lunchRice, milkshake, nutella, rice } from './testSupport.ts'
 
 const fetchMock = vi.fn<typeof fetch>()
 
@@ -14,6 +14,8 @@ function serve(options: { day?: DiaryDay; foods?: Food[]; post?: (init: RequestI
     if (init?.method === 'POST') {
       return options.post ? options.post(init) : jsonResponse(lunchRice, 201)
     }
+    if (path === '/api/foods/barcode/7891000100103') return jsonResponse(nutella)
+    if (path.startsWith('/api/foods/barcode/')) return jsonResponse({ detail: 'Product not found' }, 404)
     if (path.startsWith('/api/foods')) return jsonResponse(options.foods ?? [rice, milkshake])
     return jsonResponse(options.day ?? emptyDay('2026-11-19'))
   })
@@ -76,6 +78,44 @@ describe('adding a food to the diary', () => {
     })
     await waitFor(() => expect(screen.queryByRole('form', { name: 'Adicionar ao diário' })).not.toBeInTheDocument())
     expect(dayRequests()).toHaveLength(2)
+  })
+
+  it('picks a packaged food by its barcode and logs it', async () => {
+    serve({ day })
+    render(<DiaryPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Adicionar' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Código de barras' }))
+    const barcode = await screen.findByRole('form', { name: 'Buscar por código de barras' })
+    expect(within(barcode).getByText(/Open Food Facts/)).toBeInTheDocument()
+
+    fireEvent.change(within(barcode).getByLabelText('Código de barras', { exact: false }), { target: { value: '7891000100103' } })
+    fireEvent.click(within(barcode).getByRole('button', { name: 'Buscar produto' }))
+    const form = await screen.findByRole('form', { name: 'Adicionar ao diário' })
+    fireEvent.click(within(form).getByRole('button', { name: 'Almoço' }))
+    fireEvent.click(addButton(form))
+
+    await waitFor(() => expect(posts()).toHaveLength(1))
+    expect(JSON.parse(String(posts()[0][1]?.body))).toEqual({
+      foodId: 'nutella',
+      mealName: 'Almoço',
+      quantity: { amount: 100, unit: 'GRAM' },
+    })
+  })
+
+  it('tells when the barcode is unknown and lets the user search by name again', async () => {
+    serve({ day })
+    render(<DiaryPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Adicionar' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Código de barras' }))
+    const barcode = await screen.findByRole('form', { name: 'Buscar por código de barras' })
+
+    fireEvent.change(within(barcode).getByLabelText('Código de barras', { exact: false }), { target: { value: '12345678' } })
+    fireEvent.click(within(barcode).getByRole('button', { name: 'Buscar produto' }))
+
+    expect(await screen.findByText('Produto não encontrado')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cadastrar alimento' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar por nome' }))
+    expect(await screen.findByLabelText('Buscar alimento')).toBeInTheDocument()
   })
 
   it('starts from the reference amount of the food and follows its unit', async () => {

@@ -265,6 +265,113 @@ describe('FoodsPage', () => {
     await waitFor(() => expect(saveButton(form)).not.toHaveAttribute('aria-disabled', 'true'))
   })
 
+  describe('barcode', () => {
+    const nutella: Food = {
+      id: 'nutella',
+      name: 'Nutella (Ferrero)',
+      source: 'OPEN_FOOD_FACTS',
+      referenceAmount: { amount: 100, unit: 'GRAM' },
+      nutrients: { kcal: 539, protein: 6.3, carbohydrate: 57.5, fat: 30.9, fiber: null, sodium: 41 },
+    }
+
+    async function openBarcode() {
+      fireEvent.click(screen.getByRole('button', { name: 'Código de barras' }))
+      return screen.findByRole('form', { name: 'Buscar por código de barras' })
+    }
+
+    function typeCode(form: HTMLElement, code: string) {
+      fireEvent.change(within(form).getByLabelText('Código de barras', { exact: false }), { target: { value: code } })
+    }
+
+    function findButton(form: HTMLElement) {
+      return within(form).getByRole('button', { name: 'Buscar produto' })
+    }
+
+    it('accepts only a code of 8 to 14 digits', async () => {
+      render(<FoodsPage />)
+      const form = await openBarcode()
+
+      typeCode(form, '1234567')
+      expect(findButton(form)).toHaveAttribute('aria-disabled', 'true')
+      typeCode(form, '78910001001A3')
+      expect(findButton(form)).toHaveAttribute('aria-disabled', 'true')
+      typeCode(form, ' 7891000100103 ')
+      expect(findButton(form)).not.toHaveAttribute('aria-disabled', 'true')
+    })
+
+    it('shows the product found in the results, with the credit of the Open Food Facts', async () => {
+      fetchMock.mockImplementation(async (url) =>
+        String(url).startsWith('/api/foods/barcode/') ? jsonResponse(nutella) : jsonResponse([nutella]))
+      render(<FoodsPage />)
+      const form = await openBarcode()
+
+      typeCode(form, ' 7891000100103 ')
+      fireEvent.click(findButton(form))
+
+      expect(await screen.findByText('Nutella (Ferrero)')).toBeInTheDocument()
+      expect(screen.getByText('Embalado')).toBeInTheDocument()
+      expect(screen.getByText(/Fonte dos produtos embalados: Open Food Facts/)).toBeInTheDocument()
+      expect(fetchMock).toHaveBeenCalledWith('/api/foods/barcode/7891000100103', expect.anything())
+      await waitFor(() =>
+        expect(screen.queryByRole('form', { name: 'Buscar por código de barras' })).not.toBeInTheDocument())
+    })
+
+    it('offers to create the food when the product is not found', async () => {
+      fetchMock.mockResolvedValue(jsonResponse({ detail: 'Product not found: 7891000100103' }, 404))
+      render(<FoodsPage />)
+      const form = await openBarcode()
+      typeCode(form, '7891000100103')
+      fireEvent.click(findButton(form))
+
+      expect(await screen.findByText('Produto não encontrado')).toBeInTheDocument()
+      expect(screen.queryByText('Não foi possível buscar o produto')).not.toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Cadastrar alimento' }))
+
+      expect(await screen.findByRole('form', { name: 'Novo alimento' })).toBeInTheDocument()
+      await waitFor(() =>
+        expect(screen.queryByRole('form', { name: 'Buscar por código de barras' })).not.toBeInTheDocument())
+    })
+
+    it('keeps the form open with the problem when the product source is down', async () => {
+      fetchMock.mockResolvedValue(jsonResponse({ detail: 'The product source is unavailable, try again later' }, 503))
+      render(<FoodsPage />)
+      const form = await openBarcode()
+      typeCode(form, '7891000100103')
+      fireEvent.click(findButton(form))
+
+      expect(await screen.findByText('Não foi possível buscar o produto')).toBeInTheDocument()
+      expect(screen.getByText('The product source is unavailable, try again later')).toBeInTheDocument()
+      expect(screen.queryByText('Produto não encontrado')).not.toBeInTheDocument()
+      await waitFor(() => expect(findButton(form)).not.toHaveAttribute('aria-disabled', 'true'))
+    })
+
+    it('forgets the failure of the last code when the code changes', async () => {
+      fetchMock.mockResolvedValue(jsonResponse({ detail: 'The product source is unavailable, try again later' }, 503))
+      render(<FoodsPage />)
+      const form = await openBarcode()
+      typeCode(form, '7891000100103')
+      fireEvent.click(findButton(form))
+      await screen.findByText('Não foi possível buscar o produto')
+
+      typeCode(form, '7891000100104')
+
+      expect(screen.queryByText('Não foi possível buscar o produto')).not.toBeInTheDocument()
+    })
+
+    it('forgets that the last code was not found when the code changes', async () => {
+      fetchMock.mockResolvedValue(jsonResponse({ detail: 'Product not found: 7891000100103' }, 404))
+      render(<FoodsPage />)
+      const form = await openBarcode()
+      typeCode(form, '7891000100103')
+      fireEvent.click(findButton(form))
+      await screen.findByText('Produto não encontrado')
+
+      typeCode(form, '7891000100104')
+
+      expect(screen.queryByText('Produto não encontrado')).not.toBeInTheDocument()
+    })
+  })
+
   it('opens an empty form for the next food, starting from the current search', async () => {
     fetchMock.mockImplementation(async (_url, init) =>
       init?.method === 'POST' ? jsonResponse(milkshake, 201) : jsonResponse([milkshake]))

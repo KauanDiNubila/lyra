@@ -7,6 +7,7 @@ import { Spinner } from '@astryxdesign/core/Spinner'
 import { Text } from '@astryxdesign/core/Text'
 import { TextInput } from '@astryxdesign/core/TextInput'
 import type { Resource } from '../useAsyncResource.ts'
+import { OPEN_FOOD_FACTS_CREDIT, TACO_CREDIT } from './sourceCredits.ts'
 import type { Food } from './foodApi.ts'
 import { formatMacros } from './formatNutrients.ts'
 import { MIN_QUERY_LENGTH } from './useFoodSearch.ts'
@@ -19,6 +20,12 @@ type Props = {
   onSelect?: (food: Food) => void
   emptyActions?: ReactNode
   emptyDescription?: string
+}
+
+const sourceLabels: Record<Food['source'], string | null> = {
+  TACO: null,
+  CUSTOM: 'Meu',
+  OPEN_FOOD_FACTS: 'Embalado',
 }
 
 const DEFAULT_EMPTY_DESCRIPTION = 'Cadastre o alimento com os valores da embalagem ou da tabela do restaurante.'
@@ -66,16 +73,17 @@ export function FoodSearchPanel({
               key={food.id}
               label={food.name}
               description={<Text type="supporting" maxLines={2}>{formatMacros(food)}</Text>}
-              endContent={food.source === 'CUSTOM' ? <Text type="supporting">Meu</Text> : undefined}
+              endContent={sourceLabels[food.source] && <Text type="supporting">{sourceLabels[food.source]}</Text>}
               onClick={onSelect && (() => onSelect(food))}
             />
           ))}
         </List>
       )}
       {search.status === 'success' && search.data.some((food) => food.source === 'TACO') && (
-        <Text type="supporting">
-          Fonte dos alimentos da TACO: NEPA/Unicamp, Tabela Brasileira de Composição de Alimentos, 4. ed., 2011.
-        </Text>
+        <Text type="supporting">{TACO_CREDIT}</Text>
+      )}
+      {search.status === 'success' && search.data.some((food) => food.source === 'OPEN_FOOD_FACTS') && (
+        <Text type="supporting">{OPEN_FOOD_FACTS_CREDIT}</Text>
       )}
     </>
   )
