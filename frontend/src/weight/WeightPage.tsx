@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { X } from 'lucide-react'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { ErrorAlert } from '@/components/ErrorAlert'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -10,13 +10,7 @@ import { todayIso } from '../diary/dates.ts'
 import { useAsyncResource } from '../useAsyncResource.ts'
 import { useSubmit } from '../useSubmit.ts'
 import { deleteWeight, listWeights, recordWeight } from './weightApi.ts'
-import { formatDate, formatKilograms, newestFirst, weightProblem } from './weightRules.ts'
-
-function toKilograms(text: string): number | null {
-  if (text.trim() === '') return null
-  const value = Number(text)
-  return Number.isNaN(value) ? null : value
-}
+import { formatDate, formatKilograms, newestFirst, toKilograms, weightProblem } from './weightRules.ts'
 
 export function WeightPage() {
   const [date, setDate] = useState<string>(() => todayIso())
@@ -50,10 +44,7 @@ export function WeightPage() {
       <h1 className="text-2xl font-semibold tracking-tight">Peso</h1>
       <form onSubmit={submit} aria-label="Registrar peso" className="flex flex-col gap-4">
         {save.error && (
-          <Alert variant="destructive">
-            <AlertTitle>Não foi possível salvar o peso</AlertTitle>
-            <AlertDescription>{save.error}</AlertDescription>
-          </Alert>
+          <ErrorAlert title="Não foi possível salvar o peso">{save.error}</ErrorAlert>
         )}
         <FieldGroup className="gap-4">
           <Field>
@@ -95,20 +86,14 @@ export function WeightPage() {
         </Button>
       </form>
       {remove.error && (
-        <Alert variant="destructive">
-          <AlertTitle>Não foi possível apagar o peso</AlertTitle>
-          <AlertDescription>{remove.error}</AlertDescription>
-        </Alert>
+        <ErrorAlert title="Não foi possível apagar o peso">{remove.error}</ErrorAlert>
       )}
       {weights.status === 'loading' && (
         <Spinner className="mx-auto size-6 text-muted-foreground" aria-label="Carregando os pesos" />
       )}
       {weights.status === 'error' && (
         <div className="flex flex-col gap-3">
-          <Alert variant="destructive">
-            <AlertTitle>Não foi possível carregar os pesos</AlertTitle>
-            <AlertDescription>{weights.message}</AlertDescription>
-          </Alert>
+          <ErrorAlert title="Não foi possível carregar os pesos">{weights.message}</ErrorAlert>
           <Button variant="outline" onClick={reload}>
             Tentar de novo
           </Button>

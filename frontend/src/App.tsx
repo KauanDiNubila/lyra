@@ -1,5 +1,5 @@
 import { Scale } from 'lucide-react'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { ErrorAlert } from '@/components/ErrorAlert'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { LoginPage } from './session/LoginPage.tsx'
@@ -21,10 +21,7 @@ function App() {
   if (session.status === 'error') {
     return (
       <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-4 px-6">
-        <Alert variant="destructive">
-          <AlertTitle>Não foi possível abrir o app</AlertTitle>
-          <AlertDescription>{session.message}</AlertDescription>
-        </Alert>
+        <ErrorAlert title="Não foi possível abrir o app">{session.message}</ErrorAlert>
         <Button variant="outline" onClick={retry}>
           Tentar de novo
         </Button>
@@ -40,7 +37,7 @@ function App() {
           <span className="text-lg font-semibold tracking-tight">Lyra</span>
           <nav
             aria-label="Principal"
-            className="fixed inset-x-0 bottom-0 flex justify-around border-t bg-background pb-[env(safe-area-inset-bottom)] md:static md:justify-start md:border-0 md:bg-transparent md:pb-0"
+            className="fixed inset-x-0 bottom-0 flex justify-around border-t bg-background md:static md:justify-start md:border-0 md:bg-transparent"
           >
             <a
               href="#peso"
@@ -52,7 +49,7 @@ function App() {
             </a>
           </nav>
           <span className="ml-auto truncate text-sm text-muted-foreground">{session.user.name}</span>
-          <Button variant="ghost" size="sm" disabled={exit.isRunning} onClick={() => void exit.run(signOut)}>
+          <Button variant="ghost" className="h-11 md:h-8" disabled={exit.isRunning} onClick={() => void exit.run(signOut)}>
             {exit.isRunning && <Spinner aria-hidden />}
             Sair
           </Button>
@@ -60,10 +57,7 @@ function App() {
       </header>
       {exit.error && (
         <div className="mx-auto max-w-3xl px-4 pt-4">
-          <Alert variant="destructive">
-            <AlertTitle>Não foi possível sair</AlertTitle>
-            <AlertDescription>{exit.error}</AlertDescription>
-          </Alert>
+          <ErrorAlert title="Não foi possível sair">{exit.error}</ErrorAlert>
         </div>
       )}
       <main id="peso" className="mx-auto max-w-3xl px-4 py-6">
