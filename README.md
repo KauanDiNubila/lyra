@@ -24,7 +24,7 @@ O escopo completo e o raciocínio estão no [RFC-001](docs/rfc/001-lyra-mvp.md).
 
 ## Feito com
 
-Java 25 e Spring Boot no backend (arquitetura hexagonal, PostgreSQL) e um PWA em React com o design system Astryx no frontend. As decisões de arquitetura estão registradas em [docs/adr](docs/adr/).
+Java 25 e Spring Boot no backend (arquitetura hexagonal, PostgreSQL) e um PWA em React com Tailwind CSS e shadcn/ui no frontend, mais uma landing page em Astro. As decisões de arquitetura estão registradas em [docs/adr](docs/adr/).
 
 ## Rodando localmente
 

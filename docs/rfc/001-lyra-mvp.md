@@ -93,7 +93,7 @@ Comida de restaurante (o caso do McDonald's) não tem fonte brasileira gratuita.
 ## 7. Visão geral da arquitetura
 
 - **Backend**: Java, arquitetura hexagonal (ports and adapters) como um monolito modular. Módulos: `food`, `plan`, `diary`, `weight`, `identity`, mais um pequeno núcleo compartilhado para tipos de erro ([ADR-010](../adr/010-shared-kernel-for-errors.md)). Ver [ADR-001](../adr/001-hexagonal-modular-monolith.md) e [ADR-005](../adr/005-backend-stack.md).
-- **Frontend**: React 19 com o design system Astryx, entregue como um Progressive Web App. Ver [ADR-004](../adr/004-pwa-with-astryx.md).
+- **Frontend**: React 19 com Tailwind CSS e shadcn/ui, entregue como um Progressive Web App, e uma landing page em Astro. Ver [ADR-004](../adr/004-pwa-with-astryx.md) e [ADR-017](../adr/017-frontend-rewrite-tailwind-shadcn-astro.md).
 - **Testes**: testes unitários para domain e application, testes de integração para os adaptadores, regras de arquitetura garantidas pelo ArchUnit. Ver [ADR-002](../adr/002-testing-strategy.md).
 
 Os recursos futuros se encaixam como novos adaptadores ou novos módulos: o registro por IA é mais um adaptador do `FoodCatalog`, o social é um módulo novo que lê os dados do diário por uma porta de entrada (inbound port), um app nativo é mais um cliente da mesma API HTTP.
