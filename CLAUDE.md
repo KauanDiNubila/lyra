@@ -61,7 +61,7 @@ adapter/out/<external>/   external API clients
 - Money-like and nutrient arithmetic uses `BigDecimal`; rounding only at the presentation edge.
 - Do not change external contracts (routes, JSON, error format, database schema already migrated) without saying so explicitly.
 - No new dependency without a reason written in an ADR or the pull request.
-- Frontend (ADR-017): use the shadcn/ui components in `frontend/src/components/ui` before writing custom UI, and add new ones with `npx shadcn@latest add <name>` instead of writing them by hand. Colours and radii come from `design/tokens.css`, never from loose values in classes. Every animation respects `prefers-reduced-motion`.
+- Frontend (ADR-017): use the shadcn/ui components in `frontend/src/components/ui` before writing custom UI, and add new ones with `npx shadcn@latest add <name>` instead of writing them by hand. Colours and radii come from `design/tokens.css`, never from loose values in classes; a CSS variable that `shadcn add` writes into `frontend/src/index.css` moves to `design/tokens.css`. Every animation respects `prefers-reduced-motion`.
 
 ## Tests (ADR-002)
 
