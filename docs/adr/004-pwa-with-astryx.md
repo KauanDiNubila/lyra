@@ -1,7 +1,7 @@
 # ADR-004: Frontend como PWA construído com Astryx
 
 - **Data**: 2026-11-18
-- **Status**: Proposta, complementada pela [ADR-014](014-iphone-app-login-scan-and-distribution.md) (o app do iPhone: login por token, escaneamento e distribuição; a tecnologia do app está em aberto)
+- **Status**: Substituída pela [ADR-017](017-frontend-rewrite-tailwind-shadcn-astro.md) na escolha do design system; o PWA com React e Vite continua. Complementada pela [ADR-014](014-iphone-app-login-scan-and-distribution.md) (o app do iPhone: login por token, escaneamento e distribuição)
 - **Decisores**: Kauan Di Nubila
 - **Tags**: frontend, mobile
 
