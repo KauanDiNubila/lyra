@@ -1,3 +1,5 @@
+import path from 'node:path'
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vitest/config'
@@ -7,6 +9,7 @@ const backendKeepingTheHost = { target: 'http://localhost:8080', changeOrigin: f
 export default defineConfig({
   plugins: [
     react(),
+    tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
@@ -25,6 +28,9 @@ export default defineConfig({
       },
     }),
   ],
+  resolve: {
+    alias: { '@': path.resolve(import.meta.dirname, './src') },
+  },
   server: {
     proxy: {
       '/api': backendKeepingTheHost,

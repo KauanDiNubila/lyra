@@ -1,4 +1,4 @@
-import type { ISOTimeString } from '@astryxdesign/core/TimeInput'
+export type ISOTimeString = `${number}:${number}`
 import type { MeasurementUnit } from '../foods/foodApi.ts'
 import type { Plan, PlanRequest } from './planApi.ts'
 

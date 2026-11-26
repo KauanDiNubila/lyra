@@ -16,6 +16,12 @@ export function formatDate(isoDate: string): string {
   return longDate.format(new Date(year, month - 1, day))
 }
 
+export function toKilograms(text: string): number | null {
+  if (text.trim() === '') return null
+  const value = Number(text)
+  return Number.isNaN(value) ? null : value
+}
+
 export function weightProblem(value: number | null): string | null {
   if (value === null) return null
   if (value < MIN_KILOGRAMS || value > MAX_KILOGRAMS) return `O peso precisa estar entre ${MIN_KILOGRAMS} e ${MAX_KILOGRAMS} kg.`

@@ -1,72 +1,69 @@
-import { useState } from 'react'
-import { Banner } from '@astryxdesign/core/Banner'
-import { Button } from '@astryxdesign/core/Button'
-import { HStack } from '@astryxdesign/core/HStack'
-import { Spinner } from '@astryxdesign/core/Spinner'
-import { Tab, TabList } from '@astryxdesign/core/TabList'
-import { Text } from '@astryxdesign/core/Text'
-import { VStack } from '@astryxdesign/core/VStack'
-import { DiaryPage } from './diary/DiaryPage.tsx'
-import { FoodsPage } from './foods/FoodsPage.tsx'
-import { PlansPage } from './plans/PlansPage.tsx'
-import { AccountPage } from './session/AccountPage.tsx'
+import { Scale } from 'lucide-react'
+import { ErrorAlert } from '@/components/ErrorAlert'
+import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import { LoginPage } from './session/LoginPage.tsx'
 import { useSession } from './session/useSession.ts'
 import { useSubmit } from './useSubmit.ts'
 import { WeightPage } from './weight/WeightPage.tsx'
 
 function App() {
-  const { session, retry, signOut, deleteAccount } = useSession()
-  const [tab, setTab] = useState('diary')
+  const { session, retry, signOut } = useSession()
   const exit = useSubmit()
 
   if (session.status === 'loading') {
     return (
-      <VStack padding={4}>
-        <Spinner label="Carregando a sessão" />
-      </VStack>
+      <main className="flex min-h-dvh items-center justify-center">
+        <Spinner className="size-6 text-muted-foreground" aria-label="Carregando a sessão" />
+      </main>
     )
   }
   if (session.status === 'error') {
     return (
-      <VStack gap={3} padding={4}>
-        <Banner status="error" title="Não foi possível abrir o app" description={session.message} />
-        <Button label="Tentar de novo" variant="secondary" onClick={retry} />
-      </VStack>
+      <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-4 px-6">
+        <ErrorAlert title="Não foi possível abrir o app">{session.message}</ErrorAlert>
+        <Button variant="outline" onClick={retry}>
+          Tentar de novo
+        </Button>
+      </main>
     )
   }
   if (session.status === 'signed-out') return <LoginPage />
 
   return (
-    <>
-      <HStack justify="between" align="center" padding={4}>
-        <Text type="label">{session.user.name}</Text>
-        <Button label="Sair" variant="ghost" isLoading={exit.isRunning} onClick={() => void exit.run(signOut)} />
-      </HStack>
-      {exit.error && <Banner status="error" title="Não foi possível sair" description={exit.error} />}
-      <TabList role="tablist" value={tab} onChange={setTab}>
-        <Tab value="diary" label="Diário" panelId="diary-page" />
-        <Tab value="plans" label="Plano" panelId="plans-page" />
-        <Tab value="foods" label="Alimentos" panelId="foods-page" />
-        <Tab value="weight" label="Peso" panelId="weight-page" />
-        <Tab value="account" label="Conta" panelId="account-page" />
-      </TabList>
-      <section id="diary-page" role="tabpanel" hidden={tab !== 'diary'}>
-        <DiaryPage />
-      </section>
-      <section id="plans-page" role="tabpanel" hidden={tab !== 'plans'}>
-        <PlansPage />
-      </section>
-      <section id="foods-page" role="tabpanel" hidden={tab !== 'foods'}>
-        <FoodsPage />
-      </section>
-      <section id="weight-page" role="tabpanel" hidden={tab !== 'weight'}>
+    <div className="min-h-dvh pb-20 md:pb-0">
+      <header className="sticky top-0 z-10 border-b bg-background">
+        <div className="mx-auto flex h-14 max-w-3xl items-center gap-4 px-4">
+          <span className="text-lg font-semibold tracking-tight">Lyra</span>
+          <nav
+            aria-label="Principal"
+            className="fixed inset-x-0 bottom-0 flex justify-around border-t bg-background md:static md:justify-start md:border-0 md:bg-transparent"
+          >
+            <a
+              href="#peso"
+              aria-current="page"
+              className="flex flex-col items-center gap-1 px-4 py-2 text-xs font-medium text-foreground md:flex-row md:rounded-md md:bg-muted md:text-sm"
+            >
+              <Scale className="size-5 md:size-4" aria-hidden />
+              Peso
+            </a>
+          </nav>
+          <span className="ml-auto truncate text-sm text-muted-foreground">{session.user.name}</span>
+          <Button variant="ghost" className="h-11 md:h-8" disabled={exit.isRunning} onClick={() => void exit.run(signOut)}>
+            {exit.isRunning && <Spinner aria-hidden />}
+            Sair
+          </Button>
+        </div>
+      </header>
+      {exit.error && (
+        <div className="mx-auto max-w-3xl px-4 pt-4">
+          <ErrorAlert title="Não foi possível sair">{exit.error}</ErrorAlert>
+        </div>
+      )}
+      <main id="peso" className="mx-auto max-w-3xl px-4 py-6">
         <WeightPage />
-      </section>
-      <section id="account-page" role="tabpanel" hidden={tab !== 'account'}>
-        {tab === 'account' && <AccountPage user={session.user} onDeleteAccount={deleteAccount} />}
-      </section>
-    </>
+      </main>
+    </div>
   )
 }
 
