@@ -1,4 +1,4 @@
-import type { ISODateString } from '@astryxdesign/core/Calendar'
+export type ISODateString = `${number}-${number}-${number}`
 
 function pad(value: number): string {
   return String(value).padStart(2, '0')
