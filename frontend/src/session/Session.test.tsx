@@ -1,7 +1,7 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../App.tsx'
-import { emptyDay, jsonResponse } from '../diary/testSupport.ts'
+import { jsonResponse } from '../diary/testSupport.ts'
 import { calls, fetchMock, USER } from './testSupport.ts'
 
 type Server = {
@@ -14,15 +14,10 @@ function unauthorized(): Response {
 }
 
 function serve({ me, logout }: Server = {}) {
-  fetchMock.mockImplementation(async (url, init) => {
+  fetchMock.mockImplementation(async (url) => {
     const path = String(url)
     if (path === '/api/me') return me ? me() : jsonResponse(USER)
     if (path === '/api/logout') return logout ? logout() : new Response(null, { status: 204 })
-    if (path.startsWith('/api/diary')) {
-      return init?.method === 'POST'
-        ? jsonResponse({ detail: 'There is no active plan' }, 404)
-        : jsonResponse(emptyDay(path.split('/')[3]))
-    }
     return jsonResponse([])
   })
 }
@@ -45,7 +40,7 @@ describe('opening the app', () => {
     render(<App />)
 
     expect(await screen.findByLabelText('Carregando a sessão')).toBeInTheDocument()
-    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Entrar com Google' })).not.toBeInTheDocument()
   })
 
@@ -54,17 +49,17 @@ describe('opening the app', () => {
     render(<App />)
 
     expect(await screen.findByText('Ana Souza')).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Diário' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Peso' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sair' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Entrar com Google' })).not.toBeInTheDocument()
   })
 
-  it('shows the sign in page, and no tab, when there is no session', async () => {
+  it('shows the sign in page, and no navigation, when there is no session', async () => {
     serve({ me: () => Promise.resolve(unauthorized()) })
     render(<App />)
 
     expect(await screen.findByRole('link', { name: 'Entrar com Google' })).toBeInTheDocument()
-    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
     expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual(['/api/me'])
   })
 
@@ -124,7 +119,7 @@ describe('signing out', () => {
     expect(calls('/api/logout')).toHaveLength(1)
     expect(calls('/api/logout')[0][1]?.method).toBe('POST')
     expect(new Headers(calls('/api/logout')[0][1]?.headers).get('X-XSRF-TOKEN')).toBe('token-123')
-    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
     expect(screen.queryByText('Ana Souza')).not.toBeInTheDocument()
   })
 
@@ -153,7 +148,7 @@ describe('signing out', () => {
 
     expect(await screen.findByText('Não foi possível sair')).toBeInTheDocument()
     expect(screen.getByText('Invalid CSRF token')).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Diário' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Peso' })).toBeInTheDocument()
   })
 })
 
@@ -164,28 +159,28 @@ describe('a session that ends while the user is in the app', () => {
       const path = String(url)
       if (path === '/api/me') return jsonResponse(USER)
       if (!signedIn) return unauthorized()
-      if (path.startsWith('/api/diary')) return jsonResponse(emptyDay(path.split('/')[3]))
       return jsonResponse([])
     })
     render(<App />)
     await screen.findByText('Ana Souza')
     signedIn = false
 
-    fireEvent.click(screen.getByRole('button', { name: 'Próximo dia' }))
+    fireEvent.change(screen.getByLabelText(/^Peso/), { target: { value: '82.4' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar peso' }))
 
     expect(await screen.findByRole('link', { name: 'Entrar com Google' })).toBeInTheDocument()
-    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
   })
 
   it('does not keep the screens of the last user after the session ended', async () => {
     serve()
     render(<App />)
     await screen.findByText('Ana Souza')
-    expect(within(screen.getByRole('tabpanel', { hidden: false })).getByRole('heading', { name: 'Diário' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Peso' })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Sair' }))
 
     await screen.findByRole('link', { name: 'Entrar com Google' })
-    expect(screen.queryByRole('heading', { name: 'Diário' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Peso' })).not.toBeInTheDocument()
   })
 })

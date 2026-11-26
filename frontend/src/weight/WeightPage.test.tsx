@@ -125,7 +125,7 @@ describe('WeightPage', () => {
     typeWeight(value)
 
     expect(await screen.findByText(message)).toBeInTheDocument()
-    expect(saveButton()).toHaveAttribute('aria-disabled', 'true')
+    expect(saveButton()).toBeDisabled()
     fireEvent.submit(screen.getByRole('form', { name: 'Registrar peso' }))
     expect(callsWith('PUT')).toHaveLength(0)
   })
