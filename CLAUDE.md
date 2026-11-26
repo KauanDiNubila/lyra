@@ -1,6 +1,6 @@
 # Lyra
 
-Diet tracker built around a prescribed diet plan: the plan is the default, the diary records what changed. Backend in Java with hexagonal architecture, frontend as a React PWA with the Astryx design system.
+Diet tracker built around a prescribed diet plan: the plan is the default, the diary records what changed. Backend in Java with hexagonal architecture, frontend as a React PWA with Tailwind CSS and shadcn/ui.
 
 Read before working on a slice:
 
@@ -12,7 +12,8 @@ Read before working on a slice:
 | Path | Content |
 |---|---|
 | `backend/` | Spring Boot 4.1, Java 25, Maven wrapper |
-| `frontend/` | React 19, Vite, Astryx, vite-plugin-pwa |
+| `frontend/` | React 19, Vite, Tailwind CSS v4, shadcn/ui, vite-plugin-pwa |
+| `design/` | Design tokens shared by the app and the landing page |
 | `docs/rfc/`, `docs/adr/` | RFCs and ADRs (MADR format, in Brazilian Portuguese) |
 | `docs/api/openapi.json` | HTTP contract; `OpenApiContractTest` fails when the API drifts from it |
 | `tools/taco/` | One-off converter from the TACO spreadsheet to the seed TSV |
@@ -60,7 +61,7 @@ adapter/out/<external>/   external API clients
 - Money-like and nutrient arithmetic uses `BigDecimal`; rounding only at the presentation edge.
 - Do not change external contracts (routes, JSON, error format, database schema already migrated) without saying so explicitly.
 - No new dependency without a reason written in an ADR or the pull request.
-- Frontend: use Astryx components before writing custom UI; Astryx versions are pinned and upgraded deliberately. `frontend/CLAUDE.md` holds the Astryx component index and workflow, managed by `npx astryx init`; refresh it after an Astryx upgrade instead of editing it by hand.
+- Frontend (ADR-017): use the shadcn/ui components in `frontend/src/components/ui` before writing custom UI, and add new ones with `npx shadcn@latest add <name>` instead of writing them by hand. Colours and radii come from `design/tokens.css`, never from loose values in classes. Every animation respects `prefers-reduced-motion`.
 
 ## Tests (ADR-002)
 
