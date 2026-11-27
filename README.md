@@ -1,56 +1,61 @@
 # Lyra
 
-Um rastreador de dieta feito em torno do plano que o seu nutricionista passou.
+**O plano é o padrão. O diário registra o que mudou.**
 
-A maioria dos rastreadores começa de um dia vazio e faz você digitar tudo de novo. Quem segue um plano prescrito come mais ou menos a mesma coisa todo dia, então esse esforço é desperdiçado. O Lyra inverte o fluxo: **o plano é o padrão, e o diário só registra o que mudou.**
+O diário alimentar para quem segue o plano de um nutricionista.
 
-## Como funciona
+Todo rastreador de dieta começa do mesmo lugar: um dia em branco e uma busca por "arroz". Mas quem segue um plano come quase a mesma coisa todo dia, e digitar tudo de novo é trabalho que não precisava existir. O Lyra parte do que você já combinou com o seu nutricionista e anota só a diferença.
 
-1. **Cadastre o plano uma vez.** Refeições, alimentos, quantidades e metas diárias (calorias, proteína, carboidrato e gordura).
-2. **Abra qualquer dia já preenchido.** O Lyra copia o plano ativo para o diário daquele dia.
-3. **Registre só as diferenças.** Mais arroz, um alimento trocado, um item pulado, algo extra. Os totais por refeição e por dia são recalculados, e você vê como o dia ficou em relação ao plano e às metas.
+|  | Um rastreador comum | Lyra |
+|---|---|---|
+| O dia começa | Em branco | Preenchido com o seu plano |
+| Comer o que estava no plano | Buscar e digitar cada item | Já está lá |
+| Comer 100 g a mais de arroz | Um registro novo | Um ajuste de quantidade |
+| O que você vê no fim do dia | Um total | O total, o plano e as metas lado a lado |
 
-Os alimentos vêm da tabela brasileira TACO, e você pode cadastrar os seus. Seus planos, seu diário e seus alimentos personalizados são só seus: cada conta é isolada das outras.
+## O dia já nasce pronto
 
-## Estado do projeto
+Cadastre o plano uma vez: refeições, alimentos, quantidades e as metas diárias de calorias, proteína, carboidrato e gordura. Depois disso, o dia de hoje já abre com tudo no lugar, e qualquer outra data se preenche com um toque.
 
-O Lyra está em desenvolvimento e ainda não está disponível ao público.
+## Você registra só o que mudou
 
-- Pronto: alimentos (busca na TACO e alimentos personalizados), diário, plano alimentar, preenchimento do diário a partir do plano, login com Google e dados separados por usuário.
-- Próximo: exportar e apagar a conta.
-- Planejado: quick add para comida de restaurante, código de barras com o Open Food Facts, peso corporal e um app instalável que lê o diário de hoje offline.
+Cada entrada guarda o que estava planejado e o que foi comido de verdade.
 
-O escopo completo e o raciocínio estão no [RFC-001](docs/rfc/001-lyra-mvp.md).
+| Entrada | Exemplo |
+|---|---|
+| Planejada | Arroz, 150 g, como no plano |
+| Ajustada | Planejado 150 g, comido 250 g: +100 g |
+| Trocada | O frango do almoço virou peixe |
+| Extra | Uma maçã que não estava no plano |
+| Pulada | O lanche da tarde que ficou para outro dia |
 
-## Feito com
+A cada mudança, os totais da refeição e do dia são recalculados, e você vê como o dia ficou em relação ao plano e às metas.
 
-Java 25 e Spring Boot no backend (arquitetura hexagonal, PostgreSQL) e um PWA em React com Tailwind CSS e shadcn/ui no frontend, mais uma landing page em Astro. As decisões de arquitetura estão registradas em [docs/adr](docs/adr/).
+## Qualquer comida, do jeito que ela aparece
 
-## Rodando localmente
+- **A comida de todo dia.** A TACO, a tabela brasileira de composição de alimentos, com o arroz, o feijão e o frango do jeito que a gente come.
+- **O produto do mercado.** Busque pelo código de barras e o Lyra traz os nutrientes do Open Food Facts.
+- **O milkshake da estrada.** Comida de restaurante não tem tabela. Digite o nome, as calorias e os macros uma vez, e ela fica guardada para a próxima.
+- **Os seus alimentos.** Cadastre o que a sua receita tem de diferente e use como qualquer outro.
 
-Você precisa de JDK 25, Node.js e Docker.
+## Números em que dá para confiar
 
-```bash
-cd backend && ./mvnw spring-boot:test-run
-cd frontend && npm install && npm run dev
-```
+- **Contas exatas.** Os macros são calculados com precisão decimal e arredondados só na hora de mostrar na tela.
+- **O passado não muda.** Cada entrada guarda uma cópia do nome e dos nutrientes do alimento no dia em que foi registrada. Trocar o plano ou corrigir um alimento depois não reescreve os dias anteriores.
 
-Depois abra `http://localhost:5173`. O backend sobe com valores falsos do Google, então o login só funciona com valores reais: crie um cliente OAuth no console do Google (tipo "Web application", origem `http://localhost:5173`, URI de redirecionamento `http://localhost:5173/login/oauth2/code/google`) e exporte `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` antes de subir o backend. Nunca coloque esses valores no repositório.
+## Seus dados são seus
 
-O `JAVA_HOME` da máquina precisa apontar para o JDK 25. Para rodar as verificações:
+Entre com a sua conta Google. Cada conta é isolada das outras: ninguém vê o seu plano, o seu diário nem os seus alimentos. Você exporta tudo em JSON quando quiser e apaga a conta com todos os dados.
 
-```bash
-cd backend && ./mvnw verify
-cd frontend && npm run lint && npm test && npm run build
-```
+O peso corporal também entra no diário, dia a dia, com a variação de uma pesagem para a outra.
 
-Os testes do backend usam Testcontainers, então o Docker precisa estar rodando. Os comandos, as regras de arquitetura e o fluxo de trabalho estão no [CLAUDE.md](CLAUDE.md).
+## Por dentro
 
-## Fontes de dados e créditos
+Backend em Java 25 e Spring Boot, com arquitetura hexagonal e PostgreSQL. Frontend em React, Tailwind CSS e shadcn/ui, e uma landing page em Astro. Cada decisão de arquitetura está registrada em [docs/adr](docs/adr/).
 
-- **TACO**, a Tabela Brasileira de Composição de Alimentos, da Universidade Estadual de Campinas.
-- **Open Food Facts** para códigos de barras, quando essa slice for construída.
+## Fontes dos dados
 
-## Licença
+- **TACO**, Tabela Brasileira de Composição de Alimentos, 4. ed., NEPA/Unicamp, 2011.
+- **Open Food Facts**, sob a licença ODbL.
 
-Ainda não decidida.
+Criado por Kauan Di Nubila.
